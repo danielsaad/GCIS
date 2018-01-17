@@ -1,4 +1,4 @@
-# Grammar Compression By the Induced Suffix Sorting Framework
+# A Grammar Compression Algorithm by the Induced Suffix Sorting Framework
 
 # Introduction
 
@@ -10,7 +10,7 @@ the induced suffix sorting of (Nong _et al_. 2008). We call this algorithm GC-IS
 First download the GC-IS repository
 
 ```shell
-git clone git@bitbucket.org:louza/gc-is.git
+https://github.com/danielsaad/GCIS.git
 ```
 
 In order to compile the program, it is necessary to download, compile and install the **Succinct Data Structure Library**.
@@ -46,16 +46,16 @@ The GC-IS library has the folowing types and functions
 ```cpp
 //Type of the gc-is dictionary
 gc_is_dictionary<lcp_coder>;
-//lcp_coder can be gcis_unary_codec (unary coding) or gcis_s8b_codec (simple8b coding) 
-// Grammar compress the str by using the induced suffix sorting framework 
+//lcp_coder can be gcis_unary_codec (unary coding) or gcis_s8b_codec (simple8b coding)
+// Grammar compress the str by using the induced suffix sorting framework
 gc_is_dictionary<lcp_coder>::encode(char* str);
 
-// Grammar decompress the dictionary into the original string. 
+// Grammar decompress the dictionary into the original string.
 gc_is_dictionary<lcp_coder>::decode(char* str);
 
 // Grammar decompress the dictionary into the original string without decompressing the dictionary (Very slow). */
 gc_is_dictionary<lcp_coder>::inline_decode(char* str);
 
-// Outputs the total number of bytes to represent the grammar. 
+// Outputs the total number of bytes to represent the grammar.
 gc_is_dictionary<lcp_coder>::size_in_bytes();
 ```
