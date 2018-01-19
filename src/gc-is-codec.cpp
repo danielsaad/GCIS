@@ -2,11 +2,10 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include "gc-is.hpp"
-#include "gcis_s8b_codec.hpp"
-#include "util.hpp"
-#include "sdsl/bit_vectors.hpp"
-#include "eliasfano.hpp"
+#include "gcis.hpp"
+#include "gcis_s8b.hpp"
+#include "gcis_unary.hpp"
+#include "gcis_eliasfano.hpp"
 
 
 void load_string_from_file(char*& str,char* filename){
@@ -42,7 +41,7 @@ int main(int argc, char* argv[]){
         char* str;
         load_string_from_file(str, argv[2]);
         std::ofstream output(argv[3],std::ios::binary);
-        gc_is_dictionary<gcis_s8b_codec> d;
+        gcis_dictionary<gcis_s8b_codec> d;
 
         #ifdef MEM_MONITOR
         mm.event("GC-IS Compress");
@@ -60,7 +59,7 @@ int main(int argc, char* argv[]){
     else if(strcmp(mode,"-d")==0) {
         std::ifstream input(argv[2]);
         std::ofstream output(argv[3], std::ios::binary);
-        gc_is_dictionary<gcis_s8b_codec> d;
+        gcis_dictionary<gcis_s8b_codec> d;
 
         #ifdef MEM_MONITOR
                 mm.event("GC-IS Load");
@@ -78,7 +77,7 @@ int main(int argc, char* argv[]){
     else if(strcmp(mode,"-e")==0){
         std::ifstream input (argv[2],std::ios::binary);
         std::ifstream query(argv[3]);
-        gc_is_dictionary<gcis_s8b_codec> d;
+        gcis_dictionary<gcis_eliasfano_codec> d;
 
         #ifdef MEM_MONITOR
                 mm.event("GC-IS Load");
