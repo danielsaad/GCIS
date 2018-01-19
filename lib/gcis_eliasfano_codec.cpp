@@ -8,9 +8,6 @@ uint64_t gcis_eliasfano_codec::size_in_bytes() {
     total_bytes += rule_suffix_length.size_in_bytes();
     total_bytes += sdsl::size_in_bytes(rule);
     total_bytes += sdsl::size_in_bytes(tail);
-    // total_bytes += sdsl::size_in_bytes(lms_bv);
-    // total_bytes += sdsl::size_in_bytes(lms_rnk1);
-    // total_bytes += sdsl::size_in_bytes(lms_sel1);
     return total_bytes;
 }
 

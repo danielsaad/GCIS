@@ -3,14 +3,14 @@
 # Introduction
 
 This library is able to compress an input and generate a grammar based on
-the induced suffix sorting of (Nong _et al_. 2008). We call this algorithm GC-IS.
+the induced suffix sorting of (Nong _et al_. 2009). We call this algorithm GCIS.
 
 # Compilation
 
-First download the GC-IS repository
+First download the GCIS repository
 
 ```shell
-https://github.com/danielsaad/GCIS.git
+git clone https://github.com/danielsaad/GCIS.git
 ```
 
 In order to compile the program, it is necessary to download, compile and install the **Succinct Data Structure Library**.

@@ -6,6 +6,7 @@
 #include "eliasfano.hpp"
 #include "sdsl/int_vector.hpp"
 #include "sdsl/bit_vectors.hpp"
+#include "sdsl/dac_vector.hpp"
 #include "util.hpp"
 
 class gcis_eliasfano_codec_level{
@@ -22,21 +23,32 @@ public:
     void expand_rule(uint64_t rule_num, char* s, uint64_t &l);
 };
 
+
 class gcis_eliasfano_codec{
 public:
     gcis_eliasfano_codec() = default;
     gcis_eliasfano_codec(gcis_eliasfano_codec& rhs) = default;
     gcis_eliasfano_codec(gcis_eliasfano_codec&& rhs) = default;
 
+    // string size
     uint_t string_size;
+     // alphabet size
     uint_t alphabet_size;
+    // elias-fano coded lcp information
     eliasfano_codec lcp;
+    // fixed-width of rule suffixes array
     sdsl::int_vector<> rule;
+    // fixed-width of rule suffixes length
     eliasfano_codec rule_suffix_length;
+    // vector of tails
     sdsl::int_vector<> tail;
-    // sdsl::sd_vector<> lms_bv;
-    // sdsl::sd_vector<>::rank_1_type lms_rnk1;
-    // sdsl::sd_vector<>::select_1_type lms_sel1;
+    // Fixed-width integer reduced string
+    std::vector<uint64_t> reduced_string_ps;
+    // A dac vector storing the fully decoded rule lengths
+    std::vector<uint64_t> fully_decoded_rule_len;
+    // A integer storing the fully decoded tail length
+    uint64_t fully_decoded_tail_len;
+
 public:
     uint64_t get_lcp(uint64_t i);
 
