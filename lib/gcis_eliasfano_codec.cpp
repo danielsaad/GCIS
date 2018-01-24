@@ -19,9 +19,9 @@ void gcis_eliasfano_codec::serialize(std::ostream &o) {
     rule_suffix_length.serialize(o);
     rule.serialize(o);
     tail.serialize(o);
-    // lms_bv.serialize(o);
-    // lms_rnk1.serialize(o);
-    // lms_sel1.serialize(o);
+    fully_decoded_rule_len.serialize(o);
+    o.write((char*) &fully_decoded_tail_len, sizeof(fully_decoded_tail_len));
+    cout << "Rule length = " << sdsl::size_in_bytes(fully_decoded_rule_len) << "bytes\n";
 }
 void gcis_eliasfano_codec::load(std::istream &i) {
     i.read((char*) &string_size, sizeof(string_size));
@@ -30,11 +30,8 @@ void gcis_eliasfano_codec::load(std::istream &i) {
     rule_suffix_length.load(i);
     rule.load(i);
     tail.load(i);
-    // lms_bv.load(i);
-    // lms_rnk1.load(i);
-    // lms_sel1.load(i);
-    // lms_rnk1.set_vector(&lms_bv);
-    // lms_sel1.set_vector(&lms_bv);
+    fully_decoded_rule_len.load(i);
+    i.read((char*) &fully_decoded_tail_len, sizeof(fully_decoded_tail_len));
 }
 
 
@@ -127,114 +124,130 @@ uint64_t gcis_eliasfano_codec::get_rule_pos(uint64_t i) {
     return i == 0 ? 0 : rule_suffix_length.pos(i-1) -(i-1);
 }
 
+
 uint64_t gcis_eliasfano_codec::get_rule_length(uint64_t i){
     return rule_suffix_length[i];
 
 }
 
-// // Extract the LCP part L from a rule_num regarding L[l,r]
-// // If l>r, does not extract
-// void gcis_eliasfano_codec::extract_lcp(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k){
-//     if(l>r) return;
-//     uint64_t lcp_len = get_lcp(rule_num);
-//     uint64_t cur_lcp_len = lcp_len;
-//     // Index of LCP element
-//     int64_t idx = k+ lcp_len-1;
-//     uint64_t prev_rule = rule_num - 1;
-//     while(idx >= (int64_t) k+l){
-//         uint64_t prev_lcp_len = get_lcp(prev_rule);
-//         if(prev_lcp_len<cur_lcp_len){
-//             int64_t i = cur_lcp_len -1;
-//             uint64_t prev_rule_pos = get_rule_pos(prev_rule);
-//             while(i >= (int64_t)prev_lcp_len && idx >= (int64_t) k+l){
-//                 // We copy the value to the extracted text iff it falls in the interval
-//                 if(idx<= k+r){
-//                     extracted_text[idx-l] = rule[prev_rule_pos+i-prev_lcp_len];
-//                 }
-//                 i--;
-//                 idx--;
-//             }
-//             cur_lcp_len = prev_lcp_len;
-//         }
-//         prev_rule--;
-//     }
-//     k+=(r-l+1);
-// }
+ // Extract the LCP part L from a rule_num regarding L[l,r]
+ // If l>r, does not extract
+ void gcis_eliasfano_codec::extract_lcp(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k){
+     if(l>r) return;
+     uint64_t lcp_len = get_lcp(rule_num);
+     uint64_t cur_lcp_len = lcp_len;
+     // Index of LCP element
+     int64_t idx = k+ lcp_len-1;
+     uint64_t prev_rule = rule_num - 1;
+     while(idx >= (int64_t) k+l){
+         uint64_t prev_lcp_len = get_lcp(prev_rule);
+         if(prev_lcp_len<cur_lcp_len){
+             int64_t i = cur_lcp_len -1;
+             uint64_t prev_rule_pos = get_rule_pos(prev_rule);
+             while(i >= (int64_t)prev_lcp_len && idx >= (int64_t) k+l){
+                 // We copy the value to the extracted text iff it falls in the interval
+                 if(idx<= k+r){
+                     extracted_text[idx-l] = rule[prev_rule_pos+i-prev_lcp_len];
+                 }
+                 i--;
+                 idx--;
+             }
+             cur_lcp_len = prev_lcp_len;
+         }
+         prev_rule--;
+     }
+     k+=(r-l+1);
+ }
+
+ // Extract the Rule Suffix part S from a rule_num regarding S[l,r]
+ // If l>r, does not extract
+ void gcis_eliasfano_codec::extract_rule_suffix(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k){
+     uint64_t rule_pos = get_rule_pos(rule_num);
+     for(int64_t i = l;i<= r;i++){
+         extracted_text[k++] = rule[rule_pos+i];
+     }
+ }
 //
-// // Extract the Rule Suffix part S from a rule_num regarding S[l,r]
-// // If l>r, does not extract
-// void gcis_eliasfano_codec::extract_rule_suffix(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k){
-//     uint64_t rule_pos = get_rule_pos(rule_num);
-//     for(int64_t i = l;i<= r;i++){
-//         extracted_text[k++] = rule[rule_pos+i];
-//     }
-// }
-//
-// // Extract the Rule R regarding R[l,r]
-// void gcis_eliasfano_codec::extract_rule(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k){
-//     int64_t lcp_len = get_lcp(rule_num);
-//     int64_t rule_suffix_len = get_rule_length(rule_num);
-//     int64_t l_lcp,l_rule_suffix,r_lcp,r_rule_suffix;
-//
-//     if(lcp_len>l) {
-//         //There is something in the LCP to extract
-//
-//         //LCP starts at l, discarding previous LMS symbols
-//         l_lcp = l;
-//         //LCP ends prematurely at position r or copies all lcp symbols from L[l,r]
-//         r_lcp = std::min<int64_t>(lcp_len-1, r);
-//         extract_lcp(rule_num, l_lcp, r_lcp, extracted_text, k);
-//         if(r_lcp==lcp_len-1){
-//             l_rule_suffix = 0;
-//             r_rule_suffix = r - lcp_len;
-//             extract_rule_suffix(rule_num,l_rule_suffix,r_rule_suffix,extracted_text,k);
-//         }
-//     }
-//     else{
-//         // There is no LCP to extract. Some rule symbols must be discarded as well
-//         l_rule_suffix = l-lcp_len;
-//         r_rule_suffix = r - lcp_len;
-//         extract_rule_suffix(rule_num, l_rule_suffix, r_rule_suffix, extracted_text, k);
-//     }
-//
-// }
-//
-// void gcis_eliasfano_codec::extract_rules(uint64_t l,
-//                                          uint64_t r,
-//                                          sdsl::int_vector<>& extracted_text,
-//                                          sdsl::int_vector<>& tmp_text) {
-//     // The subinterval to be extracted falls in the tail
-//     uint64_t k = 0;
-//     if(l<tail.size()) {
-//         for (uint64_t i = l; i < std::min(r+1, tail.size()); i++) {
-//             extracted_text[k++] = tail[i];
-//         }
-//         if (r < tail.size()) {
-//             return;
-//         }
-//         l = tail.size();
-//     }
-//     //extract rules from lms substrings in the interval[l,r]
-//     uint64_t leftmost_rule = lms_rnk1(l+1)-1;
-//     uint64_t rightmost_rule = lms_rnk1(r+1)-1;
-//     // Beggining of the leftmost LMS substring
-//     uint64_t left_pos = lms_sel1(leftmost_rule+1);
-//     // Beginning of the rightmost LMS substring
-//     uint64_t right_pos = lms_sel1(rightmost_rule+1);
-//     // Extract a suffix of the leftmost lms substring
-//     if(leftmost_rule!=rightmost_rule) {
-//         uint64_t leftmost_rule_len = get_lcp(tmp_text[0]) + get_rule_length(tmp_text[0]);
-//         extract_rule(tmp_text[0],l-left_pos,leftmost_rule_len-1,extracted_text,k);
-//         for (uint64_t i = leftmost_rule + 1; i < rightmost_rule; i++) {
-//             // Extract the entire lms substring
-//             uint64_t rule_len = get_lcp(tmp_text[i-leftmost_rule]) + get_rule_length(tmp_text[i - leftmost_rule]);
-//             extract_rule(tmp_text[i - leftmost_rule],0,rule_len-1, extracted_text, k);
-//         }
-//         extract_rule(tmp_text[rightmost_rule-leftmost_rule],0,r-right_pos,extracted_text,k);
-//     }
-//     else{
-//         extract_rule(tmp_text[0],l-left_pos,r-right_pos, extracted_text, k);
-//     }
+ // Extract the Rule R regarding R[l,r]
+ void gcis_eliasfano_codec::extract_rule(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k){
+     int64_t lcp_len = get_lcp(rule_num);
+     int64_t rule_suffix_len = get_rule_length(rule_num);
+     int64_t l_lcp,l_rule_suffix,r_lcp,r_rule_suffix;
+
+     if(lcp_len>l) {
+         //There is something in the LCP to extract
+
+         //LCP starts at l, discarding previous LMS symbols
+         l_lcp = l;
+         //LCP ends prematurely at position r or copies all lcp symbols from L[l,r]
+         r_lcp = std::min<int64_t>(lcp_len-1, r);
+         extract_lcp(rule_num, l_lcp, r_lcp, extracted_text, k);
+         if(r_lcp==lcp_len-1){
+             l_rule_suffix = 0;
+             r_rule_suffix = r - lcp_len;
+             extract_rule_suffix(rule_num,l_rule_suffix,r_rule_suffix,extracted_text,k);
+         }
+     }
+     else{
+         // There is no LCP to extract. Some rule symbols must be discarded as well
+         l_rule_suffix = l-lcp_len;
+         r_rule_suffix = r - lcp_len;
+         extract_rule_suffix(rule_num, l_rule_suffix, r_rule_suffix, extracted_text, k);
+     }
+
+ }
 
 
-// }
+/**
+ * Extract a rule R entirely
+ * @param rule_num The number of the rule to be extracted
+ * @param extracted_text the container for the extracted rule
+ * @param k The index which tracks in which position of the container the extracted rule should be placed
+ */
+void gcis_eliasfano_codec::extract_rule(uint64_t rule_num,sdsl::int_vector<>& extracted_text,uint64_t& k){
+    extract_lcp(rule_num, extracted_text, k);
+    extract_rule_suffix(rule_num, extracted_text, k);
+
+}
+
+
+/**
+ *
+ * @param rule_num
+ * @param extracted_text
+ * @param k
+ */
+void gcis_eliasfano_codec::extract_lcp(uint64_t rule_num,sdsl::int_vector<>& extracted_text,uint64_t& k){
+    uint64_t lcp_len = get_lcp(rule_num);
+    uint64_t cur_lcp_len = lcp_len;
+    // Index of LCP element
+    int64_t idx = k+ lcp_len-1;
+    uint64_t prev_rule = rule_num - 1;
+    while(idx >= (int64_t) k){
+        uint64_t prev_lcp_len = get_lcp(prev_rule);
+        if(prev_lcp_len<cur_lcp_len){
+            int64_t i = cur_lcp_len -1;
+            uint64_t prev_rule_pos = get_rule_pos(prev_rule);
+            while(i >= (int64_t)prev_lcp_len && idx >= (int64_t) k){
+                // We copy the value to the extracted text iff it falls in the interval
+                if(idx<= k+lcp_len-1){
+                    extracted_text[idx] = rule[prev_rule_pos+i-prev_lcp_len];
+                }
+                i--;
+                idx--;
+            }
+            cur_lcp_len = prev_lcp_len;
+        }
+        prev_rule--;
+    }
+    k += lcp_len;
+}
+
+
+void gcis_eliasfano_codec::extract_rule_suffix(uint64_t rule_num,sdsl::int_vector<>& extracted_text,uint64_t& k){
+    int64_t rule_suffix_len = get_rule_length(rule_num);
+    uint64_t rule_pos = get_rule_pos(rule_num);
+    for(int64_t i = 0;i< rule_suffix_len;i++){
+        extracted_text[k++] = rule[rule_pos+i];
+    }
+}

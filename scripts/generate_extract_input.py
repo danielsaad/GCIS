@@ -1,7 +1,7 @@
 import os
 import random
 import sys
-number_of_substrings = 1000
+number_of_substrings = 100
 substring_size = [10,100,1000,10000]
 
 def generate_extract_input(input_file_path):

@@ -41,7 +41,7 @@ int main(int argc, char* argv[]){
         char* str;
         load_string_from_file(str, argv[2]);
         std::ofstream output(argv[3],std::ios::binary);
-        gcis_dictionary<gcis_s8b_codec> d;
+        gcis_dictionary<gcis_eliasfano_codec> d;
 
         #ifdef MEM_MONITOR
         mm.event("GC-IS Compress");
@@ -59,7 +59,7 @@ int main(int argc, char* argv[]){
     else if(strcmp(mode,"-d")==0) {
         std::ifstream input(argv[2]);
         std::ofstream output(argv[3], std::ios::binary);
-        gcis_dictionary<gcis_s8b_codec> d;
+        gcis_dictionary<gcis_eliasfano_codec> d;
 
         #ifdef MEM_MONITOR
                 mm.event("GC-IS Load");
@@ -91,13 +91,13 @@ int main(int argc, char* argv[]){
         uint64_t l,r;
         while(query >> l >> r){
             sdsl::int_vector<> str = d.extract(l,r);
-//            cout << l << " " << r << " = ";
-//            cout.flush();
-//            for(auto it: str){
-//                cout << (char) it;
-//            }
-//            cout << endl;
-//            cout.flush();
+            cout << l << " " << r << " = ";
+            cout.flush();
+            for(uint64_t i=0;i<r-l+1;i++){
+                cout << (char) str[i];
+            }
+            cout << endl;
+            cout.flush();
         }
     }
     else{

@@ -45,7 +45,7 @@ public:
     // Fixed-width integer reduced string
     std::vector<uint64_t> reduced_string_ps;
     // A dac vector storing the fully decoded rule lengths
-    std::vector<uint64_t> fully_decoded_rule_len;
+    sdsl::dac_vector_dp<> fully_decoded_rule_len;
     // A integer storing the fully decoded tail length
     uint64_t fully_decoded_tail_len;
 
@@ -63,9 +63,14 @@ public:
     //                    sdsl::int_vector<>& extracted_text,
     //                    sdsl::int_vector<>& tmp_text);
     //
-    // void extract_lcp(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
-    // void extract_rule_suffix(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
-    // void extract_rule(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
+     void extract_lcp(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
+     void extract_rule_suffix(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
+     void extract_rule(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
+
+    void extract_lcp(uint64_t rule_num,sdsl::int_vector<>& extracted_text,uint64_t& k);
+    void extract_rule_suffix(uint64_t rule_num,sdsl::int_vector<>& extracted_text,uint64_t& k);
+    void extract_rule(uint64_t rule_num,sdsl::int_vector<>& extracted_text,uint64_t& k);
+
 
 
     void serialize(std::ostream& o);

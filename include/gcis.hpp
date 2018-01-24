@@ -44,7 +44,7 @@ public:
 public:
 
 
-    uint64_t size_in_bytes(){
+    virtual uint64_t size_in_bytes(){
         uint64_t total_bytes=0;
         for(uint64_t i=0;i<g.size();i++){
             total_bytes+=g[i].size_in_bytes();
@@ -67,7 +67,7 @@ public:
 
     virtual char* decode() = 0;
 
-    void serialize(std::ostream &o) {
+    virtual void serialize(std::ostream &o) {
         reduced_string.serialize(o);
         uint64_t size = g.size();
         o.write((char*) &size,sizeof(uint64_t));
@@ -76,7 +76,7 @@ public:
         }
     }
 
-    void load(std::istream &i) {
+    virtual void load(std::istream &i) {
         uint64_t size;
         reduced_string.load(i);
         i.read((char*) &size,sizeof(uint64_t));

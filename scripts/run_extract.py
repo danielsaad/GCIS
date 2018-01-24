@@ -6,7 +6,7 @@ def run_extract(input_folder_path,output_folder_path):
     input_file_paths = os.listdir(input_folder_path)
     for f in input_file_paths:
         print("Compressing",os.path.basename(f):
-        process = Popen(['../bin/gc-is-codec', '-c', input,output])
+        process = Popen(['../bin/gc-is-codec', '-e', input,output])
         process.communicate()
 
 #argv[1] contains the path to the experiments folder
