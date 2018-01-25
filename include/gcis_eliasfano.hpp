@@ -22,7 +22,6 @@ public:
         uint64_t n = partial_sum.size();
         o.write((char*)&n,sizeof(n));
         o.write((char*)partial_sum.data(),sizeof(uint64_t) * n);
-        cout << "Partial sum" <<  n*sizeof(uint64_t) << "bytes";
     }
 
     void load(std::istream& i) override {
@@ -125,29 +124,6 @@ private:
         tset(n - 1, 1); // the sentinel must be in s1, important!!!
         for (i = n - 2; i >= 0; i--)
             tset(i, (chr(i) < chr(i + 1) || (chr(i) == chr(i + 1) && tget(i + 1) == 1)) ? 1 : 0);
-
-        // TODO: remove
-//        for(uint64_t i=0;i<n;i++){
-//            if(i==n-1){
-//                cout << '0';
-//            }
-//            if(level == 0)
-//                cout << (char) chr(i);
-//            else{
-//                cout << to_string(chr(i));
-//            }
-//        }
-//        cout << endl;
-//
-//        for(uint64_t i=0;i<n;i++){
-//            if(isLMS(i)){
-//                cout << '*';
-//            }
-//            else{
-//                cout << ' ';
-//            }
-//        }
-//        cout << endl;
 
         int_t *bkt = new int_t[K]; // bucket counters
 
@@ -285,34 +261,11 @@ private:
                 }
                 // Insert the fully decode rule length
                 if(level==0){
-//                    for(uint64_t i=0; i==0 || !isLMS(pos+i);i++){
-//                        if(pos==n-1){
-//                            cout << '0';
-//                            break;
-//                        }
-//                        else{
-//                            cout << (char) chr(pos+i);
-//                        }
-//
-//                    }
-//                    cout << endl;
                     // The symbols are terminal L(x) = 1, for every x
                     fdrlen.push_back(len);
                 }
                 else{
-                    // The symbols are not necessarly terminal.
-                    // L(x->ab..z) = L(a)+L(b)+...L(z)
-//                    for(uint64_t i=0; i==0 || !isLMS(pos+i);i++){
-//                        if(pos==n-1){
-//                            cout << '0';
-//                            break;
-//                        }
-//                        else{
-//                            cout << to_string(chr(pos+i));
-//                        }
-//
-//                    }
-//                    cout << endl;
+                    // The symbols are not necessarly terminal.            
                     uint64_t sum = g[level-1].fully_decoded_rule_len[chr(pos)];
                     for(uint64_t i=1;  i+pos < n && !isLMS(pos+i);i++){
                         sum+=g[level-1].fully_decoded_rule_len[chr(pos+i)];
@@ -372,11 +325,7 @@ private:
         else {
             g[level].fully_decoded_tail_len = g[level].tail.size();
         }
-        cout << "FD Rule length = ";
-        for(auto v: g[level].fully_decoded_rule_len){
-            cout << v << " ";
-        }
-        cout <<"\n" << "FD tail lenght = " << g[level].fully_decoded_tail_len << "\n";
+
 
         // stage 2: solve the reduced problem
         // recurse if names are not yet unique
@@ -437,7 +386,7 @@ private:
             partial_sum[0] = 0;
             for(uint64_t i = 1;i<reduced_string.size();i++){
                 partial_sum[i] = partial_sum[i-1] + g.back().fully_decoded_rule_len[reduced_string[i-1]];
-                cout << "Partial sum = " << partial_sum[i] << "\n";
+                // cout << "Partial sum = " << partial_sum[i] << "\n";
             }
 
 #ifdef REPORT

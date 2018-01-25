@@ -21,7 +21,6 @@ void gcis_eliasfano_codec::serialize(std::ostream &o) {
     tail.serialize(o);
     fully_decoded_rule_len.serialize(o);
     o.write((char*) &fully_decoded_tail_len, sizeof(fully_decoded_tail_len));
-    cout << "Rule length = " << sdsl::size_in_bytes(fully_decoded_rule_len) << "bytes\n";
 }
 void gcis_eliasfano_codec::load(std::istream &i) {
     i.read((char*) &string_size, sizeof(string_size));
