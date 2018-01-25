@@ -10,11 +10,11 @@ import repair
 
 
 
-enable_benchmark = False
+enable_benchmark = True
 
-enable_gz = False
-enable_7z = False
-enable_gc_is = False
+enable_gz = True
+enable_7z = True
+enable_gc_is = True
 enable_repair = True
 enable_testing = True
 
