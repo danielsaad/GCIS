@@ -21,7 +21,7 @@ public:
         gcis_abstract::serialize(o);
         uint64_t n = partial_sum.size();
         o.write((char*)&n,sizeof(n));
-        o.write((char*)partial_sum.data(),sizeof(uint64_t) * n);
+        o.write((char*)partial_sum.data(),sizeof(uint32_t) * n);
     }
 
     void load(std::istream& i) override {
@@ -29,7 +29,7 @@ public:
         uint64_t n;
         i.read((char*)&n,sizeof(n));
         partial_sum.resize(n);
-        i.read((char*)partial_sum.data(),sizeof(uint64_t) * n);
+        i.read((char*)partial_sum.data(),sizeof(uint32_t) * n);
     }
 
 
@@ -90,7 +90,7 @@ public:
 
 
 private:
-    std::vector<uint64_t> partial_sum;
+    std::vector<uint32_t> partial_sum;
 
 private:
 
@@ -265,7 +265,7 @@ private:
                     fdrlen.push_back(len);
                 }
                 else{
-                    // The symbols are not necessarly terminal.            
+                    // The symbols are not necessarly terminal.
                     uint64_t sum = g[level-1].fully_decoded_rule_len[chr(pos)];
                     for(uint64_t i=1;  i+pos < n && !isLMS(pos+i);i++){
                         sum+=g[level-1].fully_decoded_rule_len[chr(pos+i)];
@@ -362,9 +362,9 @@ private:
             // generate the suffix array of s1 directly
             if(premature_stop){
                 // The encoding algorithm is stopped prematurely
-                #ifdef REPORT
+#ifdef REPORT
                 print_report("Premature Stop employed at level ",level, "\n");
-                #endif
+#endif
                 reduced_string.resize(n);
                 for (j = 0; j < n; j++) {
                     // Copy the reduced substring
@@ -405,7 +405,7 @@ private:
      * @param sz the position we want to find
      * @return the leftmost index rk such that partial_sum[rk]>=sz
      */
-    uint64_t bsearch_upperbound(vector<uint64_t>& partial_sum, uint64_t sz) {
+    uint64_t bsearch_upperbound(vector<uint32_t>& partial_sum, uint64_t sz) {
         if(partial_sum.back()<=sz){
             return partial_sum.size()-1;
         }
@@ -428,7 +428,7 @@ private:
      * @param sz the position we want to find
      * @return the rightmost index lk such that partial_sum[lk]<=sz
      */
-    uint64_t bsearch_lowerbound(vector<uint64_t>& partial_sum, uint64_t sz) {
+    uint64_t bsearch_lowerbound(vector<uint32_t>& partial_sum, uint64_t sz) {
         if(partial_sum[0] >= sz){
             return 0;
         }

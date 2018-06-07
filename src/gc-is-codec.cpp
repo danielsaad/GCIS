@@ -6,7 +6,7 @@
 #include "gcis_s8b.hpp"
 #include "gcis_unary.hpp"
 #include "gcis_eliasfano.hpp"
-
+#include "gcis_eliasfano_no_lcp.hpp"
 
 void load_string_from_file(char*& str,char* filename){
         std::ifstream f(filename,std::ios::binary);
@@ -36,12 +36,15 @@ int main(int argc, char* argv[]){
 
         exit(EXIT_FAILURE);
     }
+
+    // Dictionary type
+
+    gcis_dictionary<gcis_eliasfano_codec> d;
     char* mode = argv[1];
     if(strcmp(mode,"-c")==0) {
         char* str;
         load_string_from_file(str, argv[2]);
         std::ofstream output(argv[3],std::ios::binary);
-        gcis_dictionary<gcis_eliasfano_codec> d;
 
         #ifdef MEM_MONITOR
         mm.event("GC-IS Compress");
@@ -59,7 +62,6 @@ int main(int argc, char* argv[]){
     else if(strcmp(mode,"-d")==0) {
         std::ifstream input(argv[2]);
         std::ofstream output(argv[3], std::ios::binary);
-        gcis_dictionary<gcis_eliasfano_codec> d;
 
         #ifdef MEM_MONITOR
                 mm.event("GC-IS Load");
@@ -77,7 +79,6 @@ int main(int argc, char* argv[]){
     else if(strcmp(mode,"-e")==0){
         std::ifstream input (argv[2],std::ios::binary);
         std::ifstream query(argv[3]);
-        gcis_dictionary<gcis_eliasfano_codec> d;
 
         #ifdef MEM_MONITOR
                 mm.event("GC-IS Load");
@@ -106,7 +107,7 @@ int main(int argc, char* argv[]){
     }
 
     #ifdef MEM_MONITOR
-    mm.event("GC-iS Finish");
+    mm.event("GC-IS Finish");
     #endif
 
     return 0;

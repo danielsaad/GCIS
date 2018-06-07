@@ -227,7 +227,7 @@ void gcis_eliasfano_codec::extract_lcp(uint64_t rule_num,sdsl::int_vector<>& ext
         if(prev_lcp_len<cur_lcp_len){
             int64_t i = cur_lcp_len -1;
             uint64_t prev_rule_pos = get_rule_pos(prev_rule);
-            while(i >= (int64_t)prev_lcp_len && idx >= (int64_t) k){
+            while(i >= (int64_t) prev_lcp_len && idx >= (int64_t) k){
                 // We copy the value to the extracted text iff it falls in the interval
                 if(idx<= k+lcp_len-1){
                     extracted_text[idx] = rule[prev_rule_pos+i-prev_lcp_len];

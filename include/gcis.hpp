@@ -116,18 +116,18 @@ protected:
                        int level) {
         int_t i, j;
 
-#ifdef MEM_MONITOR
+#       ifdef MEM_MONITOR
         mm.event("GC-IS Level " + to_string(level));
-#endif
+#       endif
 
-#ifdef REPORT
+#       ifdef REPORT
         uint_t total_lcp = 0;
         uint_t total_rule_suffix_length = 0;
         uint_t run_length_potential = 0;
         uint_t total_rule_len = 0;
         uint_t discarded_rules_n = 0;
         uint_t discarded_rules_len = 0;
-#endif
+#       endif
 
         unsigned char *t = new unsigned char[n / 8 + 1]; // LS-type array in bits
         // stage 1: reduce the problem by at least 1/2
@@ -228,25 +228,25 @@ protected:
                 // Resizes Rule array, LCP array and rule delimiter bitvector
                 uint64_t old_lcp_size, old_rule_delim_size;
 
-#ifdef REPORT
+#               ifdef REPORT
                 total_rule_len+=len;
                 total_lcp +=d;
                 total_rule_suffix_length += len-d;
-#endif
+#               endif
 
                 for (j = 0; j < len - d  && j + pos + d < n; j++) {
-#ifdef REPORT
+#                   ifdef REPORT
                     if(j+pos+d-1<n && chr(j+pos+d) == chr(j+pos+d+1)){
                         run_length_potential++;
                     }
-#endif
+#                   endif
                 }
                 // Since the adjacent LMS substrings differ, we must assign
                 // a new name
                 name++;
                 prev = pos;
             }
-#ifdef REPORT
+#           ifdef REPORT
             else{
                 size_t len = 1;
                 if (pos != n - 1)
@@ -255,7 +255,7 @@ protected:
                 discarded_rules_len+=len;
                 discarded_rules_n++;
             }
-#endif
+#           endif
             pos = (pos % 2 == 0) ? pos / 2 : (pos - 1) / 2;
             // Insert the name in upper half of the SA array
             // just after the LMS substring positions
@@ -278,7 +278,8 @@ protected:
         // stage 2: solve the reduced problem
         // recurse if names are not yet unique
 
-#ifdef REPORT
+
+#       ifdef REPORT
         print_report("Level ",level,"\n");
         print_report("Alphabet Size = ",K, "\n");
         print_report("String Size = ",n,"\n");
@@ -289,23 +290,23 @@ protected:
         print_report("Average LCP = ",(double) total_lcp/(name+1),"\n");
         print_report("Average Rule Suffix Length = ",(double) total_rule_suffix_length/(name+1),"\n");
         print_report("Dictionary Level Size (bytes) =",g[level].size_in_bytes(),"\n");
-        print_report("LCP Size (bits) = ",g[level].lcp.size(),"\n");
+//        print_report("LCP Size (bits) = ",g[level].lcp.size(),"\n");
         print_report("Rule Suffix Length (total) = ",g[level].rule.size(),"\n");
         print_report("Rule Suffix Width (bits per symbol) = ",(int_t) g[level].rule.width(),"\n");
         print_report("Tail Length = ",g[level].tail.size(),"\n");
         print_report("Tail Width (bits per symbol) = ",(int_t) g[level].tail.width(),"\n");
         print_report("Run Length Potential (total) = ",run_length_potential,"\n");
         print_report("Avg Run Length per Rule Suffix = ",(double) run_length_potential/(name+1),"\n");
-#endif
+#       endif
 
         bool premature_stop = evaluate_premature_stop(n,K,n1,name+1,level);
         if (name+1 < n1 && !premature_stop) {
             gc_is((int_t *) s1, SA1, n1, name+1, sizeof(int_t), level + 1);
         } else { // generate the suffix array of s1 directly
             if (premature_stop) {
-#ifdef REPORT
+#               ifdef REPORT
                 print_report("Premature Stop employed at level ",level, "\n");
-#endif
+#               endif
                 reduced_string.resize(n);
                 for (j = 0; j < n; j++) {
                     // Copy the reduced substring
@@ -322,10 +323,10 @@ protected:
             }
             sdsl::util::bit_compress(reduced_string);
 
-#ifdef REPORT
+#           ifdef REPORT
             print_report("Reduced String Length = ",(int_t) reduced_string.size(),"\n");
             print_report("Reduced String Width (bits per symbol) = ",(int_t) reduced_string.width(),"\n");
-#endif
+#           endif
         }
         // delete bitvector t
         delete[] t;
