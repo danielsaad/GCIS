@@ -1,4 +1,7 @@
 import sys
+from subprocess import Popen
+from subprocess import PIPE
+
 
 def extract_from_file(f,l,r):
     f.seek(l,0)
@@ -7,10 +10,13 @@ def extract_from_file(f,l,r):
 
 
 def extract(file_path, extract_file_path):
-    with open(file_path) as f, open(extract_file_path) as f_ext:
+    with open(file_path,'rb') as f, open(extract_file_path,'r') as f_ext:
         for line in f_ext:
             interval = [int(x) for x in line.split()] # read the numbers
             extract_from_file(f,interval[0],interval[1])
+            # Touch the file to clear the cache
+            process = Popen(['touch','-am', file_path],stdout=PIPE,stderr=PIPE)
+            process.communicate()
 
 # argv[1] = file path
 # argv[2] = extract input

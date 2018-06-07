@@ -60,7 +60,6 @@ gcis_s8b_codec_level gcis_s8b_codec::decompress(){
     lcp.reset();
     rule_suffix_length.reset();
 
-
     for(uint64_t i=0;i<number_of_rules;i++){
         int64_t k;
 
