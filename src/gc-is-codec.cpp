@@ -7,6 +7,7 @@
 #include "gcis_unary.hpp"
 #include "gcis_eliasfano.hpp"
 #include "gcis_eliasfano_no_lcp.hpp"
+#include "../external/malloc_count/malloc_count.h"
 
 void load_string_from_file(char*& str,char* filename){
         std::ifstream f(filename,std::ios::binary);
@@ -32,6 +33,7 @@ int main(int argc, char* argv[]){
     if(argc!=4){
         std::cerr << "Usage: ./gc-is-codec -c <file_to_be_encoded> <output>\n"  <<
                   "./gc-is-codec -d <file_to_be_decoded> <output>\n" <<
+                  "./gc-is-codec -s <file_to_be_decoded> <output>\n" <<
                   "./gc-is-codec -e <encoded_file> <query file>\n";
 
         exit(EXIT_FAILURE);
@@ -56,6 +58,9 @@ int main(int argc, char* argv[]){
         mm.event("GC-IS Save");
         #endif
 
+				cout<<"input:\t"<<strlen(str)<<" bytes"<<endl;
+				cout<<"output:\t"<<d.size_in_bytes()<<" bytes"<<endl;
+
         d.serialize(output);
         delete[] str;
     }
@@ -75,6 +80,32 @@ int main(int argc, char* argv[]){
 
         char *str = d.decode();
         output.write(str, strlen(str));
+    }
+    else if(strcmp(mode,"-s")==0) {
+        std::ifstream input(argv[2]);
+        std::ofstream output(argv[3], std::ios::binary);
+
+        #ifdef MEM_MONITOR
+                mm.event("GC-IS/SACA Load");
+        #endif
+
+        d.load(input);
+
+        #ifdef MEM_MONITOR
+                mm.event("GC-IS/SACA Decompress");
+        #endif
+
+				uint_t *SA;
+        char *str = d.decode_saca(&SA);
+				size_t n = strlen(str);
+
+				#if CHECK 
+						if(!d.suffix_array_check(SA, (unsigned char*)str, (uint_t) n, sizeof(char), 0)) printf("isNotSorted!!\n");
+						else printf("isSorted!!\n");
+				#endif
+
+        output.write(str, n);
+        d.suffix_array_write(SA, n, argv[3], "sa");
     }
     else if(strcmp(mode,"-e")==0){
         std::ifstream input (argv[2],std::ios::binary);

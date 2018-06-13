@@ -47,37 +47,160 @@ public:
         return extracted_text;
     }
 
+		char* decode() override {	
+			sdsl::int_vector<> r_string = reduced_string;
+			char* str;
+			if(g.size()) {
+				for (int64_t i = g.size() - 1; i >= 0; i--) {
+					sdsl::int_vector<> next_r_string;
+					gcis_eliasfano_codec_level gd = std::move(g[i].decompress());
+					next_r_string.width(sdsl::bits::hi(g[i].alphabet_size - 1) + 1);
+					next_r_string.resize(g[i].string_size);
+					uint64_t l = 0;
+					if (i == 0) {
+						// Convert the reduced string in the original text
+						str = new char[g[i].string_size];
+						for (uint64_t j = 0; j < g[i].tail.size(); j++) {
+						    str[l++] = g[i].tail[j];
+						}
+						for (uint64_t j = 0; j < r_string.size(); j++) {
+						    gd.expand_rule(r_string[j], str, l);
+						}
+					} else {
+						// Convert the reduced string in the previous reduced string
+						for (uint64_t j = 0; j < g[i].tail.size(); j++) {
+						    next_r_string[l++] = g[i].tail[j];
+						}
+						for (uint64_t j = 0; j < r_string.size(); j++) {
+						    gd.expand_rule(r_string[j], next_r_string, l);
+						}
+						r_string = std::move(next_r_string);
+					}
+				}
+			}
+			else{
+				str = new char[reduced_string.size()];
+				for(uint64_t i=0 ; i< reduced_string.size();i++){
+					str[i] = reduced_string[i];
+				}
+			}
+				return str;
+		}
 
-    char* decode() override {
+		
+    char* decode_saca(uint_t** sa) {
+
         sdsl::int_vector<> r_string = reduced_string;
         char* str;
+
+		    uint_t	n = g[0].string_size;
+		    uint_t N=n;
+
+		    uint_t* SA = new uint_t[n];
+		    int_t*	s =	new int_t[n];
+        unsigned char *t = new unsigned char[n / 8 + 1]; // LS-type array in bits
+
+    		int cs=sizeof(int_t);
+
         if(g.size()) {
-            for (int64_t i = g.size() - 1; i >= 0; i--) {
+            for (int64_t level = g.size() - 1; level >= 0; level--) {
+
+		    		    uint_t	n1=	r_string.size();
+  				      uint_t* SA1=SA, *s1=SA+N-n1;
+				
+	      			  //copy to s1[1]
+				        if(level==g.size()-1){
+      				  	//for(uint_t i=0; i<n1; i++) s1[i]=r_string[i];
+			      	  	for(uint_t i=0; i<n1; i++) SA1[r_string[i]] = i;
+      				  }
+			      	  else	for(uint_t i=0; i<n1; i++) s1[i]=SA[i];
+
+      				  #if DEBUG
+			          	cout<<"\n####"<<endl;
+        			  	cout<<"s1 = ";
+        			  	for(uint_t i=0; i<n1; i++) cout<<s1[i]<<" ";
+        			  	cout<<endl;
+      				  #endif
+
                 sdsl::int_vector<> next_r_string;
-                gcis_eliasfano_codec_level gd = std::move(g[i].decompress());
-                next_r_string.width(sdsl::bits::hi(g[i].alphabet_size - 1) + 1);
-                next_r_string.resize(g[i].string_size);
+                gcis_eliasfano_codec_level gd = std::move(g[level].decompress());
+                next_r_string.width(sdsl::bits::hi(g[level].alphabet_size - 1) + 1);
+                next_r_string.resize(g[level].string_size);
                 uint64_t l = 0;
-                if (i == 0) {
+                if (level == 0) {
                     // Convert the reduced string in the original text
-                    str = new char[g[i].string_size];
-                    for (uint64_t j = 0; j < g[i].tail.size(); j++) {
-                        str[l++] = g[i].tail[j];
+                    str = new char[g[level].string_size];
+                    for (uint64_t j = 0; j < g[level].tail.size(); j++) {
+                        str[l++] = g[level].tail[j];
                     }
                     for (uint64_t j = 0; j < r_string.size(); j++) {
                         gd.expand_rule(r_string[j], str, l);
                     }
+										n=strlen(str);
+										//copy to s[1]
+										for(uint_t i=0; i<n; i++) s[i]=str[i];
+
                 } else {
                     // Convert the reduced string in the previous reduced string
-                    for (uint64_t j = 0; j < g[i].tail.size(); j++) {
-                        next_r_string[l++] = g[i].tail[j];
+                    for (uint64_t j = 0; j < g[level].tail.size(); j++) {
+                        next_r_string[l++] = g[level].tail[j];
                     }
                     for (uint64_t j = 0; j < r_string.size(); j++) {
                         gd.expand_rule(r_string[j], next_r_string, l);
                     }
                     r_string = std::move(next_r_string);
+
+									n=r_string.size();
+									//copy to s[1]
+									for(uint_t i=0; i<n; i++) s[i]=r_string[i];
                 }
+
+								int_t	K=g[level].alphabet_size;//alphabet 
+
+                #if DEGUB
+                  cout<<"n = "<<n<<"\nn1 = "<<n1<<endl;
+                  cout<<"SA1: ";
+                  for(uint_t i=0; i<n1; i++) cout<<SA[i]<<", ";
+                  cout<<endl;
+                  cout<<"level = "<<level<<"\t string_size = "<<g[level].string_size<<"\n"<<"alphabet_size = "<<g[level].alphabet_size<<endl;
+                #endif
+
+								// stage 3: induce the result for the original problem
+								int* bkt = (int*)malloc(sizeof(int)*K);
+								get_buckets(s, bkt, n, K, cs, true); 
+
+							  // Classify the type of each character
+							  tset(n-2, 0); tset(n-1, 1); // the sentinel must be in s1, important!!!
+								for(int_t i=n-3; i>=0; i--){  tset(i, (chr(i)<chr(i+1) || (chr(i)==chr(i+1) && tget(i+1)==1))?1:0);}
+
+								#if DEGUB
+									for(int_t i=0; i<n; i++) cout<<tget(i)<<" ";
+									cout<<endl;
+								#endif
+
+								int_t j=0;
+  							for(int_t i=1; i<n; i++) if(isLMS(i)) s1[j++]=i; // get p1
+  							for(int_t i=0; i<n1; i++) SA1[i]=s1[SA1[i]]; // get index in s1
+  							for(int_t i=n1; i<n; i++) SA[i]=EMPTY; // init SA[n1..n-1]
+  							for(int_t i=n1-1; i>=0; i--) {
+								  j=SA[i]; SA[i]=EMPTY;
+								  if(level==0 && i==0)
+  							        SA[0]=n-1;
+  							    else
+  							        SA[bkt[chr(j)]--]=j;
+  							}
+
+  							induceSAl(t, SA, s, bkt, n, K, cs, level); 
+  							induceSAs(t, SA, s, bkt, n, K, cs, level); 
+								#if DEGUB
+									cout<<"SA: ";
+									for(uint_t i=0; i<N; i++) cout<<SA[i]<<", ";
+									cout<<endl;
+								#endif
+
+								free(bkt);	
             }
+
         }
         else{
             str = new char[reduced_string.size()];
@@ -85,7 +208,11 @@ public:
                 str[i] = reduced_string[i];
             }
         }
-        return str;
+
+				delete[] s;
+				delete[] t;
+				*sa=SA;
+				return str;
     }
 
 
