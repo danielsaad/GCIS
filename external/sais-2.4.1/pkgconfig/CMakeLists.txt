@@ -1,0 +1,10 @@
+## generate libsais.pc ##
+set(prefix "${CMAKE_INSTALL_PREFIX}")
+set(W64BIT "")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libsais.pc.cmake" "${CMAKE_CURRENT_BINARY_DIR}/libsais.pc" @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libsais.pc" DESTINATION lib/pkgconfig)
+if(BUILD_SAIS64)
+  set(W64BIT "64")
+  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libsais.pc.cmake" "${CMAKE_CURRENT_BINARY_DIR}/libsais64.pc" @ONLY)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libsais64.pc" DESTINATION lib/pkgconfig)
+endif(BUILD_SAIS64)

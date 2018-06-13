@@ -108,7 +108,9 @@ public:
 				
 	      		//copy to s1[1]
 				if(level==g.size()-1){
-      			    //for(uint_t i=0; i<n1; i++) s1[i]=r_string[i];
+      			    //for(uint_t i=0; i<n1; i++){
+                        // s1[i]=r_string[i];
+                    // }
 			        for(uint_t i=0; i<n1; i++){
                         SA1[r_string[i]] = i;
                     } 
@@ -159,12 +161,12 @@ public:
 
 					n=r_string.size();
 					//copy to s[1]
-					for(uint_t i=0; i<n; i++){ 
+					for(uint_t i=0; i<n; i++){
                         s[i]=r_string[i];
                     }
                 }
 
-								int_t	K=g[level].alphabet_size;//alphabet 
+				int_t	K=g[level].alphabet_size;//alphabet 
 
                 #if DEGUB
                 cout<<"n = "<<n<<"\nn1 = "<<n1<<endl;
@@ -232,7 +234,7 @@ public:
         }
         else{
             str = new char[reduced_string.size()];
-            for(uint64_t i=0 ; i< reduced_string.size();i++){
+            for(uint64_t i=0 ; i< reduced_string.size();i++) {
                 str[i] = reduced_string[i];
             }
         }
