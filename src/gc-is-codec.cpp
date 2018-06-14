@@ -63,6 +63,7 @@ int main(int argc, char* argv[]){
 
         d.serialize(output);
         delete[] str;
+        output.close();
     }
     else if(strcmp(mode,"-d")==0) {
         std::ifstream input(argv[2]);
@@ -80,27 +81,29 @@ int main(int argc, char* argv[]){
 
         char *str = d.decode();
         output.write(str, strlen(str));
+        input.close();
+        output.close();
     }
     else if(strcmp(mode,"-s")==0) {
         std::ifstream input(argv[2]);
         std::ofstream output(argv[3], std::ios::binary);
 
         #ifdef MEM_MONITOR
-                mm.event("GC-IS/SACA Load");
+        mm.event("GC-IS/SACA Load");
         #endif
 
         d.load(input);
 
         #ifdef MEM_MONITOR
-                mm.event("GC-IS/SACA Decompress");
+        mm.event("GC-IS/SACA Decompress");
         #endif
 
 		uint_t *SA;
         char *str = d.decode_saca(&SA);
-		size_t n = strlen(str);
+		size_t n = strlen(str)+1;
 
 
-		#if CHECK==0
+		#if CHECK
 		if(!d.suffix_array_check(SA, (unsigned char*)str, (uint_t) n, sizeof(char), 0)) {
             std::cout << "isNotSorted!!\n";
         }
@@ -109,21 +112,25 @@ int main(int argc, char* argv[]){
         } 
     	#endif
 
-        output.write(str, n);
-        d.suffix_array_write(SA, n, argv[3], "sa");
+        // output.write(str, n-1);
+        // d.suffix_array_write(SA, n, argv[3]);
+        output.write((const char*) &n,sizeof(n));
+        output.write((const char*)SA,sizeof(uint_t)*n);
+        input.close();
+        output.close();
     }
     else if(strcmp(mode,"-e")==0){
         std::ifstream input (argv[2],std::ios::binary);
         std::ifstream query(argv[3]);
 
         #ifdef MEM_MONITOR
-                mm.event("GC-IS Load");
+        mm.event("GC-IS Load");
         #endif
 
         d.load(input);
 
         #ifdef MEM_MONITOR
-                mm.event("GC-IS Extract");
+        mm.event("GC-IS Extract");
         #endif
         uint64_t l,r;
         while(query >> l >> r){
