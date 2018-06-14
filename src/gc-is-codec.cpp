@@ -16,7 +16,7 @@ void load_string_from_file(char*& str,char* filename){
         f.seekg(0,std::ios::beg);
         str = new char[size+1];
         f.read(str,size);
-        str[size]='\0';
+        str[size]=0;
         f.close();
 };
 

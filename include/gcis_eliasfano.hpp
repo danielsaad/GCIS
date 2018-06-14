@@ -144,7 +144,7 @@ public:
                     for (uint64_t j = 0; j < r_string.size(); j++) {
                         gd.expand_rule(r_string[j], str, l);
                     }
-					n=strlen(str);
+					n=strlen(str)+1;
 					//copy to s[1]
 					for(uint_t i=0; i<n; i++) {                
                         s[i]= (unsigned char) str[i];
