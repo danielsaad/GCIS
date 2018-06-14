@@ -12,6 +12,7 @@ cd ../../../ # go to root folder
 #compile sais
 cd external/sais-2.4.1
 mkdir -p build
+cd build
 cmake .. -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=../../../
 make -j
 make install
