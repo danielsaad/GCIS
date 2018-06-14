@@ -47,45 +47,45 @@ public:
         return extracted_text;
     }
 
-		char* decode() override {	
-			sdsl::int_vector<> r_string = reduced_string;
-			char* str;
-			if(g.size()) {
-				for (int64_t i = g.size() - 1; i >= 0; i--) {
-					sdsl::int_vector<> next_r_string;
-					gcis_eliasfano_codec_level gd = std::move(g[i].decompress());
-					next_r_string.width(sdsl::bits::hi(g[i].alphabet_size - 1) + 1);
-					next_r_string.resize(g[i].string_size);
-					uint64_t l = 0;
-					if (i == 0) {
-						// Convert the reduced string in the original text
-						str = new char[g[i].string_size];
-						for (uint64_t j = 0; j < g[i].tail.size(); j++) {
-						    str[l++] = g[i].tail[j];
-						}
-						for (uint64_t j = 0; j < r_string.size(); j++) {
-						    gd.expand_rule(r_string[j], str, l);
-						}
-					} else {
-						// Convert the reduced string in the previous reduced string
-						for (uint64_t j = 0; j < g[i].tail.size(); j++) {
-						    next_r_string[l++] = g[i].tail[j];
-						}
-						for (uint64_t j = 0; j < r_string.size(); j++) {
-						    gd.expand_rule(r_string[j], next_r_string, l);
-						}
-						r_string = std::move(next_r_string);
-					}
-				}
-			}
-			else{
-				str = new char[reduced_string.size()];
-				for(uint64_t i=0 ; i< reduced_string.size();i++){
-					str[i] = reduced_string[i];
-				}
-			}
-				return str;
-		}
+    char* decode() override {	
+        sdsl::int_vector<> r_string = reduced_string;
+        char* str;
+        if(g.size()) {
+            for (int64_t i = g.size() - 1; i >= 0; i--) {
+                sdsl::int_vector<> next_r_string;
+                gcis_eliasfano_codec_level gd = std::move(g[i].decompress());
+                next_r_string.width(sdsl::bits::hi(g[i].alphabet_size - 1) + 1);
+                next_r_string.resize(g[i].string_size);
+                uint64_t l = 0;
+                if (i == 0) {
+                    // Convert the reduced string in the original text
+                    str = new char[g[i].string_size];
+                    for (uint64_t j = 0; j < g[i].tail.size(); j++) {
+                        str[l++] = g[i].tail[j];
+                    }
+                    for (uint64_t j = 0; j < r_string.size(); j++) {
+                        gd.expand_rule(r_string[j], str, l);
+                    }
+                } else {
+                    // Convert the reduced string in the previous reduced string
+                    for (uint64_t j = 0; j < g[i].tail.size(); j++) {
+                        next_r_string[l++] = g[i].tail[j];
+                    }
+                    for (uint64_t j = 0; j < r_string.size(); j++) {
+                        gd.expand_rule(r_string[j], next_r_string, l);
+                    }
+                    r_string = std::move(next_r_string);
+                }
+            }
+        }
+        else{
+            str = new char[reduced_string.size()];
+            for(uint64_t i=0 ; i< reduced_string.size();i++){
+                str[i] = reduced_string[i];
+            }
+        }
+        return str;
+    }
 
 		
     char* decode_saca(uint_t** sa) {
@@ -146,8 +146,9 @@ public:
                     }
 					n=strlen(str);
 					//copy to s[1]
-					for(uint_t i=0; i<n; i++) 
-                        s[i]=str[i];
+					for(uint_t i=0; i<n; i++) {                
+                        s[i]= (unsigned char) str[i];
+                    }
                 }
                 else{
                     // Convert the reduced string in the previous reduced string
@@ -210,7 +211,8 @@ public:
                     SA[i]=EMPTY; // init SA[n1..n-1]
                 }
   				for(int_t i=n1-1; i>=0; i--) {
-			        j=SA[i]; SA[i]=EMPTY;
+			        j=SA[i]; 
+                    SA[i]=EMPTY;
 					if(level==0 && i==0){
   					    SA[0]=n-1;
                     }

@@ -95,14 +95,19 @@ int main(int argc, char* argv[]){
                 mm.event("GC-IS/SACA Decompress");
         #endif
 
-				uint_t *SA;
+		uint_t *SA;
         char *str = d.decode_saca(&SA);
-				size_t n = strlen(str);
+		size_t n = strlen(str);
 
-				#if CHECK 
-						if(!d.suffix_array_check(SA, (unsigned char*)str, (uint_t) n, sizeof(char), 0)) printf("isNotSorted!!\n");
-						else printf("isSorted!!\n");
-				#endif
+
+		#if CHECK==0
+		if(!d.suffix_array_check(SA, (unsigned char*)str, (uint_t) n, sizeof(char), 0)) {
+            std::cout << "isNotSorted!!\n";
+        }
+	    else{
+            std::cout << "isSorted!!\n";
+        } 
+    	#endif
 
         output.write(str, n);
         d.suffix_array_write(SA, n, argv[3], "sa");
