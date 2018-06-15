@@ -26,6 +26,7 @@ endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/mem_monitor)
+include_directories(${CMAKE_SOURCE_DIR}/external/malloc_count)
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/src)

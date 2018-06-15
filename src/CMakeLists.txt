@@ -1,7 +1,7 @@
 add_executable(gc-is-codec gc-is-codec.cpp)
 target_link_libraries(gc-is-codec gc-is sdsl pthread)
-add_executable(gc-is-codec-memory gc-is-codec.cpp)
-target_link_libraries(gc-is-codec-memory gc-is-statistics sdsl pthread)
+add_executable(gc-is-codec-memory gc-is-codec.cpp ${CMAKE_SOURCE_DIR}/external/malloc_count/malloc_count.c)
+target_link_libraries(gc-is-codec-memory gc-is-statistics sdsl pthread dl)
 target_compile_definitions(gc-is-codec-memory PRIVATE MEM_MONITOR REPORT )
 
 add_executable(sais-saca sais.cpp)
