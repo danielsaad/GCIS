@@ -9,6 +9,8 @@
 #include "gcis.hpp"
 #include "gcis_eliasfano_codec.hpp"
 
+using namespace std::chrono; 
+using timer = std::chrono::high_resolution_clock; 
 
 template<>
 class gcis_dictionary<gcis_eliasfano_codec> : public gcis_abstract<gcis_eliasfano_codec> {
@@ -146,9 +148,12 @@ public:
                     }
 					n=strlen(str)+1;
 					//copy to s[1]
-					for(uint_t i=0; i<n; i++) {                
-                        s[i]= (unsigned char) str[i];
-                    }
+auto start = timer::now();
+			for(uint_t i=0; i<n; i++) {                
+                		s[i]= (unsigned char) str[i];
+                    	}
+auto stop = timer::now();
+cout << "time: " << (double)duration_cast<seconds>(stop-start).count()<<" seconds" << endl;
                 }
                 else{
                     // Convert the reduced string in the previous reduced string

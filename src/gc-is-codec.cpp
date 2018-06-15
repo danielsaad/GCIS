@@ -9,6 +9,9 @@
 #include "gcis_eliasfano_no_lcp.hpp"
 #include "../external/malloc_count/malloc_count.h"
 
+using namespace std::chrono;
+using timer = std::chrono::high_resolution_clock;
+
 void load_string_from_file(char*& str,char* filename){
         std::ifstream f(filename,std::ios::binary);
         f.seekg (0, std::ios::end);
@@ -52,7 +55,9 @@ int main(int argc, char* argv[]){
         mm.event("GC-IS Compress");
         #endif
 
+	auto start = timer::now();
         d.encode(str);
+	auto stop = timer::now();
 
         #ifdef MEM_MONITOR
         mm.event("GC-IS Save");
@@ -64,6 +69,7 @@ int main(int argc, char* argv[]){
         d.serialize(output);
         delete[] str;
         output.close();
+	cout << "time: " << (double)duration_cast<seconds>(stop-start).count()<<" seconds" << endl;
     }
     else if(strcmp(mode,"-d")==0) {
         std::ifstream input(argv[2]);
@@ -79,10 +85,17 @@ int main(int argc, char* argv[]){
                 mm.event("GC-IS Decompress");
         #endif
 
+	auto start = timer::now();
         char *str = d.decode();
+	auto stop = timer::now();
+
         output.write(str, strlen(str));
         input.close();
         output.close();
+
+	cout<<"input:\t"<<d.size_in_bytes()<<" bytes"<<endl;
+	cout<<"output:\t"<<strlen(str)<<" bytes"<<endl;
+	cout << "time: " << (double)duration_cast<seconds>(stop-start).count()<<" seconds" << endl;
     }
     else if(strcmp(mode,"-s")==0) {
         std::ifstream input(argv[2]);
@@ -98,18 +111,16 @@ int main(int argc, char* argv[]){
         mm.event("GC-IS/SACA Decompress");
         #endif
 
-		uint_t *SA;
+	uint_t *SA;
+	auto start = timer::now();
         char *str = d.decode_saca(&SA);
-		size_t n = strlen(str)+1;
+	auto stop = timer::now();
 
+	size_t n = strlen(str)+1;
 
-		#if CHECK
-		if(!d.suffix_array_check(SA, (unsigned char*)str, (uint_t) n, sizeof(char), 0)) {
-            std::cout << "isNotSorted!!\n";
-        }
-	    else{
-            std::cout << "isSorted!!\n";
-        } 
+	#if CHECK
+		if(!d.suffix_array_check(SA, (unsigned char*)str, (uint_t) n, sizeof(char), 0)) std::cout << "isNotSorted!!\n";
+	      	else std::cout << "isSorted!!\n";
     	#endif
 
         // output.write(str, n-1);
@@ -118,6 +129,14 @@ int main(int argc, char* argv[]){
         output.write((const char*)SA,sizeof(uint_t)*n);
         input.close();
         output.close();
+
+	cout<<"input:\t"<<d.size_in_bytes()<<" bytes"<<endl;
+	cout<<"output:\t"<<n-1<<" bytes"<<endl;
+	cout<<"SA:\t"<<n*sizeof(uint_t)<<" bytes"<<endl;
+				
+	cout << "time: " << (double)duration_cast<seconds>(stop-start).count()<<" seconds" << endl;
+	delete[] SA;
+        delete[] str;
     }
     else if(strcmp(mode,"-e")==0){
         std::ifstream input (argv[2],std::ios::binary);
