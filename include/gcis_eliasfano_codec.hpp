@@ -21,6 +21,10 @@ public:
 public:
     void expand_rule(uint64_t rule_num, sdsl::int_vector<> &r_string, uint64_t &l);
     void expand_rule(uint64_t rule_num, char* s, uint64_t &l);
+
+    //expand rules while counting symbol's frequency
+    void expand_rule_bkt(uint64_t rule_num, sdsl::int_vector<> &r_string, uint64_t &l, int_t *bkt);
+    void expand_rule_bkt(uint64_t rule_num, char* s, uint64_t &l, int_t *bkt);
 };
 
 

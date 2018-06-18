@@ -95,8 +95,6 @@ gcis_eliasfano_codec_level gcis_eliasfano_codec::decompress(){
     return gd;
 }
 
-
-
 void gcis_eliasfano_codec_level::expand_rule(uint64_t rule_num, sdsl::int_vector<> &r_string, uint64_t &l) {
     uint64_t rule_start = rule_delim.pos(rule_num);
     uint64_t rule_length = rule_delim.pos(rule_num+1) - rule_start;
@@ -112,6 +110,24 @@ void gcis_eliasfano_codec_level::expand_rule(uint64_t rule_num, char* s,uint64_t
     for(uint64_t i=0;i<rule_length;i++){
         s[l] = rule[rule_start+i];
         l++;
+    }
+}
+
+void gcis_eliasfano_codec_level::expand_rule_bkt(uint64_t rule_num, sdsl::int_vector<> &r_string, uint64_t &l, int_t *bkt) {
+    uint64_t rule_start = rule_delim.pos(rule_num);
+    uint64_t rule_length = rule_delim.pos(rule_num+1) - rule_start;
+    for(uint64_t i=0;i<rule_length;i++){
+        r_string[l++] = rule[rule_start+i];
+	bkt[rule[rule_start+i]]++;
+    }
+}
+
+void gcis_eliasfano_codec_level::expand_rule_bkt(uint64_t rule_num, char* s,uint64_t &l, int_t *bkt) {
+    uint64_t rule_start = rule_delim.pos(rule_num);
+    uint64_t rule_length = rule_delim.pos(rule_num+1) - rule_start;
+    for(uint64_t i=0;i<rule_length;i++){
+        s[l++] = rule[rule_start+i];
+	bkt[rule[rule_start+i]]++;
     }
 }
 
