@@ -119,7 +119,7 @@ int main(int argc, char* argv[]){
 		
 		size_t n = strlen((char*)str)+1;
 		
-		#if CHECK == 0
+		#if CHECK
 			if(!d.suffix_array_check(SA, str, (uint_t) n, sizeof(char), 0)) std::cout << "isNotSorted!!\n";
 			else std::cout << "isSorted!!\n";
 		#endif
@@ -153,11 +153,10 @@ int main(int argc, char* argv[]){
 		d.saca(str, SA, n);
 		auto stop = timer::now();
 	
-		#if CHECK == 0
+		#if CHECK
 			if(!d.suffix_array_check(SA, (unsigned char*)str, (uint_t) n, sizeof(char), 0)) std::cout << "isNotSorted!!\n";
 			else std::cout << "isSorted!!\n";
 		#endif
-
 		//std::ofstream output(argv[3], std::ios::binary);
 		//output.write((const char*) &n,sizeof(n));
 		//output.write((const char*)SA,sizeof(sa_int32_t)*n);
