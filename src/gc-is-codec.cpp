@@ -127,7 +127,7 @@ int main(int argc, char* argv[]){
 		// output.write(str, n-1);
 		d.suffix_array_write(SA, n, argv[3], "sa");
 		output.write((const char*) &n,sizeof(n));
-		//output.write((const char*)SA,sizeof(uint_t)*n);
+		output.write((const char*)SA,sizeof(uint_t)*n);
 		input.close();
 		output.close();
 		

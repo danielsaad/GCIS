@@ -152,7 +152,7 @@ public:
 
         SAIS((int_t*) s, SA,n,K,cs,level);
 
-				return SA;
+		return SA;
     }
 
 protected:
