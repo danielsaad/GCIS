@@ -7,4 +7,6 @@ target_compile_definitions(gc-is-codec-memory PRIVATE MEM_MONITOR REPORT )
 add_executable(sais-saca sais.cpp)
 target_link_libraries(sais-saca sais)
 
-install(TARGETS sais-saca gc-is-codec gc-is-codec-memory RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+add_executable(sais-nong sais-nong.cpp)
+
+install(TARGETS sais-nong sais-saca gc-is-codec gc-is-codec-memory RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/bin)
