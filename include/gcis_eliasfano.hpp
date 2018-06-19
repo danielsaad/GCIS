@@ -92,220 +92,212 @@ public:
 		
     unsigned char* decode_saca(uint_t** sa) {
 
-	sdsl::int_vector<> r_string = reduced_string;
-	unsigned char* str;
-	uint_t	n = g[0].string_size;
-	uint_t N=n;
+		sdsl::int_vector<> r_string = reduced_string;
+		unsigned char* str;
+		uint_t	n = g[0].string_size;
+		uint_t* SA = new uint_t[n];
 
-	uint_t* SA = new uint_t[n];
-	int_t* s = new int_t[n];
-	unsigned char *t = new unsigned char[n / 8 + 1]; // LS-type array in bits
-
-	int cs=sizeof(int_t);
-	if(g.size()) {
+		//int_t* s = new int_t[n];//TODO: remove extra array
+		int_t* s = (int_t*)SA+n/2;
+		unsigned char *t = new unsigned char[n / 8 + 1]; // LS-type array in bits
+	
+		int cs=sizeof(int_t);
+		if(g.size()) {
 	
 	    for (int64_t level = g.size() - 1; level >= 0; level--) {
 
-		#if TIME
-		    auto start = timer::now();
-		#endif
+				#if TIME
+				    auto start = timer::now();
+				#endif
+		
+				n=g[level].string_size;
 
-		uint_t n1=r_string.size();
-	    	uint_t* SA1=SA, *s1=SA+N-n1;
+				uint_t n1=r_string.size();
+	    	uint_t* SA1=SA, *s1=SA+n-n1;
 	    	    		
 	    	//copy to s1[1]
-		if(level==g.size()-1)
-		    for(uint_t i=0; i<n1; i++)SA1[r_string[i]] = i;
-	    	else
-	    	    for(uint_t i=0; i<n1; i++) s1[i]=SA[i];
-
-	    	#if DEBUG
-		    cout<<"\n##\nlevel = "<<level<<endl;
-		    cout<<"\n####"<<endl;
-		    cout<<"s1 = ";
-		    for(uint_t i=0; i<n1; i++){
-		        cout<<s1[i]<<" ";
-	    		cout<<endl;
-		    }
-		#endif
-
-		#if TIME
-		    auto expand= timer::now();
-		#endif
-
-		sdsl::int_vector<> next_r_string;
-		gcis_eliasfano_codec_level gd = std::move(g[level].decompress());
-		next_r_string.width(sdsl::bits::hi(g[level].alphabet_size - 1) + 1);
-		next_r_string.resize(g[level].string_size);
-		uint64_t l = 0;
-
-		int_t K=g[level].alphabet_size;//alphabet 
-
-		int* bkt = (int*)malloc(sizeof(int)*K);
-		init_buckets(bkt, K);
-
-		if (level == 0) {
+				if(level==g.size()-1) for(uint_t i=0; i<n1; i++)SA1[r_string[i]] = i;
+			  else for(uint_t i=0; i<n1; i++) s1[i]=SA[i];
 	
-		    delete[] s;
+			  #if DEBUG
+				    cout<<"\n##\nlevel = "<<level<<endl;
+				    cout<<"n = "<<n<<"\nn1 = "<<n1<<endl;
+				    cout<<"\n####"<<endl;
+				    cout<<"s1 = ";
+				    for(uint_t i=0; i<n1; i++){
+				        cout<<s1[i]<<" ";
+			    		cout<<endl;
+				    }
+				#endif
+	
+				#if TIME
+				    auto expand= timer::now();
+				#endif
+	
+				sdsl::int_vector<> next_r_string;
+				gcis_eliasfano_codec_level gd = std::move(g[level].decompress());
+				next_r_string.width(sdsl::bits::hi(g[level].alphabet_size - 1) + 1);
+				next_r_string.resize(g[level].string_size);
+				uint64_t l = 0;
+	
+				int_t K=g[level].alphabet_size;//alphabet 
+	
+				int* bkt = (int*)malloc(sizeof(int)*K);
+				init_buckets(bkt, K);
+	
+				if (level == 0) {
+			
+				//    delete[] s;
+					// Convert the reduced string in the original text
+					str = new unsigned char[g[level].string_size];
+					for (uint64_t j = 0; j < g[level].tail.size(); j++) {
+						str[l++] = g[level].tail[j];
+						bkt[g[level].tail[j]]++;//count frequencies
+					}
+					for (uint64_t j = 0; j < r_string.size(); j++) {
+						gd.expand_rule_bkt(r_string[j], str, l, bkt);
+					}
+					n=g[level].string_size;
+					// Classify the type of each character
+					tset(n-2, 0);
+					tset(n-1, 1); // the sentinel must be in s1, important!!!
+					for(int_t i=n-3; i>=0; i--){  
+					    tset(i, (str[i]<str[i+1] || (str[i]==str[i+1] && tget(i+1)==1)) ? 1 : 0);
+					}
+				}
+				else{
+			    // Convert the reduced string in the previous reduced string
+			    for (uint64_t j = 0; j < g[level].tail.size(); j++) {
+						next_r_string[l++] = g[level].tail[j];
+						bkt[g[level].tail[j]]++;//count frequencies
+			    }
+			    for (uint64_t j = 0; j < r_string.size(); j++) {
+						gd.expand_rule_bkt(r_string[j], next_r_string, l, bkt);
+			    }
+			    r_string = std::move(next_r_string);
+	
+			    //n=r_string.size();
+					n=g[level].string_size;
+			    //copy to s[1]
+			    for(uint_t i=0; i<n; i++) s[i]=r_string[i];
+	
+			    // Classify the type of each character
+			    tset(n-2, 0);
+			    tset(n-1, 1); // the sentinel must be in s1, important!!!
+			    for(int_t i=n-3; i>=0; i--){  
+			        tset(i, (r_string[i]<r_string[i+1] || (r_string[i]==r_string[i+1] && tget(i+1)==1)) ? 1 : 0);
+			    }
+				}
 
-		    // Convert the reduced string in the original text
-		    str = new unsigned char[g[level].string_size];
-		    for (uint64_t j = 0; j < g[level].tail.size(); j++) {
-			str[l++] = g[level].tail[j];
-			bkt[g[level].tail[j]]++;//count frequencies
-		    }
-		    for (uint64_t j = 0; j < r_string.size(); j++) {
-			gd.expand_rule_bkt(r_string[j], str, l, bkt);
-		    }
-		    n=g[level].string_size;
+				#if TIME
+			    auto end = timer::now();
+				  cout << "expand: " << (double)duration_cast<seconds>(end-expand).count()<<" seconds" << endl;
+				#endif
 
-		    /*
-		    //copy to s[1]
-		    for(uint_t i=0; i<n; i++) s[i]= (unsigned char) str[i];
-		    */
+				#if DEGUB
+				    cout<<"n = "<<n<<"\nn1 = "<<n1<<endl;
+				    cout<<"level = "<<level<<"\t string_size = "<<g[level].string_size<<"\n"<<"alphabet_size = "<<g[level].alphabet_size<<endl;
+				    cout<<"SA1: ";
+				    for(uint_t i=0; i<n1; i++) cout<<SA[i]<<", ";
+				    cout<<endl;
+				#endif
 
-		    // Classify the type of each character
-		    tset(n-2, 0);
-		    tset(n-1, 1); // the sentinel must be in s1, important!!!
-		    for(int_t i=n-3; i>=0; i--){  
-		        tset(i, (str[i]<str[i+1] || (str[i]==str[i+1] && tget(i+1)==1)) ? 1 : 0);
-		    }
-		}
-		else{
-		    // Convert the reduced string in the previous reduced string
-		    for (uint64_t j = 0; j < g[level].tail.size(); j++) {
-			next_r_string[l++] = g[level].tail[j];
-			bkt[g[level].tail[j]]++;//count frequencies
-		    }
-		    for (uint64_t j = 0; j < r_string.size(); j++) {
-			gd.expand_rule_bkt(r_string[j], next_r_string, l, bkt);
-		    }
-		    r_string = std::move(next_r_string);
+				// stage 3: induce the result for the original problem
+				get_buckets_end(bkt, true, K); 
 
-		    n=r_string.size();
-		    //copy to s[1]
-		    for(uint_t i=0; i<n; i++) s[i]=r_string[i];
+				#if TIME
+				    auto begin = timer::now();
+				#endif
 
-		    // Classify the type of each character
-		    tset(n-2, 0);
-		    tset(n-1, 1); // the sentinel must be in s1, important!!!
-		    for(int_t i=n-3; i>=0; i--){  
-		        tset(i, (r_string[i]<r_string[i+1] || (r_string[i]==r_string[i+1] && tget(i+1)==1)) ? 1 : 0);
-		    }
-		}
+				#if TIME
+				    end = timer::now();
+				    cout << "classify: " << (double)duration_cast<seconds>(end-begin).count()<<" seconds" << endl;
+				    begin = timer::now();
+				#endif
 
-		#if TIME
-		    auto end = timer::now();
-		    cout << "expand: " << (double)duration_cast<seconds>(end-expand).count()<<" seconds" << endl;
-		#endif
+				#if DEGUB
+				    for(int_t i=0; i<n; i++){
+					cout<<tget(i)<<" ";
+				    }
+				    cout<<endl;
+				#endif
 
-		#if DEGUB
-		    cout<<"n = "<<n<<"\nn1 = "<<n1<<endl;
-		    cout<<"SA1: ";
-		    for(uint_t i=0; i<n1; i++) cout<<SA[i]<<", ";
-		    cout<<endl;
-		    cout<<"level = "<<level<<"\t string_size = "<<g[level].string_size<<"\n"<<"alphabet_size = "<<g[level].alphabet_size<<endl;
-		#endif
-
-		// stage 3: induce the result for the original problem
-		get_buckets_end(bkt, true, K); 
-
-		#if TIME
-		    auto begin = timer::now();
-		#endif
-
-		#if TIME
-		    end = timer::now();
-		    cout << "classify: " << (double)duration_cast<seconds>(end-begin).count()<<" seconds" << endl;
-		    begin = timer::now();
-		#endif
-
-		#if DEGUB
-		    for(int_t i=0; i<n; i++){
-			cout<<tget(i)<<" ";
-		    }
-		    cout<<endl;
-		#endif
-
-		int_t j=0;
-		for(int_t i=1; i<n; i++){
-		    if(isLMS(i)){
-			s1[j++]=i; // get p1
-		    }
-		}
+				int_t j=0;
+				for(int_t i=1; i<n; i++){
+				    if(isLMS(i)){
+					s1[j++]=i; // get p1
+				    }
+				}
  
-		for(int_t i=0; i<n1; i++){
-		    SA1[i]=s1[SA1[i]]; // get index in s1
-		}
-		for(int_t i=n1; i<n; i++){
-		    SA[i]=EMPTY; // init SA[n1..n-1]
-		}
+				for(int_t i=0; i<n1; i++){
+				    SA1[i]=s1[SA1[i]]; // get index in s1
+				}
+				for(int_t i=n1; i<n; i++){
+				    SA[i]=EMPTY; // init SA[n1..n-1]
+				}
 
-		if(level){
-		    for(int_t i=n1-1; i>=0; i--) {
-		        j=SA[i]; 
-		        SA[i]=EMPTY;
-		        SA[bkt[chr(j)]--]=j;
-		    }
+				if(level){
+				    for(int_t i=n1-1; i>=0; i--) {
+				        j=SA[i]; 
+				        SA[i]=EMPTY;
+				        SA[bkt[chr(j)]--]=j;
+				    }
+				}
+				else{
+				    for(int_t i=n1-1; i>=0; i--) {
+				        j=SA[i]; 
+				        SA[i]=EMPTY;
+				        if(i==0) SA[0]=n-1;
+				        else SA[bkt[str[j]]--]=j;
+				    }
+				}
+
+				#if TIME
+				    end = timer::now();
+				    cout << "position: " << (double)duration_cast<seconds>(end-begin).count()<<" seconds" << endl;
+				    begin = timer::now();
+				#endif
+
+				if(level) induceSAl(t, SA, s, bkt, n, K, cs, level); 
+				else induceSAl(t, SA, (int_t*)str, bkt, n, K, sizeof(unsigned char), level); 
+
+				#if TIME
+				    end = timer::now();
+				    cout << "induce L: " << (double)duration_cast<seconds>(end-begin).count()<<" seconds" << endl;
+				    begin = timer::now();
+				#endif
+
+				if(level) induceSAs(t, SA, s, bkt, n, K, cs, level); 
+				else induceSAs(t, SA, (int_t*)str, bkt, n, K, sizeof(unsigned char), level); 
+
+				#if TIME
+				    end = timer::now();
+				    cout << "induce S: " << (double)duration_cast<seconds>(end-begin).count()<<" seconds" << endl;
+				#endif
+
+				#if DEGUB
+				cout<<"SA: ";
+				for(uint_t i=0; i<n; i++){
+				    cout<<SA[i]<<", ";
+				}
+				cout<<endl;
+				#endif
+				free(bkt);	
+				
+				#if TIME
+				    auto stop = timer::now();
+				    cout << "time: " << (double)duration_cast<seconds>(stop-start).count()<<" seconds" << endl;
+				#endif
+			}
 		}
 		else{
-		    for(int_t i=n1-1; i>=0; i--) {
-		        j=SA[i]; 
-		        SA[i]=EMPTY;
-		        if(i==0) SA[0]=n-1;
-		        else SA[bkt[str[j]]--]=j;
-		    }
+			str = new unsigned char[reduced_string.size()];
+			for(uint64_t i=0 ; i< reduced_string.size();i++) str[i] = reduced_string[i];
 		}
 
-		#if TIME
-		    end = timer::now();
-		    cout << "position: " << (double)duration_cast<seconds>(end-begin).count()<<" seconds" << endl;
-		    begin = timer::now();
-		#endif
-
-		if(level) induceSAl(t, SA, s, bkt, n, K, cs, level); 
-		else induceSAl(t, SA, (int_t*)str, bkt, n, K, sizeof(unsigned char), level); 
-
-		#if TIME
-		    end = timer::now();
-		    cout << "induce L: " << (double)duration_cast<seconds>(end-begin).count()<<" seconds" << endl;
-		    begin = timer::now();
-		#endif
-
-		if(level) induceSAs(t, SA, s, bkt, n, K, cs, level); 
-		else induceSAs(t, SA, (int_t*)str, bkt, n, K, sizeof(unsigned char), level); 
-
-		#if TIME
-		    end = timer::now();
-		    cout << "induce S: " << (double)duration_cast<seconds>(end-begin).count()<<" seconds" << endl;
-		#endif
-
-		#if DEGUB
-		cout<<"SA: ";
-		for(uint_t i=0; i<N; i++){
-		    cout<<SA[i]<<", ";
-		}
-		cout<<endl;
-		#endif
-		free(bkt);	
-		
-		#if TIME
-		    auto stop = timer::now();
-		    cout << "time: " << (double)duration_cast<seconds>(stop-start).count()<<" seconds" << endl;
-		#endif
-	    }
-
-	}
-	else{
-	    str = new unsigned char[reduced_string.size()];
-	    for(uint64_t i=0 ; i< reduced_string.size();i++) {
-		str[i] = reduced_string[i];
-	    }
-	}
-
-	delete[] t;
-	*sa=SA;
-	return str;
+		delete[] t;
+		*sa=SA;
+		return str;
     }
 
 
