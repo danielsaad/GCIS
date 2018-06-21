@@ -146,7 +146,7 @@ void SA_IS(unsigned char *s, int *SA, int n, int K, int cs, int level) {
     SA_IS((unsigned char*)s1, SA1, n1, name-1, sizeof(int), level+1);
   } else { // generate the suffix array of s1 directly
     for(i=0; i<n1; i++) SA1[s1[i]] = i;
-	cerr << endl << "Recusion ends";
+	cerr << endl << "Recursion ends";
 	fprintf(stderr, "\nMean reduction ratio over iterations: %.2lf", redu_ratio/(level+1));
 	fprintf(stderr, "\nMean reduction ratio over characters: %.2lf", (double)sum_n1/sum_n);
   }
@@ -198,7 +198,7 @@ void load_string_from_file(char*& str,char* filename){
 int main(int argc, char* argv[]){
 
     if(argc!=4) {
-        std::cerr << "Usage: ./sais -c <input_file> <output_file>" << std::endl;
+        std::cerr << "Usage: ./sais-nong -c <input_file> <output_file>" << std::endl;
         exit(EXIT_FAILURE);
     }
     char* str;
@@ -211,8 +211,8 @@ int main(int argc, char* argv[]){
     std::cout << "Building SA with SAIS." << std::endl;
     SA_IS((unsigned char*) str, SA, n, 255, sizeof(char), 0);
     std::ofstream output(argv[3], std::ios::binary);
-    output.write((const char*) &n,sizeof(n));
-    output.write((const char*)SA,sizeof(int32_t)*n);
+    // output.write((const char*) &n,sizeof(n));
+    // output.write((const char*)SA,sizeof(int32_t)*n);
     output.close();
     return 0;    
 }

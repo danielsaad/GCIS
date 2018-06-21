@@ -123,19 +123,19 @@ int main(int argc, char* argv[]){
 			if(!d.suffix_array_check(SA, str, (uint_t) n, sizeof(char), 0)) std::cout << "isNotSorted!!\n";
 			else std::cout << "isSorted!!\n";
 		#endif
-		
-		// output.write(str, n-1);
-		d.suffix_array_write(SA, n, argv[3], "sa");
+	
+		#if CHECK
 		output.write((const char*) &n,sizeof(n));
 		output.write((const char*)SA,sizeof(uint_t)*n);
-		input.close();
-		output.close();
 		
 		cout<<"input:\t"<<d.size_in_bytes()<<" bytes"<<endl;
 		cout<<"output:\t"<<n-1<<" bytes"<<endl;
 		cout<<"SA:\t"<<n*sizeof(uint_t)<<" bytes"<<endl;
-					
-		cout << "time: " << (double)duration_cast<seconds>(stop-start).count()<<" seconds" << endl;
+		#endif 	
+		
+		output.close();
+		input.close();	
+		std::cout << "time: " << (double)duration_cast<seconds>(stop-start).count()<<" seconds" << endl;
 		delete[] SA;
 		delete[] str;
 	}

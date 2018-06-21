@@ -97,7 +97,6 @@ public:
 		uint_t	n = g[0].string_size;
 		uint_t* SA = new uint_t[n];
 
-		//int_t* s = new int_t[n];//TODO: remove extra array
 		int_t* s = (int_t*)SA+n/2;
 		unsigned char *t = new unsigned char[n / 8 + 1]; // LS-type array in bits
 	

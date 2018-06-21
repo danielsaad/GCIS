@@ -19,7 +19,7 @@ void load_string_from_file(char*& str,char* filename){
 int main(int argc, char* argv[]){
 
     if(argc!=4) {
-        std::cerr << "Usage: ./sais -c <input_file> <output_file>" << std::endl;
+        std::cerr << "Usage: ./sais-yuta -c <input_file> <output_file>" << std::endl;
         exit(EXIT_FAILURE);
     }
     char* str;
@@ -32,8 +32,8 @@ int main(int argc, char* argv[]){
     std::cout << "Building SA with SAIS." << std::endl;
     sais_u8((sa_uint8_t*) str,SA,n,k);
     std::ofstream output(argv[3], std::ios::binary);
-    output.write((const char*) &n,sizeof(n));
-    output.write((const char*)SA,sizeof(sa_int32_t)*n);
+    // output.write((const char*) &n,sizeof(n));
+    // output.write((const char*)SA,sizeof(sa_int32_t)*n);
     output.close();
     return 0;
 }
