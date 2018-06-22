@@ -6,7 +6,7 @@ import csv
 
 class experiment_data:
     def __init__(self):
-        self.experiment_data = ""
+        self.experiment_name = ""
         self.experiment_time = []
         self.experiment_input = []
 
@@ -22,8 +22,11 @@ def run_decode_nong(input_folder_path,output_folder_path):
         decompressed_file = os.path.join(output_folder_path,f)
 
         print("GCIS Compressing: ",f)
-        process = subprocess.run(['../bin/gc-is-codec','-c',input_file,compressed_file],
-        stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        if(os.path.isfile(compressed_file)):
+            print(compressed_file,'already exists, skipping')
+        else:
+            process = subprocess.run(['../bin/gc-is-codec','-c',input_file,compressed_file],
+            stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 
         print("GCIS Decoding")
         start_time = time.perf_counter() # Start time
@@ -57,8 +60,11 @@ def run_decode_yuta(input_folder_path,output_folder_path):
         decompressed_file = os.path.join(output_folder_path,f)
 
         print("GCIS Compressing: ",f)
-        process = subprocess.run(['../bin/gc-is-codec','-c',input_file,compressed_file],
-        stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        if(os.path.isfile(compressed_file)):
+            print(compressed_file,'already exists, skipping')
+        else:
+            process = subprocess.run(['../bin/gc-is-codec','-c',input_file,compressed_file],
+            stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 
         print("GCIS Decoding")
         start_time = time.perf_counter() # Start time
@@ -162,11 +168,21 @@ def run_saca(input_folder_path,output_folder_path):
  
     with open(os.path.join(output_folder_path,'results-saca.csv'),'w') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
-        header = ['Input File',decode_saca_data.experiment_name,saca_nong_data.experiment_name,saca_yuta_data.experiment_name,decode_saca_nong_data,decode_saca_yuta_data]
+
+        header = ['Input File',decode_saca_data.experiment_name,
+            saca_nong_data.experiment_name,saca_yuta_data.experiment_name,
+            decode_saca_nong_data.experiment_name,
+            decode_saca_yuta_data.experiment_name]
+
         writer.writerow(header)
-        time = list(zip(decode_saca_data.experiment_time,saca_nong_data.experiment_time,saca_yuta_data.experiment_time))
+
+        time = list(zip(decode_saca_data.experiment_time,
+            saca_nong_data.experiment_time,saca_yuta_data.experiment_time,
+            decode_saca_nong_data.experiment_time,
+            decode_saca_yuta_data.experiment_time))
+
         for i,t in enumerate(time):
-            row = [decode_saca_data.experiment_input[i],t[0],t[1],t[2]]
+            row = [decode_saca_data.experiment_input[i],t[0],t[1],t[2],t[3],t[4]]
             writer.writerow(row)
 
 
