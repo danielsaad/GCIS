@@ -3,6 +3,8 @@ import sys
 import subprocess
 import time
 import csv
+from matplotlib import pyplot as plt
+import numpy
 
 class experiment_data:
     def __init__(self):
@@ -33,8 +35,8 @@ def run_decode_nong(input_folder_path,output_folder_path):
         process = subprocess.run(['../bin/gc-is-codec','-d',compressed_file,decompressed_file],
         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         end_time = time.perf_counter() # End time
-        print("Time Decode =","{:.2f}".format(end_time-start_time))
         total_time = end_time - start_time
+        print("Time Decode =","{:.2f}".format(total_time))
 
 
         print("SACA Nong: ",f)
@@ -45,7 +47,7 @@ def run_decode_nong(input_folder_path,output_folder_path):
         total_time += end_time - start_time
         print("Time Decode + Nong =","{:.2f}".format(total_time))
         e.experiment_input.append(f)
-        e.experiment_time.append("{:.2f}".format(end_time-start_time))
+        e.experiment_time.append("{:.2f}".format(total_time))
 
     return e
 
@@ -71,8 +73,8 @@ def run_decode_yuta(input_folder_path,output_folder_path):
         process = subprocess.run(['../bin/gc-is-codec','-d',compressed_file,decompressed_file],
         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         end_time = time.perf_counter() # End time
-        print("Time Decode =","{:.2f}".format(end_time-start_time))
         total_time = end_time - start_time
+        print("Time Decode =","{:.2f}".format(total_time))
 
 
         print("SACA Yuta: ",f)
@@ -83,7 +85,7 @@ def run_decode_yuta(input_folder_path,output_folder_path):
         total_time += end_time - start_time
         print("Time Decode + Yuta =","{:.2f}".format(total_time))
         e.experiment_input.append(f)
-        e.experiment_time.append("{:.2f}".format(end_time-start_time))
+        e.experiment_time.append("{:.2f}".format(total_time))
 
     return e
 
