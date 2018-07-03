@@ -12,85 +12,83 @@
 using namespace std::chrono; 
 using timer = std::chrono::high_resolution_clock; 
 
+#define TIME 0
+
 template<>
 class gcis_dictionary<gcis_eliasfano_codec> : public gcis_abstract<gcis_eliasfano_codec> {
 
 public:
 
-public:
+	void serialize(std::ostream& o) override {
+		gcis_abstract::serialize(o);
+		uint64_t n = partial_sum.size();
+		o.write((char*)&n,sizeof(n));
+		o.write((char*)partial_sum.data(),sizeof(uint32_t) * n);
+   }
 
-    void serialize(std::ostream& o) override {
-	gcis_abstract::serialize(o);
-	uint64_t n = partial_sum.size();
-	o.write((char*)&n,sizeof(n));
-	o.write((char*)partial_sum.data(),sizeof(uint32_t) * n);
-    }
+	void load(std::istream& i) override {
+		gcis_abstract::load(i);
+		uint64_t n;
+		i.read((char*)&n,sizeof(n));
+		partial_sum.resize(n);
+		i.read((char*)partial_sum.data(),sizeof(uint32_t) * n);
+  }
 
-    void load(std::istream& i) override {
-	gcis_abstract::load(i);
-	uint64_t n;
-	i.read((char*)&n,sizeof(n));
-	partial_sum.resize(n);
-	i.read((char*)partial_sum.data(),sizeof(uint32_t) * n);
-    }
+	/**
+   * Extracts any valid substring T[l,r] from the text
+   * @param l Beggining of such substring
+   * @param r End of such substring
+   * @return Returns the extracted substring
+   */
+	sdsl::int_vector<> extract(uint64_t l,uint64_t r){
+		uint64_t size = g.size() ? 4* (g.back().fully_decoded_tail_len + (r-l+1)) : (r-l+1);
+		sdsl::int_vector<> extracted_text(size);
+		sdsl::int_vector<> tmp_text(size);
+		extract(l,r,extracted_text,tmp_text);
+		return extracted_text;
+   }
 
-
-    /**
-     * Extracts any valid substring T[l,r] from the text
-     * @param l Beggining of such substring
-     * @param r End of such substring
-     * @return Returns the extracted substring
-     */
-    sdsl::int_vector<> extract(uint64_t l,uint64_t r){
-	uint64_t size = g.size() ? 4* (g.back().fully_decoded_tail_len + (r-l+1)) : (r-l+1);
-	sdsl::int_vector<> extracted_text(size);
-	sdsl::int_vector<> tmp_text(size);
-	extract(l,r,extracted_text,tmp_text);
-	return extracted_text;
-    }
-
-    char* decode() override {	
-	sdsl::int_vector<> r_string = reduced_string;
-	char* str;
-	if(g.size()) {
-	    for (int64_t i = g.size() - 1; i >= 0; i--) {
-		sdsl::int_vector<> next_r_string;
-		gcis_eliasfano_codec_level gd = std::move(g[i].decompress());
-		next_r_string.width(sdsl::bits::hi(g[i].alphabet_size - 1) + 1);
-		next_r_string.resize(g[i].string_size);
-		uint64_t l = 0;
-		if (i == 0) {
-		    // Convert the reduced string in the original text
-		    str = new char[g[i].string_size];
-		    for (uint64_t j = 0; j < g[i].tail.size(); j++) {
-			str[l++] = g[i].tail[j];
-		    }
-		    for (uint64_t j = 0; j < r_string.size(); j++) {
-			gd.expand_rule(r_string[j], str, l);
-		    }
-		} else {
-		    // Convert the reduced string in the previous reduced string
-		    for (uint64_t j = 0; j < g[i].tail.size(); j++) {
-			next_r_string[l++] = g[i].tail[j];
-		    }
-		    for (uint64_t j = 0; j < r_string.size(); j++) {
-			gd.expand_rule(r_string[j], next_r_string, l);
-		    }
-		    r_string = std::move(next_r_string);
+	char* decode() override {	
+		sdsl::int_vector<> r_string = reduced_string;
+		char* str;
+		if(g.size()) {
+			for (int64_t i = g.size() - 1; i >= 0; i--) {
+				sdsl::int_vector<> next_r_string;
+				gcis_eliasfano_codec_level gd = std::move(g[i].decompress());
+				next_r_string.width(sdsl::bits::hi(g[i].alphabet_size - 1) + 1);
+				next_r_string.resize(g[i].string_size);
+				uint64_t l = 0;
+				if (i == 0) {
+				    // Convert the reduced string in the original text
+				    str = new char[g[i].string_size];
+				    for (uint64_t j = 0; j < g[i].tail.size(); j++) {
+							str[l++] = g[i].tail[j];
+				    }
+				    for (uint64_t j = 0; j < r_string.size(); j++) {
+							gd.expand_rule(r_string[j], str, l);
+				    }
+				} else {
+				    // Convert the reduced string in the previous reduced string
+				    for (uint64_t j = 0; j < g[i].tail.size(); j++) {
+							next_r_string[l++] = g[i].tail[j];
+				    }
+				    for (uint64_t j = 0; j < r_string.size(); j++) {
+							gd.expand_rule(r_string[j], next_r_string, l);
+				    }
+				    r_string = std::move(next_r_string);
+				}
+	  	}
 		}
-	    }
-	}
-	else{
+		else{
 	    str = new char[reduced_string.size()];
 	    for(uint64_t i=0 ; i< reduced_string.size();i++){
-		str[i] = reduced_string[i];
+				str[i] = reduced_string[i];
 	    }
-	}
+		}
 	return str;
-    }
+  }
 
-		
-    unsigned char* decode_saca(uint_t** sa) {
+	unsigned char* decode_saca(uint_t** sa) {
 
 		sdsl::int_vector<> r_string = reduced_string;
 		unsigned char* str;
@@ -98,13 +96,11 @@ public:
 		uint_t* SA = new uint_t[n];
 
 		int_t* s = (int_t*)SA+n/2;
-		unsigned char *t = new unsigned char[n / 8 + 1]; // LS-type array in bits
 	
 		int cs=sizeof(int_t);
 		if(g.size()) {
 	
 	    for (int64_t level = g.size() - 1; level >= 0; level--) {
-
 				#if TIME
 				    auto start = timer::now();
 				#endif
@@ -119,7 +115,7 @@ public:
 			  else for(uint_t i=0; i<n1; i++) s1[i]=SA[i];
 	
 			  #if DEBUG
-				    cout<<"\n##\nlevel = "<<level<<endl;
+				    cout<<endl<<"level = "<<level<<"\t string_size = "<<g[level].string_size<<"\n"<<"alphabet_size = "<<g[level].alphabet_size<<endl;
 				    cout<<"n = "<<n<<"\nn1 = "<<n1<<endl;
 				    cout<<"\n####"<<endl;
 				    cout<<"s1 = ";
@@ -141,37 +137,46 @@ public:
 	
 				int_t K=g[level].alphabet_size;//alphabet 
 	
-				int* bkt = (int*)malloc(sizeof(int)*K);
-				init_buckets(bkt, K);
+				int_t *bkt = new int_t[K]; // bucket 
+				int_t *cnt = new int_t[K]; // counters
 	
+        init_buckets(cnt, K);
+  
 				if (level == 0) {
 			
-				//    delete[] s;
+          // delete[] s;
 					// Convert the reduced string in the original text
 					str = new unsigned char[g[level].string_size];
 					for (uint64_t j = 0; j < g[level].tail.size(); j++) {
 						str[l++] = g[level].tail[j];
-						bkt[g[level].tail[j]]++;//count frequencies
+						cnt[g[level].tail[j]]++;//count frequencies
 					}
 					for (uint64_t j = 0; j < r_string.size(); j++) {
-						gd.expand_rule_bkt(r_string[j], str, l, bkt);
+						gd.expand_rule_bkt(r_string[j], str, l, cnt);
 					}
 					n=g[level].string_size;
 					// Classify the type of each character
-					tset(n-2, 0);
-					tset(n-1, 1); // the sentinel must be in s1, important!!!
-					for(int_t i=n-3; i>=0; i--){  
-					    tset(i, (str[i]<str[i+1] || (str[i]==str[i+1] && tget(i+1)==1)) ? 1 : 0);
-					}
+          uint_t cur_t, succ_t;
+          uint_t j=n1-1; s1[j--]=n-1;
+          succ_t=0; // s[n-2] must be L-type
+          for(uint_t i=n-2; i>0; i--) {
+            cur_t=(str[i-1]<str[i] ||
+                  (str[i-1]==str[i] && succ_t==1))?1:0;
+            if(cur_t==0 && succ_t==1) s1[j--]=i;
+            succ_t=cur_t;
+          }      
 				}
 				else{
+          
+          init_buckets(bkt, K);
+          
 			    // Convert the reduced string in the previous reduced string
 			    for (uint64_t j = 0; j < g[level].tail.size(); j++) {
 						next_r_string[l++] = g[level].tail[j];
-						bkt[g[level].tail[j]]++;//count frequencies
+						cnt[g[level].tail[j]]++;//count frequencies
 			    }
 			    for (uint64_t j = 0; j < r_string.size(); j++) {
-						gd.expand_rule_bkt(r_string[j], next_r_string, l, bkt);
+						gd.expand_rule_bkt(r_string[j], next_r_string, l, cnt);
 			    }
 			    r_string = std::move(next_r_string);
 	
@@ -181,11 +186,15 @@ public:
 			    for(uint_t i=0; i<n; i++) s[i]=r_string[i];
 	
 			    // Classify the type of each character
-			    tset(n-2, 0);
-			    tset(n-1, 1); // the sentinel must be in s1, important!!!
-			    for(int_t i=n-3; i>=0; i--){  
-			        tset(i, (r_string[i]<r_string[i+1] || (r_string[i]==r_string[i+1] && tget(i+1)==1)) ? 1 : 0);
-			    }
+          uint_t cur_t, succ_t;
+          uint_t j=n1-1; s1[j--]=n-1;
+          succ_t=0; // s[n-2] must be L-type
+          for(uint_t i=n-2; i>0; i--) {
+            cur_t=(r_string[i-1]<r_string[i] ||
+                  (r_string[i-1]==r_string[i] && succ_t==1))?1:0;
+            if(cur_t==0 && succ_t==1) s1[j--]=i;
+            succ_t=cur_t;
+          }      
 				}
 
 				#if TIME
@@ -202,7 +211,7 @@ public:
 				#endif
 
 				// stage 3: induce the result for the original problem
-				get_buckets_end(bkt, true, K); 
+				get_buckets(cnt, bkt, K, true); 
 
 				#if TIME
 				    auto begin = timer::now();
@@ -216,18 +225,12 @@ public:
 
 				#if DEGUB
 				    for(int_t i=0; i<n; i++){
-					cout<<tget(i)<<" ";
+              cout<<tget(i)<<" ";
 				    }
 				    cout<<endl;
 				#endif
 
 				int_t j=0;
-				for(int_t i=1; i<n; i++){
-				    if(isLMS(i)){
-					s1[j++]=i; // get p1
-				    }
-				}
- 
 				for(int_t i=0; i<n1; i++){
 				    SA1[i]=s1[SA1[i]]; // get index in s1
 				}
@@ -243,12 +246,12 @@ public:
 				    }
 				}
 				else{
-				    for(int_t i=n1-1; i>=0; i--) {
+				    for(int_t i=n1-1; i>0; i--) {
 				        j=SA[i]; 
 				        SA[i]=EMPTY;
-				        if(i==0) SA[0]=n-1;
-				        else SA[bkt[str[j]]--]=j;
+				        SA[bkt[str[j]]--]=j;
 				    }
+            SA[0]=n-1;
 				}
 
 				#if TIME
@@ -257,8 +260,8 @@ public:
 				    begin = timer::now();
 				#endif
 
-				if(level) induceSAl(t, SA, s, bkt, n, K, cs, level); 
-				else induceSAl(t, SA, (int_t*)str, bkt, n, K, sizeof(unsigned char), level); 
+				if(level) induceSAl(SA, s, cnt, bkt, n, K, cs, level); 
+				else induceSAl(SA, (int_t*)str, cnt, bkt, n, K, sizeof(unsigned char), level); 
 
 				#if TIME
 				    end = timer::now();
@@ -266,8 +269,8 @@ public:
 				    begin = timer::now();
 				#endif
 
-				if(level) induceSAs(t, SA, s, bkt, n, K, cs, level); 
-				else induceSAs(t, SA, (int_t*)str, bkt, n, K, sizeof(unsigned char), level); 
+				if(level) induceSAs(SA, s, cnt, bkt, n, K, cs, level); 
+				else induceSAs(SA, (int_t*)str, cnt, bkt, n, K, sizeof(unsigned char), level); 
 
 				#if TIME
 				    end = timer::now();
@@ -281,7 +284,8 @@ public:
 				}
 				cout<<endl;
 				#endif
-				free(bkt);	
+				delete[] bkt;
+				delete[] cnt;
 				
 				#if TIME
 				    auto stop = timer::now();
@@ -294,17 +298,14 @@ public:
 			for(uint64_t i=0 ; i< reduced_string.size();i++) str[i] = reduced_string[i];
 		}
 
-		delete[] t;
 		*sa=SA;
 		return str;
-    }
-
+	}
 
 private:
     std::vector<uint32_t> partial_sum;
 
 private:
-
 
     void gc_is(int_t *s,
 	       uint_t *SA,
@@ -312,6 +313,7 @@ private:
 	       int_t K,
 	       int cs,
 	       int level) override {
+
 	int_t i, j;
 
 #ifdef MEM_MONITOR

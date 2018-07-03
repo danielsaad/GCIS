@@ -1,8 +1,11 @@
-#include <iostream>
-#include <fstream>
 #include <cstring>
+#include <fstream>
+#include <iostream>
+#include "gcis.hpp"
 #include "sais.h"
 
+using namespace std::chrono;
+using timer = std::chrono::high_resolution_clock;
 
 void load_string_from_file(char*& str,char* filename){
         std::ifstream f(filename,std::ios::binary);
@@ -29,11 +32,19 @@ int main(int argc, char* argv[]){
     sa_int32_t* SA = new sa_int32_t[n];    
     sa_int32_t k = 256;
 
-    std::cout << "Building SA with SAIS." << std::endl;
+    std::cout << "Building SA with SAIS-YUTA." << std::endl;
+		auto start = timer::now();
     sais_u8((sa_uint8_t*) str,SA,n,k);
+		auto stop = timer::now();
+
+		cout<<"input:\t"<<strlen(str)<<" bytes"<<endl;
+
     std::ofstream output(argv[3], std::ios::binary);
+		//cout<<"output:\t"<<sizeof(sa_int32_t)*n<<" bytes"<<endl;
     // output.write((const char*) &n,sizeof(n));
-    // output.write((const char*)SA,sizeof(sa_int32_t)*n);
+    output.write((const char*)SA,sizeof(sa_int32_t)*n);
     output.close();
+
+		cout << "time: " << (double)duration_cast<seconds>(stop-start).count()<<" seconds" << endl;
     return 0;
 }

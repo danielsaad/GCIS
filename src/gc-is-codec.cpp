@@ -36,7 +36,7 @@ int main(int argc, char* argv[]){
 		std::cerr << "Usage: ./gc-is-codec -c <file_to_be_encoded> <output>\n"  <<
 		          "./gc-is-codec -d <file_to_be_decoded> <output>\n" <<
 		          "./gc-is-codec -s <file_to_be_decoded> <output>\n" <<
-		          "./gc-is-codec -a <input_file> <output>\n" <<
+		          "./gc-is-codec -A <input_file> <output>\n" <<
 		          "./gc-is-codec -e <encoded_file> <query file>\n";
 		
 		exit(EXIT_FAILURE);
@@ -54,6 +54,8 @@ int main(int argc, char* argv[]){
 		#ifdef MEM_MONITOR
 		mm.event("GC-IS Compress");
 		#endif
+
+    std::cout << "Encoding..." << std::endl;
 		
 		auto start = timer::now();
 		d.encode(str);
@@ -86,6 +88,8 @@ int main(int argc, char* argv[]){
 			        mm.event("GC-IS Decompress");
 			#endif
 			
+			std::cout << "Decoding..." << std::endl;
+
 			auto start = timer::now();
 			char *str = d.decode();
 			auto stop = timer::now();
@@ -111,27 +115,29 @@ int main(int argc, char* argv[]){
 		#ifdef MEM_MONITOR
 		mm.event("GC-IS/SACA Decompress");
 		#endif
+
+    std::cout << "Building SA while decoding..." << std::endl;
 		
 		uint_t *SA;
 		auto start = timer::now();
 		unsigned char *str = d.decode_saca(&SA);
 		auto stop = timer::now();
 		
-		size_t n = strlen((char*)str)+1;
+		size_t n = strlen((char*)str);
 		
 		#if CHECK
 			if(!d.suffix_array_check(SA, str, (uint_t) n, sizeof(char), 0)) std::cout << "isNotSorted!!\n";
 			else std::cout << "isSorted!!\n";
-		#endif
+		#endif 	
 	
-		#if CHECK
-		output.write((const char*) &n,sizeof(n));
-		output.write((const char*)SA,sizeof(uint_t)*n);
-		
+	  d.suffix_array_write((uint_t*)SA, n+1, argv[2], "SA");
+
+		output.write((char*)str, n);
+		//output.write((const char*)SA,sizeof(uint_t)*n);
+
 		cout<<"input:\t"<<d.size_in_bytes()<<" bytes"<<endl;
 		cout<<"output:\t"<<n-1<<" bytes"<<endl;
 		cout<<"SA:\t"<<n*sizeof(uint_t)<<" bytes"<<endl;
-		#endif 	
 		
 		output.close();
 		input.close();	
@@ -147,7 +153,7 @@ int main(int argc, char* argv[]){
 		size_t n = strlen(str)+1;
 		uint_t* SA = new uint_t[n];    
 	
-		std::cout << "Building SA with SAIS." << std::endl;
+		std::cout << "Building SA with SAIS-NONG..." << std::endl;
 		auto start = timer::now();
 		//sais_u8((sa_uint8_t*) str,SA,n,k);
 		d.saca(str, SA, n);
@@ -156,7 +162,8 @@ int main(int argc, char* argv[]){
 		#if CHECK
 			if(!d.suffix_array_check(SA, (unsigned char*)str, (uint_t) n, sizeof(char), 0)) std::cout << "isNotSorted!!\n";
 			else std::cout << "isSorted!!\n";
-		#endif
+		#endif 	
+
 		//std::ofstream output(argv[3], std::ios::binary);
 		//output.write((const char*) &n,sizeof(n));
 		//output.write((const char*)SA,sizeof(sa_int32_t)*n);

@@ -474,25 +474,102 @@ protected:
         }
     }
 
+    // compute SA for the S-Type suffixes by inducing the L-Type suffixes and the S-Type suffixes
+    void induceSAs(uint_t *SA,
+                   int_t *s,
+                   int_t *cnt,
+                   int_t *bkt,
+                   int_t n,
+                   int_t K,
+                   int cs,
+                   int level) {
+        int_t i, j;
+        get_buckets(cnt, bkt, K, true);
+        for (i = n - 1; i >= 0; i--) {
+            if (SA[i] != EMPTY) {
+                j = SA[i] - 1;
+                if (j >= 0)
+                  if(chr(j)<=chr(j+1) && bkt[chr(j)]<i) {
+                    SA[bkt[chr(j)]--] = j;
+                }
+            }
+        }
+    }
+
+    // compute SA for the L-Type suffixes by inducing the LMS-Suffixes and the L-Suffixes
+    void induceSAl(uint_t *SA,
+                   int_t *s,
+                   int_t *cnt,
+                   int_t *bkt,
+                   int_t n,
+                   int_t K,
+                   int cs,
+                   int level) {
+        int_t i, j;
+        // find heads of buckets
+        get_buckets(cnt, bkt, K, false);
+        //  if(level==0) bkt[0]++;
+        for (i = 0; i < n; i++) {
+            if (SA[i] != EMPTY) {
+                j = SA[i] - 1;
+                if(j>=0)
+                  if(chr(j)>=chr(SA[i])){
+                    SA[bkt[chr(j)]++] = j;
+                  }
+            }
+        }
+    }
     // Init buckets
     void init_buckets(int_t *bkt,
                      int_t K
                      ) {
         int_t i;
-
         // clear all buckets
         for (i = 0; i < K; i++) {
             bkt[i] = 0;
         }
     }
 
+    // Count frequencies
+    void get_counts(int_t *s,
+                     int_t *bkt,
+                     int_t n,
+                     int_t K,
+                     int cs) {
+        init_buckets(bkt,K);// clear all buckets
+        for (int_t i = 0; i < n; i++) {// compute the size of each bucket
+            bkt[chr(i)]++;
+        }
+    }
+  
+    // Compute the head or end of each bucket
+    void get_buckets(int_t *tmp,
+                     int_t *bkt,
+                     int_t K,
+                     bool end) {
+        int_t sum = 0;
+        // compute the size of each bucket
+        if(end){
+          for (int_t i = 0; i < K; i++) {
+            sum += tmp[i];
+            bkt[i] = sum - 1;
+          }
+        }  
+        else{
+          for (int_t i = 0; i < K; i++) {
+            sum += tmp[i];
+            bkt[i] = sum - tmp[i];
+          }           
+        }
+    }
+    
     // Compute the head or end of each bucket
     void get_buckets(int_t *s,
                      int_t *bkt,
                      int_t n,
                      int_t K,
                      int cs,
-                     int end) {
+                     bool end) {
         int_t i, sum = 0;
 
         // clear all buckets
@@ -502,22 +579,17 @@ protected:
             bkt[chr(i)]++;
         }
         //Mark the end of each bucket
-        for (i = 0; i < K; i++) {
-            sum += bkt[i];
-            bkt[i] = end ? sum - 1 : sum - bkt[i];
-        }
-    }
-
-    // Compute the head or end of each bucket
-    void get_buckets_end(
-                     int_t *bkt,int end,
-                     int_t K) {
-        int_t i, sum = 0;
-
-        //Mark the end of each bucket
-        for (i = 0; i < K; i++) {
+        if(end){
+          for (i = 0; i < K; i++) {
             sum += bkt[i];
             bkt[i] = sum - 1;
+          }
+        }
+        else{
+          for (i = 0; i < K; i++) {
+            sum += bkt[i];
+            bkt[i] = sum - bkt[i];
+          }
         }
     }
 
