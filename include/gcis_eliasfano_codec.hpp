@@ -1,3 +1,5 @@
+// vim: noai:ts=2:sw=2
+
 #ifndef GC_IS_GCIS_ELIASFANO_CODEC_HPP
 #define GC_IS_GCIS_ELIASFANO_CODEC_HPP
 
@@ -67,9 +69,9 @@ public:
     //                    sdsl::int_vector<>& extracted_text,
     //                    sdsl::int_vector<>& tmp_text);
     //
-     void extract_lcp(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
-     void extract_rule_suffix(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
-     void extract_rule(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
+    void extract_lcp(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
+    void extract_rule_suffix(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
+    void extract_rule(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
 
     void extract_lcp(uint64_t rule_num,sdsl::int_vector<>& extracted_text,uint64_t& k);
     void extract_rule_suffix(uint64_t rule_num,sdsl::int_vector<>& extracted_text,uint64_t& k);

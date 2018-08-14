@@ -5,12 +5,15 @@ ADD_LIBRARY(gc-is STATIC
         gcis_unary_codec.cpp
         gcis_eliasfano_codec.cpp
         gcis_eliasfano_codec_no_lcp.cpp
-        ../include/eliasfano.hpp
+        gcis_gap_codec.cpp
         eliasfano.cpp
+        ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
         ../include/gcis_eliasfano.hpp
-        ../include/gcis_eliasfano_no_lcp.hpp)
+        ../include/gcis_eliasfano_no_lcp.hpp
+        ../include/gcis_gap_codec.hpp
+        ../include/gcis_gap.hpp)
 
 ADD_LIBRARY(gc-is-statistics STATIC
         util.cpp
@@ -19,11 +22,14 @@ ADD_LIBRARY(gc-is-statistics STATIC
         gcis_unary_codec.cpp
         gcis_eliasfano_codec.cpp
         gcis_eliasfano_codec_no_lcp.cpp
+        gcis_gap_codec.cpp
         eliasfano.cpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
         ../include/gcis_eliasfano.hpp
-        ../include/gcis_eliasfano_no_lcp.hpp)
+        ../include/gcis_eliasfano_no_lcp.hpp
+        ../include/gcis_gap_codec.hpp
+        ../include/gcis_gap.hpp)
 
 target_compile_definitions(gc-is-statistics PRIVATE  MEM_MONITOR REPORT )
 install (TARGETS gc-is ARCHIVE DESTINATION ${CMAKE_SOURCE_DIR}/lib)

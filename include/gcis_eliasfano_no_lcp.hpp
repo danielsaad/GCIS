@@ -250,7 +250,7 @@ private:
                     fdrlen.push_back(len);
                 }
                 else{
-                    // The symbols are not necessarly terminal.            
+                    // The symbols are not necessarily terminal.            
                     uint64_t sum = g[level-1].fully_decoded_rule_len[chr(pos)];
                     for(uint64_t i=1;  i+pos < n && !isLMS(pos+i);i++){
                         sum+=g[level-1].fully_decoded_rule_len[chr(pos+i)];

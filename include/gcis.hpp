@@ -86,14 +86,11 @@ public:
         }
     }
 
-		bool suffix_array_check(uint_t *SA, 
-														unsigned char *s, 
-														size_t len, 
-														int cs, 
-														unsigned char sentinel){
-		  int_t i,j,k;
-		
-		  for (i = 0; i < len-1;  i++) {
+    bool suffix_array_check(uint_t *SA, unsigned char *s, size_t len, int cs,
+                            unsigned char sentinel) {
+        int_t i, j, k;
+
+        for (i = 0; i < len - 1; i++) {
 		    size_t min = SA[i+1]<SA[i]?(len-SA[i]):(len-SA[i+1]);
 		    if (!sleq(s, SA[i], SA[i+1], min, cs, sentinel)){
 		
