@@ -185,17 +185,12 @@ int main(int argc, char *argv[]) {
 #ifdef MEM_MONITOR
         mm.event("GC-IS Extract");
 #endif
+        vector<pair<int,int>> v_query;
         uint64_t l, r;
         while (query >> l >> r) {
-            sdsl::int_vector<> str = d.extract(l,r);
-            cout << l << " " << r << " = ";
-            cout.flush();
-            for (uint64_t i = 0; i < r - l + 1; i++) {
-                cout << (char) str[i];
-            }
-            cout << endl;
-            cout.flush();
+                v_query.push_back(make_pair(l,r));
         }
+        d.extract_batch(v_query);
     } else {
         std::cerr << "Invalid mode: use -c for compression, -d for "
                      "decompression or -e for extraction.\n";
