@@ -4,6 +4,12 @@
 #include "gcis.hpp"
 #include "gcis_gap_codec.hpp"
 
+void print_text(sdsl::int_vector<> &v, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        cout << v[i] << " ";
+    }
+    cout << endl;
+}
 template <>
 class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
 
@@ -57,15 +63,20 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
     void extract_batch(vector<pair<int, int>> &query) {
         int l, r;
         std::tie(l, r) = query[0];
-        uint64_t size =
-            g.size() ? 4 * (g.back().fully_decoded_tail_len + (r - l + 1))
-                     : (r - l + 1);
+        uint64_t query_length = 50000;
+        uint64_t size = query_length;
+//            g.size() ?  (g.back().fully_decoded_tail_len + (query_length))
+  //                   : (query_length);
         sdsl::int_vector<> extracted_text(size);
         sdsl::int_vector<> tmp_text(size);
         for (auto p : query) {
             cout << "Extracting"
                  << "[" << p.first << "," << p.second << "]" << endl;
             extract(p.first, p.second, extracted_text, tmp_text);
+            for (uint64_t i = p.first; i <= p.second; i++) {
+                cout << (char)extracted_text[i - p.first];
+            }
+            cout << endl;
         }
     }
 
@@ -566,8 +577,7 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
             std::move(sdsl::enc_vector<sdsl::coder::elias_delta>(lcp));
         g[level].rule_pos =
             std::move(sdsl::enc_vector<sdsl::coder::elias_delta>(rule_pos));
-        g[level].fully_decoded_rule_len =
-            std::move(sdsl::dac_vector_dp<>(fdrlen));
+        g[level].fully_decoded_rule_len = std::move(sdsl::dac_vector<>(fdrlen));
 
         lcp.clear();
         rule_pos.clear();
@@ -640,6 +650,11 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
         g[level].string_size = n;
         g[level].alphabet_size = K;
         if (name + 1 < n1 && !premature_stop) {
+            // cout << "rules = ";
+            // for (uint64_t i = 0; i < n1; i++) {
+            //     cout << (int)s1[i];
+            // }
+            // cout << endl;
             gc_is((int_t *)s1, SA1, n1, name + 1, sizeof(int_t), level + 1);
         } else {
             // generate the suffix array of s1 directly
@@ -649,19 +664,25 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
                 print_report("Premature Stop employed at level ", level, "\n");
 #endif
                 reduced_string.resize(n);
+                // cout << "Reduced string = ";
                 for (j = 0; j < n; j++) {
                     // Copy the reduced substring
                     reduced_string[j] =
                         (uint64_t)(cs == sizeof(char) ? ((char *)s)[j] : s[j]);
+                    // cout << reduced_string[j];
                 }
+                // cout << endl;
                 // The last level of computation is discarded
                 g.pop_back();
             } else {
+                // cout << "Reduced string = ";
                 reduced_string.resize(n1);
                 for (j = 0; j < n1; j++) {
                     // Copy the reduced substring
                     reduced_string[j] = s1[j];
+                    // cout << reduced_string[j];
                 }
+                // cout << endl;
             }
             sdsl::util::bit_compress(reduced_string);
             partial_sum.resize(reduced_string.size());
@@ -736,7 +757,7 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
      * @param sz The index we want to find
      * @param text_r The tracked position of the original text representing the
      * end of extracted_text
-     * @return The leftmost index such that text_l r sum(extracted_text,i) <= sz
+     * @return The leftmost index such that text_r sum(extracted_text,i) <= sz
      */
     uint64_t sequential_upperbound(gcis_gap_codec &codec,
                                    sdsl::int_vector<> &extracted_text,
@@ -761,7 +782,7 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
      * @param sz The index we want to found
      * @param text_l The tracked position of the original text representing the
      * beggining of extracted_text
-     * @return The rightmost index such that text_l + sum(extracted_text,i) <=
+     * @return The rightmost index such that text_l + sum(extracted_text,i) >=
      * sz
      */
     uint64_t sequential_lowerbound(gcis_gap_codec &codec,
@@ -780,6 +801,14 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
         return index;
     }
 
+    /**
+     * @brief Extract the substring T[l,r] from the text.
+     *
+     * @param l Beggining of the substring
+     * @param r End of the substring
+     * @param extracted_text Extracted substring buffer
+     * @param tmp_text Temporary Buffer
+     */
     void extract(int64_t l, int64_t r, sdsl::int_vector<> &extracted_text,
                  sdsl::int_vector<> &tmp_text) {
         // Stores the interval being tracked in the text
@@ -819,14 +848,17 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
             // Copy the tail
             text_l = 0;
             for (auto v : g.back().tail) {
+                cout << v;
                 tmp_text[extracted_idx++] = v;
             }
+            cout << endl;
             // Find the leftmost index which covers r
             rk = bsearch_upperbound(partial_sum,
                                     r - g.back().fully_decoded_tail_len);
             text_r = g.back().fully_decoded_tail_len + partial_sum[rk] +
                      g.back().fully_decoded_rule_len[reduced_string[rk]];
             // Decompress the rules located at reduced_string[0..rk];
+            // print_text(reduced_string, rk + 1);
             for (uint64_t i = 0; i <= rk; i++) {
                 g.back().extract_rule(reduced_string[i], tmp_text,
                                       extracted_idx);
@@ -842,6 +874,7 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
                                     r - g.back().fully_decoded_tail_len);
             text_r = g.back().fully_decoded_tail_len + partial_sum[rk] +
                      g.back().fully_decoded_rule_len[reduced_string[rk]];
+
             // Decompress the rules located at reduced_string[0..rk];
             for (uint64_t i = lk; i <= rk; i++) {
                 g.back().extract_rule(reduced_string[i], tmp_text,
@@ -859,6 +892,10 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
                 text_l = 0;
                 text_r = g[level].fully_decoded_tail_len - 1;
                 // Copy the tail
+                if (text_r > tmp_text.size()) {
+                    tmp_text.resize(text_r);
+                    extracted_text.resize(text_r);
+                }
                 for (auto v : g[level].tail) {
                     tmp_text[extracted_idx++] = v;
                 }
@@ -871,6 +908,7 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
                 }
                 rk = sequential_upperbound(g[level], extracted_text,
                                            extracted_text_len, r, text_r);
+                // print_text(extracted_text, rk + 1);
                 for (uint64_t i = 0; i <= rk; i++) {
                     g[level].extract_rule(extracted_text[i], tmp_text,
                                           extracted_idx);
@@ -882,10 +920,12 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
                                            extracted_text_len, l, text_l);
                 rk = sequential_upperbound(g[level], extracted_text,
                                            extracted_text_len, r, text_r);
+                // print_text(extracted_text, rk - lk + 1);
                 for (uint64_t i = lk; i <= rk; i++) {
                     g[level].extract_rule(extracted_text[i], tmp_text,
                                           extracted_idx);
                 }
+                // print_text(tmp_text,extracted_idx);
             }
             level--;
         }
@@ -893,6 +933,7 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
         for (uint64_t i = 0, offset = l - text_l; i < r - l + 1; i++) {
             extracted_text[i] = tmp_text[i + offset];
         }
+        // print_text(extracted_text, r - l + 1);
     }
 };
 

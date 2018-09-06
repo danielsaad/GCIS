@@ -9,10 +9,14 @@
 #include "gcis_eliasfano_codec.hpp"
 #include <iostream>
 
+
 using namespace std::chrono;
 using timer = std::chrono::high_resolution_clock;
 
 #define TIME 0
+
+
+
 
 template <>
 class gcis_dictionary<gcis_eliasfano_codec>
@@ -32,6 +36,33 @@ class gcis_dictionary<gcis_eliasfano_codec>
         i.read((char *)&n, sizeof(n));
         partial_sum.resize(n);
         i.read((char *)partial_sum.data(), sizeof(uint32_t) * n);
+    }
+
+
+    /**
+     * @brief Extracts several valid substrings of the form T[l,r]
+     * from the text.
+     *
+     * @param query A vector containing [l,r] pairs.
+     */
+    void extract_batch(vector<pair<int, int>> &query) {
+        int l, r;
+        std::tie(l, r) = query[0];
+        uint64_t query_length = 50000;
+        uint64_t size = query_length;
+//            g.size() ?  (g.back().fully_decoded_tail_len + (query_length))
+  //                   : (query_length);
+        sdsl::int_vector<> extracted_text(size);
+        sdsl::int_vector<> tmp_text(size);
+        for (auto p : query) {
+            cout << "Extracting"
+                 << "[" << p.first << "," << p.second << "]" << endl;
+            extract(p.first, p.second, extracted_text, tmp_text);
+            for (uint64_t i = p.first; i <= p.second; i++) {
+                cout << (char)extracted_text[i - p.first];
+            }
+            cout << endl;
+        }
     }
 
     /**
@@ -745,7 +776,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
      * @param sz The index we want to found
      * @param text_l The tracked position of the original text representing the
      * beggining of extracted_text
-     * @return The rightmost index such that text_l + sum(extracted_text,i) <=
+     * @return The rightmost index such that text_l + sum(extracted_text,i) >
      * sz
      */
     uint64_t sequential_lowerbound(gcis_eliasfano_codec &codec,
@@ -763,7 +794,8 @@ class gcis_dictionary<gcis_eliasfano_codec>
         }
         return index;
     }
-
+        
+    
     void extract(int64_t l, int64_t r, sdsl::int_vector<> &extracted_text,
                  sdsl::int_vector<> &tmp_text) {
         //	  // Stores the interval being tracked in the text

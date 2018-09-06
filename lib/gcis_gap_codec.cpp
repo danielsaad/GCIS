@@ -156,7 +156,9 @@ uint64_t gcis_gap_codec::get_rule_length(uint64_t i) {
     return i > 0 ? rule_pos[i] - rule_pos[i - 1] : 1;
 }
 
-uint64_t gcis_gap_codec::get_lcp(uint64_t i) { return lcp[i]; }
+uint64_t gcis_gap_codec::get_lcp(uint64_t i) { 
+    return i> 0 ? lcp[i] - lcp[i-1] : 0; 
+}
 
 /**
  * @brief Extracts the LCP from a rule into a buffer.
@@ -187,7 +189,8 @@ void gcis_gap_codec::extract_lcp(uint64_t rule_num,
     // Extract the necessary LCP values
     do {
         if (idx_lcp > 0) {
-            lcp_len = buffer[idx_lcp] - buffer[idx_lcp - 1] + lcp_sample_value;
+            lcp_len = buffer[idx_lcp] - buffer[idx_lcp - 1];
+            assert(buffer[idx_lcp] >= buffer[idx_lcp-1]);
             idx_lcp--;
         } else {
             if (sample_bucket_lcp > 0) {
@@ -196,7 +199,8 @@ void gcis_gap_codec::extract_lcp(uint64_t rule_num,
                 lcp.get_inter_sampled_values(sample_bucket_lcp, buffer.data());
                 lcp_sample_value = lcp.sample(sample_bucket_lcp);
                 lcp_len = tmp - (buffer.back() + lcp_sample_value);
-                idx_lcp = lcp.get_sample_dens() - 2;
+                assert(tmp>= buffer.back() + lcp_sample_value);
+                idx_lcp = lcp.get_sample_dens() - 1;
             } else { // LCP[0] = 0;
                 lcp_len = 0;
             }
@@ -228,7 +232,7 @@ void gcis_gap_codec::extract_lcp(uint64_t rule_num,
                                                   buffer.data());
                 rule_pos_sample_value = rule_pos.sample(sample_bucket_rule_pos);
                 pos = buffer.back() + rule_pos_sample_value;
-                idx_rule_pos = rule_pos.get_sample_dens() - 2;
+                idx_rule_pos = rule_pos.get_sample_dens() - 1;
             } else { // Rule[0] starts at pos 0
                 pos = 0;
             }
@@ -255,7 +259,10 @@ void gcis_gap_codec::extract_lcp(uint64_t rule_num,
             uint64_t prev_rule_pos = rule_pos_values[j];
             while (i >= (int64_t)prev_lcp_len && idx >= (int64_t)k) {
                 // Copy the symbols to the extracted text
-                extracted_text[idx] = rule[prev_rule_pos + i - prev_lcp_len];
+                if (idx <= k + lcp_len - 1) {
+                    uint64_t symb = rule[prev_rule_pos + i - prev_lcp_len];
+                    extracted_text[idx] = symb;
+                }
                 i--;
                 idx--;
             }
@@ -276,6 +283,7 @@ void gcis_gap_codec::extract_rule_suffix(uint64_t rule_num,
         extracted_text[k++] = rule[rule_pos + i];
     }
 }
+
 
 void gcis_gap_codec::extract_rule(uint64_t rule_num,
                                   sdsl::int_vector<> &extracted_text,
