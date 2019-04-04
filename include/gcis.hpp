@@ -34,6 +34,29 @@ unsigned char mask[] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 
 #define isLMS(i) (i > 0 && tget(i) && !tget(i - 1))
 
+/**/
+#define RMQ   1  //variants = (1, trivial) (2, using Gog's stack)
+#define BINARY 0 //binary search on stack operations
+#define STACK_SIZE 895 //to use 10Kb of working space
+
+typedef struct _pair{
+  uint_t idx;
+  int_t lcp;
+} t_pair;
+
+int compare (const void * a, const void * b){
+  if(*(const uint_t *)a < *(const uint_t *)b) return -1;
+  if(*(const uint_t *)a > *(const uint_t *)b) return 1;
+return 0;
+}
+
+void stack_push(t_pair* STACK, int_t *top, uint_t idx, int_t lcp){
+  STACK[*top].idx=idx;
+  STACK[*top].lcp=lcp;
+  (*top)++;
+}
+/**/
+
 template <class codec_t> class gcis_abstract {
   public:
     std::vector<codec_t> g;
@@ -45,6 +68,9 @@ template <class codec_t> class gcis_abstract {
     }
     unsigned char* decode_saca(uint_t** SA){
         throw(NotImplementedException("decode_saca"));
+    }
+    unsigned char* decode_saca_lcp(uint_t** SA, int_t **LCP){
+        throw(NotImplementedException("decode_saca_lcp"));
     }
     virtual uint64_t size_in_bytes() {
         uint64_t total_bytes = 0;
@@ -86,6 +112,31 @@ template <class codec_t> class gcis_abstract {
         for (uint64_t j = 0; j < size; j++) {
             g[j].load(i);
         }
+    }
+
+    bool lcp_array_check(uint_t *SA, int_t *LCP, unsigned char *s, size_t len, int cs,
+                            unsigned char sentinel) {
+      int r=1;
+      uint_t i,j,k;
+      int_t h;
+      double mean=0.0;
+      
+      for(i=1;i<len;i++) {
+      	
+      	j=SA[i-1]; k=SA[i];
+      	for(h=0;j+h<len && k+h<len;h++) if(s[j+h]!=s[k+h]) break;
+      	
+      	if(LCP[i]!=h) {
+          cout << i << "\t"<<h<<"\t"<<LCP[i]<<" (wrong) "<<endl;
+          r=0;
+      		//return 0;
+      	}
+      	mean+=(double)LCP[i]/(double)len;
+      }
+      
+      printf("LCP_mean = %lf\n", mean);
+	
+      return r;
     }
 
     bool suffix_array_check(uint_t *SA, unsigned char *s, size_t len, int cs,
@@ -478,6 +529,37 @@ template <class codec_t> class gcis_abstract {
         }
     }
 
+    void compute_lcp_phi_sparse_sais(int_t *s, uint_t *SA1, 
+      uint_t *RA, int_t *LCP, int_t *PLCP,
+      uint_t n1, int cs) {
+    
+      uint_t i;
+    
+      PLCP[SA1[0]]=0;//PLCP* (lms) is stored in PLCP array
+      for(i=1; i<n1; i++)
+        PLCP[SA1[i]] = LCP[i]; 
+    
+      LCP[SA1[0]]=0;//PHI is stored in LCP array
+      for(i=1; i<n1; i++)
+        LCP[SA1[i]] = SA1[i-1]; //RA[SA1[i-1]];
+    
+      int_t l=0; //q=0;
+      for(i=0; i<n1-1;i++){
+        
+        l=0; 
+    
+        while(chr(RA[i]+l)==chr(RA[LCP[i]]+l)) l++;
+        PLCP[i]=l;
+    
+        if(LCP[i]==n1-1) l -= RA[i+1]-RA[i];
+        else l -= max(RA[i+1]-RA[i], RA[LCP[i]+1]-RA[LCP[i]]);//LCP[i] stores the distance of i-th suffix to its successor
+      }
+    
+      LCP[0]=0;
+      for(i=1; i<n1;i++) LCP[i]=PLCP[SA1[i]];
+    
+    }
+
     // compute SA for the S-Type suffixes by inducing the L-Type suffixes and
     // the S-Type suffixes
     void induceSAs(uint_t *SA, int_t *s, int_t *cnt, int_t *bkt, int_t n,
@@ -493,6 +575,126 @@ template <class codec_t> class gcis_abstract {
                     }
             }
         }
+    }
+
+    // compute SA for the S-Type suffixes by inducing the L-Type suffixes and
+    // the S-Type suffixes
+    void induceSAs_LCP(uint_t *SA, int_t *LCP, int_t *s, int_t *cnt, int_t *bkt, int_t n,
+                   int_t K, int cs, int level) {
+        int_t i, j;
+        get_buckets(cnt, bkt, K, true);
+
+        #if RMQ == 1
+          int_t *M=(int_t *)malloc(sizeof(int_t)*K);
+          for(i=0;i<K;i++) M[i]=I_MAX;
+        #elif RMQ == 2 
+          uint_t* last_occ = (uint_t*) malloc(K*sizeof(uint_t));
+          uint_t* tmp = (uint_t*) malloc(K*sizeof(uint_t));
+          t_pair* STACK = (t_pair*) malloc((STACK_SIZE+1)*sizeof(t_pair));
+          int_t top = 0;
+          //init
+          stack_push(STACK, &top, n, -1);
+          for(i=0;i<K;i++) last_occ[i]=n-1;
+        #endif  
+
+        for (i = n - 1; i >= 0; i--) {
+            //if (SA[i] != EMPTY) {
+            if (SA[i]>0) {
+                j = SA[i] - 1;
+                if (j >= 0 && chr(j) <= chr(j + 1) && bkt[chr(j)] < i) {
+                    SA[bkt[chr(j)]] = j;
+                    #if RMQ == 1
+                      if(LCP[bkt[chr(j)]+1]>=0) LCP[bkt[chr(j)]+1]=M[chr(j)]+1;
+                    #elif RMQ == 2
+                      int_t min = I_MAX, end = top-1; 
+                      
+                      int_t last=last_occ[chr(j)];
+                      //search (can be binary)
+                      #if BINARY == 1 
+                        int_t a=0, b=top-1;  
+                        int_t m = (b-a)/2;
+                        while(a<=b){
+                          if(STACK[m].idx==last){ break;}
+                          if(STACK[m].idx<last) b=m-1; 
+                          else a=m+1;
+                          m=a+(b-a)/2;
+                        }
+                        end = m-1;
+                      #else
+                        while(STACK[end].idx<=last) end--;
+                      #endif
+                    
+                      min=STACK[(end+1)].lcp;
+                      last_occ[chr(j)] = i;
+                      
+                      if(LCP[bkt[chr(j)]+1]>=0) LCP[bkt[chr(j)]+1]=min+1;
+                    
+                    #endif
+                    
+                    #if RMQ == 1
+                      if(LCP[bkt[chr(j)]]>0) LCP[bkt[chr(j)]]=I_MAX;
+                      M[chr(j)] = I_MAX;
+                    #endif
+                    
+                    bkt[chr(j)]--;
+                    
+                    if(SA[bkt[chr(j)]]!=U_MAX) {//L/S-seam
+                      int_t l=0;	
+                      while(chr(SA[bkt[chr(j)]+1]+l)==chr(SA[bkt[chr(j)]]+l))l++;
+                      LCP[bkt[chr(j)]+1]=l;
+                      //FELIPE
+                      printf("--> %d\n", bkt[chr(j)]+1);
+                    }
+                }
+            }
+            if(LCP[i]<0) LCP[i]=0;
+            
+            #if RMQ == 1
+              int_t k;
+              for(k=0; k<K; k++) if(M[k]>LCP[i]) M[k] = LCP[i];
+            #elif RMQ == 2
+
+            int_t lcp=max(0,LCP[i]);
+            
+            while(STACK[(top)-1].lcp>=lcp) (top)--;
+            stack_push(STACK, &top, i, lcp);
+            
+            if(top>=STACK_SIZE){
+
+              int_t j;
+              memcpy(tmp, last_occ, K*sizeof(uint_t));
+              qsort(tmp, K, sizeof(uint_t), compare);
+              
+              int_t curr=0, end=1;
+              STACK[top].idx=U_MAX;
+              
+              for(j=K-1;j>=0; j--){
+                if(STACK[end-1].idx > tmp[j]){
+                  while(STACK[curr].idx>tmp[j]) curr++;
+                  STACK[end].idx=STACK[curr].idx;
+                  STACK[end].lcp=STACK[curr].lcp;
+                  end++;
+                }
+              }
+              
+              if(end>=STACK_SIZE){
+                fprintf(stderr,"ERROR: induceSAl0_LCP\n");
+                exit(1);
+              }
+              top = end;
+            }
+          #endif
+        }//for
+        LCP[0]=0;
+
+        //variant 1
+        #if RMQ == 1
+        free(M);
+        #elif RMQ == 2
+        free(STACK);
+        free(last_occ);
+        free(tmp);
+        #endif
     }
 
     // compute SA for the L-Type suffixes by inducing the LMS-Suffixes and the
@@ -512,6 +714,156 @@ template <class codec_t> class gcis_abstract {
                     }
             }
         }
+    }
+    // compute SA for the L-Type suffixes by inducing the LMS-Suffixes and the
+    // L-Suffixes
+    void induceSAl_LCP(uint_t *SA, int_t *LCP, int_t *s, int_t *cnt, int_t *bkt, int_t n,
+                   int_t K, int cs, int level) {
+        int_t i, j;
+
+        for(i=0;i<K;i++)
+          if(bkt[i]+1<n) if(SA[bkt[i]+1]!=U_MAX) LCP[bkt[i]+1]=I_MIN;
+
+        // find heads of buckets
+        get_buckets(cnt, bkt, K, false);
+
+        for(i=0;i<K;i++)
+          if(bkt[i]<n) LCP[bkt[i]]=-2;
+
+        #if RMQ == 1
+          int_t *M=(int_t *)malloc(sizeof(int_t)*K);
+          for(i=0;i<K;i++){
+            M[i]=I_MAX;
+          }
+        #elif RMQ == 2
+          uint_t* last_occ = (uint_t*) malloc(K*sizeof(uint_t));
+          uint_t* tmp = (uint_t*) malloc(K*sizeof(uint_t));
+          t_pair* STACK = (t_pair*) malloc((STACK_SIZE+1)*sizeof(t_pair));
+          int_t top = 0;
+          //init
+          stack_push(STACK, &top, 0, -1);
+          for(i=0;i<K;i++) last_occ[i]=0;
+        #endif
+
+        //  bkt[0]++;
+        for (i = 0; i < n; i++) {
+            if (SA[i] != U_MAX) {
+              
+                if(LCP[i]==I_MIN){ //is a L/S-seam position
+                  int_t l=0;
+                  if(SA[bkt[chr(SA[i])]-1]<n-1)	
+                    while(chr(SA[i]+l)==chr(SA[bkt[chr(SA[i])]-1]+l))++l;
+                  LCP[i]=l;
+                }
+                #if RMQ == 1
+                  uint_t k;
+                  for(k=0; k<K; k++) if(M[k]>LCP[i]) M[k] = max(0,LCP[i]);
+                #elif RMQ == 2
+                  int_t min_lcp=0;
+                  uint_t last;
+                  if(!SA[i]) last = 0;
+                  else{
+                  last = last_occ[chr(SA[i]-1)];
+                  last_occ[chr(SA[i]-1)] = i+1;
+                  }
+                  int_t lcp=max(0,LCP[i]);
+                  #if BINARY == 1 
+                    int_t a=0, b=top-1;  
+                    int_t m = (b-a)/2;                    
+                    while(a<=b){
+                      if(STACK[m].lcp==lcp){ break; }
+                      if(STACK[m].lcp>lcp) b=m-1; 
+                      else a=m+1;
+                      m=a+(b-a)/2;
+                    }
+                    top = m;
+                  #else
+                    while(STACK[(top)-1].lcp>=lcp) (top)--;	
+                  #endif
+                  stack_push(STACK, &top, i+1, lcp);
+                  j = top-1;
+                  #if BINARY == 1 
+                    a=0, b=top-1;  
+                    m = (b-a)/2;
+                    while(a<=b){
+                      if(STACK[m].idx==last){ m++; break;}
+                      if(STACK[m].idx>last) b=m-1; 
+                      else a=m+1;
+                      m=a+(b-a)/2;
+                    }
+                    j = m-1;
+                  #else
+                    while(STACK[j].idx>last) j--;
+                  #endif
+                  min_lcp=STACK[(j+1)].lcp;
+                #endif
+
+                //j = SA[i] - 1;
+                if (SA[i] > 0){                  
+                  j=SA[i]-1;
+                  if (chr(j) >= chr(j+1)) {
+                    SA[bkt[chr(j)]] = j;
+                    #if RMQ == 1
+                      LCP[bkt[chr(j)]]+=M[chr(j)]+1;
+                      M[chr(j)] = I_MAX;
+                    #elif RMQ == 2
+                      LCP[bkt[chr(j)]]+=min_lcp+1;
+                    #endif
+                    bkt[chr(j)]++;
+                  }
+                  if(bkt[chr(SA[i])]-1<i){ //if is LMS-type
+                    SA[i]=U_MAX;
+                  }
+                }
+                #if RMQ == 2
+                if(top>=STACK_SIZE){//if stack is full
+                  int_t j;
+                  memcpy(tmp, last_occ, K*sizeof(uint_t));
+                  qsort(tmp, K, sizeof(uint_t), compare);
+                  int_t curr=1, end=1;
+                  STACK[top].idx=U_MAX;
+
+                  for(j=0;j<K; j++){
+                    if(STACK[end-1].idx < tmp[j]+1){
+                      //search (can be binary)
+                      #if BINARY == 1
+                        int_t a=curr-1, b=top-1;
+                        int_t m = (b-a)/2, last=tmp[j]+1;
+                        while(a<=b){
+                          if(STACK[m].idx==last){ break;}
+                          if(STACK[m].idx>last) b=m-1;
+                          else a=m+1;
+                          m=a+(b-a)/2;
+                        }
+                      curr = m;
+                      #else
+                        while(STACK[curr].idx<tmp[j]+1) curr++;
+                      #endif
+                      
+                      if(curr<top) {
+                        STACK[end].idx=STACK[curr].idx;
+                        STACK[end].lcp=STACK[curr].lcp;
+                        end++;
+                        curr++;
+                      }
+                    }
+                  }
+                  if(end>=STACK_SIZE){
+                  fprintf(stderr,"ERROR: induceSAl0_LCP\n");
+                  exit(1);
+                  }
+                  top = end;
+                }
+                #endif
+            }
+        }
+        #if RMQ == 1
+        free(M);
+        #elif RMQ == 2
+        free(STACK);
+        free(last_occ);
+        free(tmp);
+        #endif
     }
     // Init buckets
     void init_buckets(int_t *bkt, int_t K) {

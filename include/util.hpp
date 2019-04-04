@@ -17,9 +17,17 @@ using namespace std;
 #ifdef m64
     typedef int64_t  int_t;
     typedef uint64_t uint_t;
+    #define PRIdN    PRId64
+    #define U_MAX    UINT64_MAX
+    #define I_MAX    INT64_MAX
+    #define I_MIN    INT64_MIN
 #else
     typedef int32_t  int_t;
     typedef uint32_t uint_t;
+    #define PRIdN    PRId32
+    #define U_MAX    UINT32_MAX
+    #define I_MAX    INT32_MAX
+    #define I_MIN    INT32_MIN    
 #endif
 
 
@@ -42,7 +50,6 @@ template <typename T>
 void print_report(T value){
     report_file << value;
 }
-
 
 template<typename T, typename... TArgs>
 void print_report(T value, TArgs... args) {
