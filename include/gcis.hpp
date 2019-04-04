@@ -642,8 +642,6 @@ template <class codec_t> class gcis_abstract {
                       int_t l=0;	
                       while(chr(SA[bkt[chr(j)]+1]+l)==chr(SA[bkt[chr(j)]]+l))l++;
                       LCP[bkt[chr(j)]+1]=l;
-                      //FELIPE
-                      printf("--> %d\n", bkt[chr(j)]+1);
                     }
                 }
             }
