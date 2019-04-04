@@ -40,6 +40,12 @@ template <class codec_t> class gcis_abstract {
     sdsl::int_vector<> reduced_string;
 
   public:
+    void extract_batch(vector<pair<int,int>>& v_query){
+        throw(NotImplementedException("extract_batch"));
+    }
+    unsigned char* decode_saca(uint_t** SA){
+        throw(NotImplementedException("decode_saca"));
+    }
     virtual uint64_t size_in_bytes() {
         uint64_t total_bytes = 0;
         for (uint64_t i = 0; i < g.size(); i++) {

@@ -1,8 +1,10 @@
-#include "gcis.hpp"
-#include "sais.h"
+#include <chrono>
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include "divsufsort.h"
+
+using namespace std;
 
 using namespace std::chrono;
 using timer = std::chrono::high_resolution_clock;
@@ -18,34 +20,32 @@ void load_string_from_file(char *&str, char *filename) {
     f.close();
 };
 
+
 int main(int argc, char *argv[]) {
 
     if (argc != 3) {
-        std::cerr << "Usage: ./sais-yuta <input_file> <output_file>"
+        std::cerr << "Usage: ./divsufsort <input_file> <output_file>"
                   << std::endl;
         exit(EXIT_FAILURE);
     }
+    auto start = timer::now();
     char *str;
     load_string_from_file(str, argv[1]);
+    size_t n = strlen(str);
+    saidx_t *SA = new saidx_t[n];
 
-    size_t n = strlen(str) + 1;
-    sa_int32_t *SA = new sa_int32_t[n];
-    sa_int32_t k = 256;
 
-    std::cout << "Building SA with SAIS-YUTA." << std::endl;
-    auto start = timer::now();
-    sais_u8((sa_uint8_t *)str, SA, n, k);
+    std::cout << "Building SA with Divsufsort." << std::endl;
+    divsufsort((sauchar_t*) str, SA, n);
     auto stop = timer::now();
 
-    cout << "input:\t" << strlen(str) << " bytes" << endl;
-
     std::ofstream output(argv[2], std::ios::binary);
-    // output.write((const char*) &n,sizeof(n));
-    // output.write((const char*)SA,sizeof(sa_int32_t)*n);
-    output.close();
 
-    cout << "time: "
-         << (double)duration_cast<milliseconds>(stop - start).count() / 1000.0
+    // We don't store the data for performance reasons
+    // output.write((const char*) &n,sizeof(n));
+    // output.write((const char*)SA,sizeof(int32_t)*n);
+    cout << "time: " << (double)duration_cast<milliseconds>(stop - start).count()/1000.0
          << " seconds" << endl;
+    output.close();
     return 0;
 }

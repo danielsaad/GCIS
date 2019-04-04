@@ -10,6 +10,7 @@
 #include <fstream>
 #include <sdsl/int_vector.hpp>
 #include <cstdint>
+#include <exception>
 
 using namespace std;
 
@@ -97,5 +98,18 @@ ostream& operator<<(ostream& os,const std::vector<T>& v){
 }
 #endif //MY_DEBUGs
 
+
+// For static asserts
+template<class T>
+struct false_predicate : std::false_type
+{ };
+
+
+// When calling not implemented functions this exception is generatd
+class NotImplementedException : public std::logic_error{
+public:
+    NotImplementedException () : std::logic_error{"Function not yet implemented."} {}
+    NotImplementedException (const string& custom_string) : std::logic_error{custom_string+ ": function not yet implemented."} {}
+};
 
 #endif //GC_IS_UTIL_HPP

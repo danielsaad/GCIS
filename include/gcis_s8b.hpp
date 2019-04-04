@@ -7,10 +7,11 @@
 
 #include "gcis.hpp"
 #include "gcis_s8b_codec.hpp"
-
+#include "util.hpp"
 template <>
 class gcis_dictionary<gcis_s8b_codec> : public gcis_abstract<gcis_s8b_codec> {
 public:
+
     char* decode() override {
         sdsl::int_vector<> r_string = reduced_string;
         char* str= 0;

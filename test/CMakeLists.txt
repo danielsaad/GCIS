@@ -10,14 +10,15 @@ ExternalProject_Add(
   LOG_CONFIGURE ON
   LOG_BUILD ON)
 
-ExternalProject_Get_Property(googletest source_dir)
+ExternalProject_Get_Property(googletest source_dir binary_dir)
+
 set(GTEST_INCLUDE_DIRS ${source_dir}/googletest/include)
 set(GMOCK_INCLUDE_DIRS ${source_dir}/googlemock/include)
 
 
 
 ExternalProject_Get_Property(googletest binary_dir)
-set(GTEST_LIBRARY_PATH ${binary_dir}/googlemock/gtest/${CMAKE_FIND_LIBRARY_PREFIXES}gtest.a)
+set(GTEST_LIBRARY_PATH ${binary_dir}/lib/${CMAKE_FIND_LIBRARY_PREFIXES}gtest.a)
 set(GTEST_LIBRARY gtest)
 add_library(${GTEST_LIBRARY} UNKNOWN IMPORTED)
 set_target_properties(${GTEST_LIBRARY} PROPERTIES
@@ -25,7 +26,7 @@ set_target_properties(${GTEST_LIBRARY} PROPERTIES
 )
 add_dependencies(${GTEST_LIBRARY} googletest)
 
-set(GTEST_MAIN_LIBRARY_PATH ${binary_dir}/googlemock/gtest/${CMAKE_FIND_LIBRARY_PREFIXES}gtest_main.a)
+set(GTEST_MAIN_LIBRARY_PATH ${binary_dir}/lib/${CMAKE_FIND_LIBRARY_PREFIXES}gtest_main.a)
 set(GTEST_MAIN_LIBRARY gtest_main)
 add_library(${GTEST_MAIN_LIBRARY} UNKNOWN IMPORTED)
 set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES
@@ -33,7 +34,7 @@ set_target_properties(${GTEST_MAIN_LIBRARY} PROPERTIES
 )
 add_dependencies(${GTEST_MAIN_LIBRARY} googletest)
 
-set(GMOCK_LIBRARY_PATH ${binary_dir}/googlemock/${CMAKE_FIND_LIBRARY_PREFIXES}gmock.a)
+set(GMOCK_LIBRARY_PATH ${binary_dir}/lib/${CMAKE_FIND_LIBRARY_PREFIXES}gmock.a)
 set(GMOCK_LIBRARY gmock)
 add_library(${GMOCK_LIBRARY} UNKNOWN IMPORTED)
 set_target_properties(${GMOCK_LIBRARY} PROPERTIES
@@ -41,7 +42,7 @@ set_target_properties(${GMOCK_LIBRARY} PROPERTIES
 )
 add_dependencies(${GMOCK_LIBRARY} googletest)
 
-set(GMOCK_MAIN_LIBRARY_PATH ${binary_dir}/googlemock/${CMAKE_FIND_LIBRARY_PREFIXES}gmock_main.a)
+set(GMOCK_MAIN_LIBRARY_PATH ${binary_dir}/lib/${CMAKE_FIND_LIBRARY_PREFIXES}gmock_main.a)
 set(GMOCK_MAIN_LIBRARY gmock_main)
 add_library(${GMOCK_MAIN_LIBRARY} UNKNOWN IMPORTED)
 set_target_properties(${GMOCK_MAIN_LIBRARY} PROPERTIES
@@ -57,4 +58,4 @@ add_executable(test_main test_main.cpp test_simple8b.cpp ../lib/gcis_s8b_codec.c
 
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 target_link_libraries(test_main gtest gc-is sdsl gmock pthread)
-install(TARGETS test_main RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+# install(TARGETS test_main RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/bin)

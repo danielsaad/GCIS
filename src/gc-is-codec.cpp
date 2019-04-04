@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "Usage: ./gc-is-codec -c <file_to_be_encoded> <output>\n"
                   << "./gc-is-codec -d <file_to_be_decoded> <output>\n"
                   << "./gc-is-codec -s <file_to_be_decoded> <output>\n"
-                  << "./gc-is-codec -a <input_file> <output>\n"
+                  << "./gc-is-codec -A <input_file> <output>\n"
                   << "./gc-is-codec -e <encoded_file> <query file>\n";
 
         exit(EXIT_FAILURE);
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
 
     // Dictionary type
 
-    gcis_dictionary<gcis_gap_codec> d;
+    gcis_dictionary<gcis_eliasfano_codec> d;
     char *mode = argv[1];
     if (strcmp(mode, "-c") == 0) {
         char *str;
@@ -94,8 +94,8 @@ int main(int argc, char *argv[]) {
 
         cout << "input:\t" << d.size_in_bytes() << " bytes" << endl;
         cout << "output:\t" << strlen(str) << " bytes" << endl;
-        cout << "time: " << (double)duration_cast<seconds>(stop - start).count()
-             << " seconds" << endl;
+        cout << "time: " << (double)duration_cast<milliseconds>(stop - start).count()/1000.0
+             << setprecision(2) << fixed << " seconds" << endl;
     } else if (strcmp(mode, "-s") == 0) {
         std::ifstream input(argv[2]);
         std::ofstream output(argv[3], std::ios::binary);
@@ -111,11 +111,12 @@ int main(int argc, char *argv[]) {
 #endif
 
         uint_t *SA;
+        std::cout << "Building SA under decoding." << std::endl;
         auto start = timer::now();
-        // unsigned char *str = d.decode_saca(&SA);
+        unsigned char *str = d.decode_saca(&SA);
         auto stop = timer::now();
-
-        // size_t n = strlen((char*)str)+1;
+ 
+        size_t n = strlen((char*)str)+1;
 
 #if CHECK
         if (!d.suffix_array_check(SA, str, (uint_t)n, sizeof(char), 0))
@@ -125,13 +126,15 @@ int main(int argc, char *argv[]) {
 #endif
 
 #if CHECK
-        output.write((const char *)&n, sizeof(n));
-        output.write((const char *)SA, sizeof(uint_t) * n);
 
         cout << "input:\t" << d.size_in_bytes() << " bytes" << endl;
         cout << "output:\t" << n - 1 << " bytes" << endl;
         cout << "SA:\t" << n * sizeof(uint_t) << " bytes" << endl;
+        output.write((const char*) &n,sizeof(n));
+        output.write((const char*)SA,sizeof(sa_int32_t)*n);
+
 #endif
+
 
         output.close();
         input.close();
@@ -148,7 +151,7 @@ int main(int argc, char *argv[]) {
         size_t n = strlen(str) + 1;
         uint_t *SA = new uint_t[n];
 
-        std::cout << "Building SA with SAIS." << std::endl;
+        std::cout << "Building SA with SAIS ." << std::endl;
         auto start = timer::now();
         // sais_u8((sa_uint8_t*) str,SA,n,k);
         d.saca(str, SA, n);
@@ -160,12 +163,14 @@ int main(int argc, char *argv[]) {
             std::cout << "isNotSorted!!\n";
         else
             std::cout << "isSorted!!\n";
+        std::ofstream output(argv[3], std::ios::binary);
+        output.write((const char*) &n,sizeof(n));
+        output.write((const char*)SA,sizeof(sa_int32_t)*n);
+        output.close();
 #endif
-        // std::ofstream output(argv[3], std::ios::binary);
-        // output.write((const char*) &n,sizeof(n));
-        // output.write((const char*)SA,sizeof(sa_int32_t)*n);
-        d.suffix_array_write((uint_t *)SA, n, argv[2], "SA");
-        // output.close();
+ 
+
+        // d.suffix_array_write((uint_t *)SA, n, argv[2], "SA");
 
         cout << "input:\t" << n << " bytes" << endl;
         cout << "SA:\t" << n * sizeof(uint_t) << " bytes" << endl;
@@ -191,9 +196,13 @@ int main(int argc, char *argv[]) {
                 v_query.push_back(make_pair(l,r));
         }
         d.extract_batch(v_query);
-    } else {
-        std::cerr << "Invalid mode: use -c for compression, -d for "
-                     "decompression or -e for extraction.\n";
+    } else {  
+        std::cerr << "Invalid mode, use: " << endl <<
+                  "-c for compression;" << endl <<
+                  "-d for decompression;" << endl <<
+                  "-e for extraction;" << endl <<
+                  "-s for building SA under decompression" << endl <<
+                  "-A for building SA with SAIS" << endl;
         exit(EXIT_FAILURE);
     }
 

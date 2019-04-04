@@ -1,6 +1,8 @@
 #ifndef GCIS_GAP_HPP
 #define GCIS_GAP_HPP
 
+
+#include <chrono>
 #include "gcis.hpp"
 #include "gcis_gap_codec.hpp"
 
@@ -65,19 +67,27 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
         std::tie(l, r) = query[0];
         uint64_t query_length = 50000;
         uint64_t size = query_length;
-//            g.size() ?  (g.back().fully_decoded_tail_len + (query_length))
-  //                   : (query_length);
+        //            g.size() ?  (g.back().fully_decoded_tail_len +
+        //            (query_length))
+        //                   : (query_length);
         sdsl::int_vector<> extracted_text(size);
         sdsl::int_vector<> tmp_text(size);
+        auto first = std::chrono::high_resolution_clock::now();
+        auto total_time = std::chrono::high_resolution_clock::now();
         for (auto p : query) {
             cout << "Extracting"
                  << "[" << p.first << "," << p.second << "]" << endl;
+            auto t0 = std::chrono::high_resolution_clock::now();
             extract(p.first, p.second, extracted_text, tmp_text);
+            auto t1 = std::chrono::high_resolution_clock::now();
+            total_time += t1-t0;
             for (uint64_t i = p.first; i <= p.second; i++) {
                 cout << (char)extracted_text[i - p.first];
             }
             cout << endl;
         }
+        std::chrono::duration<double> elapsed = total_time - first;
+        cout << "Batch Extraction Total time(s): " << elapsed.count() << endl;
     }
 
     char *decode() override {
@@ -644,9 +654,9 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
 #endif
 
         // TODO: reenable premature_stop comparison
-        bool premature_stop = false;
-        //	  bool premature_stop =
-        // evaluate_premature_stop(n,K,n1,name+1,level);
+        // bool premature_stop = false;
+        bool premature_stop =
+            evaluate_premature_stop(n, K, n1, name + 1, level);
         g[level].string_size = n;
         g[level].alphabet_size = K;
         if (name + 1 < n1 && !premature_stop) {
