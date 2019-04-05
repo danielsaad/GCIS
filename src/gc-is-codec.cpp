@@ -172,6 +172,7 @@ int main(int argc, char *argv[]) {
  
         size_t n = strlen((char*)str)+1;
 
+#if CHECK
         if (!d.suffix_array_check(SA, str, (uint_t)n, sizeof(char), 0))
             std::cout << "isNotSorted!!\n";
         else
@@ -181,8 +182,6 @@ int main(int argc, char *argv[]) {
             std::cout << "isNotLCP!!\n";
         else
             std::cout << "isLCP!!\n";
-
-#if CHECK
 #endif
 
 #if CHECK
