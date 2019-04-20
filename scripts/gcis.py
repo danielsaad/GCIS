@@ -34,6 +34,16 @@ def compress_gc_is_parallel(input_list,output_list):
 def decompress_saca(input,output):
     process = Popen(['../bin/gc-is-codec', '-s', input,output])
     return process.communicate()
+
+
+'''
+    Build SA + LCP under decompressing using GCIS
+'''
+def decompress_saca_lcp(input,output):
+    process = Popen(['../bin/gc-is-codec', '-I', input,output])
+    return process.communicate()
+
+
 '''
     Decode a compressed GCIS file and return the time used on
     decompression (without saving file).

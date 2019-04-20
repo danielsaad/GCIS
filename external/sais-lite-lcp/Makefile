@@ -12,13 +12,23 @@ CPPFLAGS			= -Wall -DNDEBUG
 LDFLAGS				= 
 LDLIBS				= 
 #TARGET_ARCH		=
+INSTALL_DIR=../..
+
 
 # targets
 .PHONY: all
-all: suftest
-suftest: sais.o suftest.o
+all: suftest libsaislcp
+
+install: libsaislcp sais-lcp.h
+	cp libsaislcp.a $(INSTALL_DIR)/lib
+	cp sais-lcp.h $(INSTALL_DIR)/include 
+
+libsaislcp: sais-lcp.o
+	ar rcs libsaislcp.a sais-lcp.o
+
+suftest: sais-lcp.o suftest.o
 test:
-	$(CC) -O -g -Wall test.c sais.c -o test
+	$(CC) -O -g -Wall test.c sais-lcp.c -o test
 	./test
 	$(RM) test test.exe
 
@@ -27,4 +37,5 @@ clean:
 	$(RM) suftest suftest.exe test test.exe sais.o suftest.o
 
 # dependencies
-sais.o suftest.o: sais.h Makefile
+sais.o suftest.o: sais-lcp.h Makefile
+

@@ -1,9 +1,10 @@
-#include "gcis.hpp"
 #include "sais.h"
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <chrono> 
 
+using namespace std;
 using namespace std::chrono;
 using timer = std::chrono::high_resolution_clock;
 

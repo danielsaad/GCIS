@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "sais.h"
+#include "sais-lcp.h"
 
 
 /* Checks the suffix array SA of the string T. */
@@ -191,7 +191,7 @@ main(int argc, const char *argv[]) {
   /* Construct the suffix array. */
   fprintf(stderr, "%s: %ld bytes ... \n", fname, n);
   start = clock();
-  if(sais(T, SA, LCP, (int)n) != 0) {
+  if(sais_lcp(T, SA, LCP, (int)n) != 0) {
     fprintf(stderr, "%s: Cannot allocate memory.\n", argv[0]);
     exit(EXIT_FAILURE);
   }

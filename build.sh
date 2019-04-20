@@ -17,6 +17,18 @@ cmake .. -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=../../../
 make -j
 make install
 cd ../../../
+#compile sais-lcp
+cd external/sais-lite-lcp
+make && make install
+cd ../../
+# compile divsufsort-lcp
+cd external/libdivsufsort-lcp
+mkdir -p build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=../../../
+make -j
+make install
+cd ../../../
 # compile gcis
 mkdir -p build
 cd build

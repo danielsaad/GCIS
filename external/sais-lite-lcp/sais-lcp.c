@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "sais.h"
+#include "sais-lcp.h"
 
 #ifndef UCHAR_SIZE
 # define UCHAR_SIZE 256
@@ -826,7 +826,7 @@ static sais_index_type sais_main(const void *T, sais_index_type *SA,
 /*---------------------------------------------------------------------------*/
 
 int
-sais(unsigned char *T, int *SA, int* LCP, int n) {
+sais_lcp(unsigned char *T, int *SA, int* LCP, int n) {
   if((T == NULL) || (SA == NULL) || (LCP == NULL) || (n < 0)) { return -1; }
   if(n <= 1) { if(n == 1) { SA[0] = 0; LCP[0] = 0; } return 0; }
   T[n - 1] = 0;

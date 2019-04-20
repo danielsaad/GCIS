@@ -4,12 +4,12 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../include"
 set(divsufsort_SRCS divsufsort.c sssort.c trsort.c utils.c)
 
 ## libdivsufsort ##
-add_library(divsufsort ${divsufsort_SRCS})
-install(TARGETS divsufsort
+add_library(divsufsort-lcp ${divsufsort_SRCS})
+install(TARGETS divsufsort-lcp
   RUNTIME DESTINATION ${CMAKE_INSTALL_RUNTIMEDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-set_target_properties(divsufsort PROPERTIES
+set_target_properties(divsufsort-lcp PROPERTIES
   VERSION   "${LIBRARY_VERSION}"
   SOVERSION "${LIBRARY_SOVERSION}"
   DEFINE_SYMBOL DIVSUFSORT_BUILD_DLL

@@ -17,7 +17,7 @@ set(CPACK_SOURCE_GENERATOR "TGZ;TBZ2;ZIP")
 include(ProjectCPack)
 
 ## Project options ##
-option(BUILD_SHARED_LIBS "Set to OFF to build static libraries" ON)
+option(BUILD_SHARED_LIBS "Set to OFF to build static libraries" OFF)
 option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_DIVSUFSORT64 "Build libdivsufsort64" OFF)
 option(USE_OPENMP "Use OpenMP for parallelization" OFF)

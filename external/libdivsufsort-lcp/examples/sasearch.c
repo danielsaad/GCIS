@@ -50,7 +50,7 @@
 # include <io.h>
 # include <fcntl.h>
 #endif
-#include <divsufsort.h>
+#include <divsufsort-lcp.h>
 #include "lfs.h"
 
 
