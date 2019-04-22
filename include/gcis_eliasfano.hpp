@@ -128,10 +128,10 @@ class gcis_dictionary<gcis_eliasfano_codec>
         return str;
     }
 
-    unsigned char *decode_saca(uint_t **sa) {
+    char *decode_saca(uint_t **sa) {
 
         sdsl::int_vector<> r_string = reduced_string;
-        unsigned char *str;
+        char *str;
         uint_t n = g[0].string_size;
         uint_t *SA = new uint_t[n];
 
@@ -195,7 +195,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
 
                     // delete[] s;
                     // Convert the reduced string in the original text
-                    str = new unsigned char[g[level].string_size];
+                    str = new char[g[level].string_size];
                     for (uint64_t j = 0; j < g[level].tail.size(); j++) {
                         str[l++] = g[level].tail[j];
                         cnt[g[level].tail[j]]++; // count frequencies
@@ -330,7 +330,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     induceSAl(SA, s, cnt, bkt, n, K, cs, level);
                 else
                     induceSAl(SA, (int_t *)str, cnt, bkt, n, K,
-                              sizeof(unsigned char), level);
+                              sizeof(char), level);
 
 #if TIME
                 end = timer::now();
@@ -344,7 +344,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     induceSAs(SA, s, cnt, bkt, n, K, cs, level);
                 else
                     induceSAs(SA, (int_t *)str, cnt, bkt, n, K,
-                              sizeof(unsigned char), level);
+                              sizeof(char), level);
 
 #if TIME
                 end = timer::now();
@@ -371,7 +371,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
 #endif
             }
         } else {
-            str = new unsigned char[reduced_string.size()];
+            str = new char[reduced_string.size()];
             for (uint64_t i = 0; i < reduced_string.size(); i++)
                 str[i] = reduced_string[i];
         }
@@ -380,10 +380,10 @@ class gcis_dictionary<gcis_eliasfano_codec>
         return str;
     }//end decode_saca
 
-    unsigned char *decode_saca_lcp(uint_t **sa, int_t **lcp) {
+    char *decode_saca_lcp(uint_t **sa, int_t **lcp) {
 
         sdsl::int_vector<> r_string = reduced_string;
-        unsigned char *str;
+        char *str;
         uint_t n = g[0].string_size;
         uint_t *SA = new uint_t[n];
         int_t *LCP = new int_t[n];
@@ -434,7 +434,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
 
                 sdsl::int_vector<> next_r_string;
                 gcis_eliasfano_codec_level gd =
-                    std::move(g[level].decompress());
+                std::move(g[level].decompress());
                 next_r_string.width(sdsl::bits::hi(g[level].alphabet_size - 1) +
                                     1);
                 next_r_string.resize(g[level].string_size);
@@ -451,7 +451,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
 
                     // delete[] s;
                     // Convert the reduced string in the original text
-                    str = new unsigned char[g[level].string_size];
+                    str = new char[g[level].string_size];
                     for (uint64_t j = 0; j < g[level].tail.size(); j++) {
                         str[l++] = g[level].tail[j];
                         cnt[g[level].tail[j]]++; // count frequencies
@@ -460,6 +460,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
                         gd.expand_rule_bkt(r_string[j], str, l, cnt);
                     }
                     n = g[level].string_size;
+                    str[n-1]=0;
                     // Classify the type of each character
                     uint_t cur_t, succ_t;
                     uint_t j = n1 - 1;
@@ -556,7 +557,6 @@ class gcis_dictionary<gcis_eliasfano_codec>
                   int_t *PLCP=LCP+n-n1;//PHI is stored in PLCP array
                   //compute the LCP of consecutive LMS-suffixes
                   compute_lcp_phi_sparse_sais((int_t*)str, SA1, RA, LCP, PLCP, n1, sizeof(char));
-
                 }
 
                 int_t j = 0;
@@ -598,6 +598,8 @@ class gcis_dictionary<gcis_eliasfano_codec>
                 if (level)
                     induceSAl(SA, s, cnt, bkt, n, K, cs, level);
                 else
+                    //induceSAl(SA, (int_t *)str, cnt, bkt, n, K,
+                    //          sizeof(char), level);
                     induceSAl_LCP(SA, LCP, (int_t *)str, cnt, bkt, n, K,
                               sizeof(char), level);
 
@@ -623,8 +625,10 @@ class gcis_dictionary<gcis_eliasfano_codec>
                 if (level)
                     induceSAs(SA, s, cnt, bkt, n, K, cs, level);
                 else{
+                    //induceSAs(SA, (int_t *)str, cnt, bkt, n, K,
+                    //          sizeof(char), level);
                     induceSAs_LCP(SA, LCP, (int_t *)str, cnt, bkt, n, K,
-                              sizeof(unsigned char), level);
+                              sizeof(char), level);
                     SA[0]=n-1;
                 }
 
@@ -663,7 +667,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
 #endif
             }
         } else {
-            str = new unsigned char[reduced_string.size()];
+            str = new char[reduced_string.size()];
             for (uint64_t i = 0; i < reduced_string.size(); i++)
                 str[i] = reduced_string[i];
         }
