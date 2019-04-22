@@ -9,7 +9,7 @@
 #include "util.hpp"
 #include <cstdint>
 #include <cstring>
-#define chr(i) (cs == sizeof(int_t) ? ((int_t *)s)[i] : ((unsigned char *)s)[i])
+#define chr(i) (cs == sizeof(int_t) ? ((int_t *)s)[i] : ((char *)s)[i])
 
 #define false 0
 #define true 1
@@ -34,8 +34,10 @@ unsigned char mask[] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 
 #define isLMS(i) (i > 0 && tget(i) && !tget(i - 1))
 
+#define max(a,b) ((a) > (b) ? (a) : (b))
+
 /**/
-#define RMQ   1  //variants = (1, trivial) (2, using Gog's stack)
+#define RMQ   2  //variants = (1, trivial) (2, using Gog's stack)
 #define BINARY 0 //binary search on stack operations
 #define STACK_SIZE 895 //to use 10Kb of working space
 
@@ -66,10 +68,10 @@ template <class codec_t> class gcis_abstract {
     void extract_batch(vector<pair<int,int>>& v_query){
         throw(NotImplementedException("extract_batch"));
     }
-    unsigned char* decode_saca(uint_t** SA){
+    char* decode_saca(uint_t** SA){
         throw(NotImplementedException("decode_saca"));
     }
-    unsigned char* decode_saca_lcp(uint_t** SA, int_t **LCP){
+    char* decode_saca_lcp(uint_t** SA, int_t **LCP){
         throw(NotImplementedException("decode_saca_lcp"));
     }
     virtual uint64_t size_in_bytes() {
@@ -535,9 +537,11 @@ template <class codec_t> class gcis_abstract {
     
       uint_t i;
     
+      /*
       PLCP[SA1[0]]=0;//PLCP* (lms) is stored in PLCP array
       for(i=1; i<n1; i++)
         PLCP[SA1[i]] = LCP[i]; 
+      */
     
       LCP[SA1[0]]=0;//PHI is stored in LCP array
       for(i=1; i<n1; i++)
@@ -546,7 +550,8 @@ template <class codec_t> class gcis_abstract {
       int_t l=0; //q=0;
       for(i=0; i<n1-1;i++){
         
-        l=0; 
+        if(l<0) l=0;
+        //l=max(0,l); 
     
         while(chr(RA[i]+l)==chr(RA[LCP[i]]+l)) l++;
         PLCP[i]=l;
