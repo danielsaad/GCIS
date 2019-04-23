@@ -69,8 +69,8 @@ def decode_sais_lcp_yuta(compressed_file, output_file):
     for l in lines:
         if(l.startswith('Decompression Time:')):
             decompress_time = l.split()[2]
-        elif(l.startswith('Suffix Array Construction Time:')):
-            saca_time = l.split()[4]
+        elif(l.startswith('Suffix Array + LCP Construction Time')):
+            saca_time = l.split()[6]
 
     return (decompress_time, saca_time)
 
@@ -90,7 +90,7 @@ def decode_sais_nong(compressed_file, output_file):
     for l in lines:
         if(l.startswith('Decompression Time:')):
             decompress_time = l.split()[2]
-        elif(l.startswith('Suffix Array Construction Time:')):
+        elif(l.startswith('Suffix Array Construction Time')):
             saca_time = l.split()[4]
 
     return (decompress_time, saca_time)
@@ -126,7 +126,7 @@ def decode_sais_divsufsort_lcp(compressed_file, output_file):
     for l in lines:
         if(l.startswith('Decompression Time:')):
             decompress_time = l.split()[2]
-        elif(l.startswith('Suffix Array Construction Time:')):
-            saca_time = l.split()[4]
+        elif(l.startswith('Suffix Array + LCP Construction Time')):
+            saca_time = l.split()[6]
 
     return (decompress_time, saca_time)

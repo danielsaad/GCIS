@@ -32,7 +32,9 @@ def run_decode_nong(input_folder_path, output_folder_path):
             gcis.compress_gc_is(input_file, compressed_file)
 
         print("GCIS Decoding and SAIS Nong")
-        dt = st = tt = []
+        dt = []
+        st = []
+        tt = []
         for i in range(number_of_samples):
             (decode_time, saca_time) = sais.decode_sais_nong(
                 compressed_file, output_file)
@@ -65,7 +67,9 @@ def run_decode_yuta(input_folder_path, output_folder_path):
             gcis.compress_gc_is(input_file, compressed_file)
 
         print("GCIS Decoding and SAIS Yuta")
-        dt = st = tt = []
+        dt = []
+        st = [] 
+        tt = []
         for i in range(number_of_samples):
             (decode_time, saca_time) = sais.decode_sais_yuta(
                 compressed_file, output_file)
@@ -98,7 +102,9 @@ def run_decode_lcp_yuta(input_folder_path, output_folder_path):
             gcis.compress_gc_is(input_file, compressed_file)
 
         print("GCIS Decoding and SAIS Yuta + LCP")
-        dt = st = tt = []
+        dt = []
+        st = [] 
+        tt = []
         for i in range(number_of_samples):
             (decode_time, saca_time) = sais.decode_sais_lcp_yuta(
                 compressed_file, output_file)
@@ -132,7 +138,9 @@ def run_decode_divsufsort(input_folder_path, output_folder_path):
             gcis.compress_gc_is(input_file, compressed_file)
 
         print("GCIS Decoding and Divsufsort")
-        dt = st = tt = []
+        dt = [] 
+        st = []
+        tt = []
         for i in range(number_of_samples):
             (decode_time, saca_time) = sais.decode_sais_divsufsort(
                 compressed_file, output_file)
@@ -166,7 +174,9 @@ def run_decode_divsufsort_lcp(input_folder_path, output_folder_path):
             gcis.compress_gc_is(input_file, compressed_file)
 
         print("GCIS Decoding and Divsufsort + LCP")
-        dt = st = tt = []
+        dt = []
+        st = []
+        tt = []
         for i in range(number_of_samples):
             (decode_time, saca_time) = sais.decode_sais_divsufsort_lcp(
                 compressed_file, output_file)
@@ -242,7 +252,7 @@ def run_sais_lcp_yuta(input_folder_path, output_folder_path):
             start_time = time.perf_counter()  # Start time
             sais.sais_lcp_yuta(input_file, output_file)
             end_time = time.perf_counter()  # End time
-            print("Time Yuta =", "{:.2f}".format(end_time-start_time))
+            print("Time Yuta + LCP=", "{:.2f}".format(end_time-start_time))
             tt.append(end_time-start_time)
 
         e.experiment_input.append(f)
@@ -380,7 +390,7 @@ def run_decode_saca_lcp(input_folder_path, output_folder_path):
         tt = []
         for i in range(number_of_samples):
             start_time = time.perf_counter()  # Start time
-            gcis.decompress_saca(compressed_file, output_file)
+            gcis.decompress_saca_lcp(compressed_file, output_file)
             end_time = time.perf_counter()  # End time
             total_time = end_time - start_time
             print("Time GCIS + LCP =", "{:.2f}".format(total_time))
@@ -432,7 +442,7 @@ def run_saca(input_folder_path, output_folder_path):
     decode_saca_divsufsort_data = run_decode_divsufsort(
         input_folder_path, output_folder_path)
     print('Running decode + Divsufsort Saca + LCP')
-    decode_saca_divsufsort_lcp_data = run_decode_divsufsort(
+    decode_saca_divsufsort_lcp_data = run_decode_divsufsort_lcp(
         input_folder_path, output_folder_path)
 
     # Save data into csv file
@@ -474,12 +484,12 @@ def run_saca(input_folder_path, output_folder_path):
                         saca_yuta_data.experiment_time,
                         saca_divsufsort_data.experiment_time,
                         saca_yuta_lcp_data.experiment_time,
-                        saca_divsufsort_lcp_data,
+                        saca_divsufsort_lcp_data.experiment_time,
                         decode_saca_nong_data.experiment_time,
                         decode_saca_yuta_data.experiment_time,
-                        decode_saca_divsufsort_data.experiment_time),
+                        decode_saca_divsufsort_data.experiment_time,
                     decode_saca_yuta_lcp_data.experiment_time,
-                    decode_saca_divsufsort_lcp_data.experiment_time)
+                    decode_saca_divsufsort_lcp_data.experiment_time))
 
         for i, t in enumerate(time):
 

@@ -140,11 +140,11 @@ int main(int argc, char *argv[]) {
                   << (double)duration_cast<seconds>(stop - start).count()
                   << " seconds" << endl;
 
-        output1.write(str, strlen(str));
-        output2.write((const char*)SA,sizeof(sa_int32_t)*n);
+        // output1.write(str, strlen(str));
+        // output2.write((const char*)SA,sizeof(sa_int32_t)*n);
         output1.close();
         output2.close();
-        input.close();
+        // input.close();
         delete[] SA;
     }
     else if (strcmp(mode, "-l") == 0) {
@@ -196,9 +196,9 @@ int main(int argc, char *argv[]) {
                   << " seconds" << endl;
 
         //output.write((const char*) &n,sizeof(n));
-        output1.write(str, strlen(str));
-        output2.write((const char*)SA,sizeof(sa_int32_t)*n);
-        output3.write((const char*)LCP,sizeof(sa_int32_t)*n);
+        // output1.write(str, strlen(str));
+        // output2.write((const char*)SA,sizeof(sa_int32_t)*n);
+        // output3.write((const char*)LCP,sizeof(sa_int32_t)*n);
 
         output1.close();
         output2.close();

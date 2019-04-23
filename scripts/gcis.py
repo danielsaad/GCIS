@@ -40,7 +40,7 @@ def decompress_saca(input,output):
     Build SA + LCP under decompressing using GCIS
 '''
 def decompress_saca_lcp(input,output):
-    process = Popen(['../bin/gc-is-codec', '-I', input,output])
+    process = Popen(['../bin/gc-is-codec', '-l', input,output])
     return process.communicate()
 
 
