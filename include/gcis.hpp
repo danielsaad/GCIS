@@ -9,7 +9,7 @@
 #include "util.hpp"
 #include <cstdint>
 #include <cstring>
-#define chr(i) (cs == sizeof(int_t) ? ((int_t *)s)[i] : ((char *)s)[i])
+#define chr(i) (cs == sizeof(int_t) ? ((int_t *)s)[i] : ((unsigned char *)s)[i])	
 
 #define false 0
 #define true 1
@@ -68,10 +68,10 @@ template <class codec_t> class gcis_abstract {
     void extract_batch(vector<pair<int,int>>& v_query){
         throw(NotImplementedException("extract_batch"));
     }
-    char* decode_saca(uint_t** SA){
+    unsigned char* decode_saca(uint_t** SA){
         throw(NotImplementedException("decode_saca"));
     }
-    char* decode_saca_lcp(uint_t** SA, int_t **LCP){
+    unsigned char* decode_saca_lcp(uint_t** SA, int_t **LCP){
         throw(NotImplementedException("decode_saca_lcp"));
     }
     virtual uint64_t size_in_bytes() {

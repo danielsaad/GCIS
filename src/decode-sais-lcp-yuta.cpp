@@ -34,21 +34,28 @@ int main(int argc, char *argv[]) {
     cout << "Computing the Suffix Array with SAIS-YUTA" << endl;
     size_t n = strlen(str) + 1;
     int *SA = new int[n];
-    int *LCP = new int[n - 1];
+    int *LCP = new int[n];
     sais_lcp((unsigned char *)str, SA, LCP, n);
-
     cout << "input:\t" << strlen(str) << " bytes" << endl;
-
-    // We just want to compute the suffix array and LCP,
-    // we do not need to store it.
-    // output.write((const char*)&n,sizeof(n));
-    // output.write((const char*)SA,sizeof(int)*n);
-    // output.write((const char*)LCP,sizeof(int)*(n-1);
-    output_file.close();
     stop = timer::now();
 
     cout << "Suffix Array + LCP Construction Time: "
          << (double)duration_cast<milliseconds>(stop - start).count() / 1000.0
          << " seconds" << endl;
+
+    string ouf_basename(argv[2]);
+    std::ofstream output(ouf_basename+".sa", std::ios::binary);
+
+    n--;
+    output.write((const char*) &n,sizeof(n));
+    output.write((const char*) &SA[1],sizeof(int)*n);
+
+    std::ofstream output_lcp(ouf_basename+".lcp", std::ios::binary);
+    output_lcp.write((const char*) &n,sizeof(n));
+    output_lcp.write((const char*)&LCP[1],sizeof(int)*n);
+
+
+    output.close();
+    output_lcp.close();
     return 0;
 }

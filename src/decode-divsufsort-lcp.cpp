@@ -35,14 +35,20 @@ int main(int argc, char *argv[]) {
     saidx_t* LCP = new saidx_t[n];
     divsuflcpsort((sauchar_t*)str,SA,LCP,n);
     cout << "input:\t" << strlen(str) << " bytes" << endl;
-
-    // We just want to compute the suffix array, we do not need to store it.
-    // output.write((const char*)&n,sizeof(n));
-    // output.write((const char*)SA,sizeof(sa_int32_t)*n);
-    output_file.close();
     stop = timer::now();
 
     cout << "Suffix Array + LCP Construction Time: " << (double)duration_cast<milliseconds>(stop - start).count()/1000.0
          << " seconds" << endl;
+
+    string output_file_basename(argv[2]);
+    std::ofstream output(output_file_basename + ".sa", std::ios::binary);
+    std::ofstream output_lcp(output_file_basename + ".lcp", std::ios::binary);
+    output.write((const char *)&n, sizeof(n));
+    output.write((const char *)SA, sizeof(saidx_t) * n);
+    output_lcp.write((const char *)&n, sizeof(n));
+    output_lcp.write((const char *)LCP, sizeof(saidx_t) * n);
+    output.close();
+    output_lcp.close();
+
     return 0;
 }

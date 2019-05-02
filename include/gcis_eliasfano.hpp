@@ -128,10 +128,10 @@ class gcis_dictionary<gcis_eliasfano_codec>
         return str;
     }
 
-    char *decode_saca(uint_t **sa) {
+    unsigned char* decode_saca(uint_t **sa) {
 
         sdsl::int_vector<> r_string = reduced_string;
-        char *str;
+        unsigned char* str;
         uint_t n = g[0].string_size;
         uint_t *SA = new uint_t[n];
 
@@ -195,7 +195,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
 
                     // delete[] s;
                     // Convert the reduced string in the original text
-                    str = new char[g[level].string_size];
+                    str = new unsigned char[g[level].string_size];
                     for (uint64_t j = 0; j < g[level].tail.size(); j++) {
                         str[l++] = g[level].tail[j];
                         cnt[g[level].tail[j]]++; // count frequencies
@@ -330,7 +330,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     induceSAl(SA, s, cnt, bkt, n, K, cs, level);
                 else
                     induceSAl(SA, (int_t *)str, cnt, bkt, n, K,
-                              sizeof(char), level);
+                              sizeof(unsigned char), level);
 
 #if TIME
                 end = timer::now();
@@ -344,7 +344,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     induceSAs(SA, s, cnt, bkt, n, K, cs, level);
                 else
                     induceSAs(SA, (int_t *)str, cnt, bkt, n, K,
-                              sizeof(char), level);
+                              sizeof(unsigned char), level);
 
 #if TIME
                 end = timer::now();
@@ -371,7 +371,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
 #endif
             }
         } else {
-            str = new char[reduced_string.size()];
+            str = new unsigned char[reduced_string.size()];
             for (uint64_t i = 0; i < reduced_string.size(); i++)
                 str[i] = reduced_string[i];
         }
@@ -380,10 +380,10 @@ class gcis_dictionary<gcis_eliasfano_codec>
         return str;
     }//end decode_saca
 
-    char *decode_saca_lcp(uint_t **sa, int_t **lcp) {
+    unsigned char *decode_saca_lcp(uint_t **sa, int_t **lcp) {
 
         sdsl::int_vector<> r_string = reduced_string;
-        char *str;
+        unsigned char *str;
         uint_t n = g[0].string_size;
         uint_t *SA = new uint_t[n];
         int_t *LCP = new int_t[n];
@@ -451,7 +451,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
 
                     // delete[] s;
                     // Convert the reduced string in the original text
-                    str = new char[g[level].string_size];
+                    str = new unsigned char[g[level].string_size];
                     for (uint64_t j = 0; j < g[level].tail.size(); j++) {
                         str[l++] = g[level].tail[j];
                         cnt[g[level].tail[j]]++; // count frequencies
@@ -601,7 +601,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     //induceSAl(SA, (int_t *)str, cnt, bkt, n, K,
                     //          sizeof(char), level);
                     induceSAl_LCP(SA, LCP, (int_t *)str, cnt, bkt, n, K,
-                              sizeof(char), level);
+                              sizeof(unsigned char), level);
 
                 #if DEGUB
                 if(level==0){
@@ -628,7 +628,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     //induceSAs(SA, (int_t *)str, cnt, bkt, n, K,
                     //          sizeof(char), level);
                     induceSAs_LCP(SA, LCP, (int_t *)str, cnt, bkt, n, K,
-                              sizeof(char), level);
+                              sizeof(unsigned char), level);
                     SA[0]=n-1;
                 }
 
@@ -667,7 +667,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
 #endif
             }
         } else {
-            str = new char[reduced_string.size()];
+            str = new unsigned char[reduced_string.size()];
             for (uint64_t i = 0; i < reduced_string.size(); i++)
                 str[i] = reduced_string[i];
         }

@@ -124,7 +124,7 @@ void gcis_eliasfano_codec_level::expand_rule_bkt(uint64_t rule_num,
 }
 
 void gcis_eliasfano_codec_level::expand_rule_bkt(uint64_t rule_num,
-                                                 char *s, uint64_t &l,
+                                                 unsigned char *s, uint64_t &l,
                                                  int_t *bkt) {
     uint64_t rule_start = rule_delim.pos(rule_num);
     uint64_t rule_length = rule_delim.pos(rule_num + 1) - rule_start;

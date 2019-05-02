@@ -1,8 +1,8 @@
+#include "sais_nong.hpp"
 #include <chrono>
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include "sais_nong.hpp"
 
 using namespace std;
 
@@ -39,13 +39,15 @@ int main(int argc, char *argv[]) {
     SA_IS((unsigned char *)str, SA, n, 255, sizeof(char), 0);
     auto stop = timer::now();
 
-    std::ofstream output(argv[2], std::ios::binary);
-
-    // We don't store the data for performance reasons
-    // output.write((const char*) &n,sizeof(n));
-    // output.write((const char*)SA,sizeof(int32_t)*n);
     cout << "time: " << (double)duration_cast<seconds>(stop - start).count()
          << " seconds" << endl;
+
+    string ouf_basename = argv[2];
+    std::ofstream output(ouf_basename + ".sa", std::ios::binary);
+    n--;
+    output.write((const char *)&n, sizeof(n));
+    output.write((const char *)&SA[1], sizeof(int32_t) * n);
+
     output.close();
     return 0;
 }

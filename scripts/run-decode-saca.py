@@ -5,6 +5,7 @@ import csv
 import gcis
 import sais
 import statistics
+import filecmp
 
 number_of_samples = 1
 
@@ -22,7 +23,7 @@ def run_decode_nong(input_folder_path, output_folder_path):
     input_filename = os.listdir(input_folder_path)
     for f in input_filename:
         input_file = os.path.join(input_folder_path, f)
-        output_file = os.path.join(output_folder_path, f+'.decode.nong.sa')
+        output_file = os.path.join(output_folder_path, f+'-decode-nong')
         compressed_file = os.path.join(output_folder_path, f+'.gcis')
 
         print("GCIS Compressing: ", f)
@@ -57,7 +58,7 @@ def run_decode_yuta(input_folder_path, output_folder_path):
     input_filename = os.listdir(input_folder_path)
     for f in input_filename:
         input_file = os.path.join(input_folder_path, f)
-        output_file = os.path.join(output_folder_path, f+'.decode.yuta.sa')
+        output_file = os.path.join(output_folder_path, f+'-decode-yuta')
         compressed_file = os.path.join(output_folder_path, f+'.gcis')
 
         print("GCIS Compressing: ", f)
@@ -68,7 +69,7 @@ def run_decode_yuta(input_folder_path, output_folder_path):
 
         print("GCIS Decoding and SAIS Yuta")
         dt = []
-        st = [] 
+        st = []
         tt = []
         for i in range(number_of_samples):
             (decode_time, saca_time) = sais.decode_sais_yuta(
@@ -92,7 +93,7 @@ def run_decode_lcp_yuta(input_folder_path, output_folder_path):
     input_filename = os.listdir(input_folder_path)
     for f in input_filename:
         input_file = os.path.join(input_folder_path, f)
-        output_file = os.path.join(output_folder_path, f+'.decode.yuta.salcp')
+        output_file = os.path.join(output_folder_path, f+'-decode-yuta')
         compressed_file = os.path.join(output_folder_path, f+'.gcis')
 
         print("GCIS Compressing: ", f)
@@ -103,7 +104,7 @@ def run_decode_lcp_yuta(input_folder_path, output_folder_path):
 
         print("GCIS Decoding and SAIS Yuta + LCP")
         dt = []
-        st = [] 
+        st = []
         tt = []
         for i in range(number_of_samples):
             (decode_time, saca_time) = sais.decode_sais_lcp_yuta(
@@ -128,7 +129,7 @@ def run_decode_divsufsort(input_folder_path, output_folder_path):
     for f in input_filename:
         input_file = os.path.join(input_folder_path, f)
         output_file = os.path.join(
-            output_folder_path, f+'.decode.divsufsort.sa')
+            output_folder_path, f+'-decode-divsufsort')
         compressed_file = os.path.join(output_folder_path, f+'.gcis')
 
         print("GCIS Compressing: ", f)
@@ -138,7 +139,7 @@ def run_decode_divsufsort(input_folder_path, output_folder_path):
             gcis.compress_gc_is(input_file, compressed_file)
 
         print("GCIS Decoding and Divsufsort")
-        dt = [] 
+        dt = []
         st = []
         tt = []
         for i in range(number_of_samples):
@@ -162,9 +163,22 @@ def run_decode_divsufsort_lcp(input_folder_path, output_folder_path):
     e.experiment_name = "DECODE-SAIS-DIVSUFSORT-LCP"
     input_filename = os.listdir(input_folder_path)
     for f in input_filename:
+
+        # Divsufsort + LCP have
+        # Terrible behaviour on artificial sequences, skip.
+        if(f == 'fib41' or f == 'rs.13' or f == 'tm29'):
+            print("Divsufort + LCP: Artificial Sequence", f, "skipping")
+            tt = [-1.0]
+            st = [-1.0]
+            dt = [-1.0]
+            e.experiment_input.append(f)
+            e.experiment_time.append(('{:.2f}'.format(statistics.mean(dt)), '{:.2f}'.format(
+                statistics.mean(st)), '{:.2f}'.format(statistics.mean(tt))))
+            continue
+
         input_file = os.path.join(input_folder_path, f)
         output_file = os.path.join(
-            output_folder_path, f+'.decode.divsufsort.salcp')
+            output_folder_path, f+'-decode-divsufsort')
         compressed_file = os.path.join(output_folder_path, f+'.gcis')
 
         print("GCIS Compressing: ", f)
@@ -199,7 +213,7 @@ def run_sais_nong(input_folder_path, output_folder_path):
     input_filename = os.listdir(input_folder_path)
     for f in input_filename:
         input_file = os.path.join(input_folder_path, f)
-        output_file = os.path.join(output_folder_path, f+'.nong.sa')
+        output_file = os.path.join(output_folder_path, f+'-nong')
 
         print("SACA Nong: ", f)
         tt = []
@@ -221,7 +235,7 @@ def run_sais_yuta(input_folder_path, output_folder_path):
     input_filename = os.listdir(input_folder_path)
     for f in input_filename:
         input_file = os.path.join(input_folder_path, f)
-        output_file = os.path.join(output_folder_path, f+'.yuta.sa')
+        output_file = os.path.join(output_folder_path, f+'-yuta')
 
         print("SACA Yuta: ", f)
         tt = []
@@ -244,7 +258,7 @@ def run_sais_lcp_yuta(input_folder_path, output_folder_path):
     input_filename = os.listdir(input_folder_path)
     for f in input_filename:
         input_file = os.path.join(input_folder_path, f)
-        output_file = os.path.join(output_folder_path, f+'.yuta.salcp')
+        output_file = os.path.join(output_folder_path, f+'-yuta')
 
         print("SACA Yuta + LCP: ", f)
         tt = []
@@ -267,7 +281,7 @@ def run_sais_divsufsort(input_folder_path, output_folder_path):
     input_filename = os.listdir(input_folder_path)
     for f in input_filename:
         input_file = os.path.join(input_folder_path, f)
-        output_file = os.path.join(output_folder_path, f+'.divsufsort.sa')
+        output_file = os.path.join(output_folder_path, f+'-divsufsort')
 
         print("SACA Divsufsort: ", f)
         tt = []
@@ -289,10 +303,20 @@ def run_sais_divsufsort_lcp(input_folder_path, output_folder_path):
     e.experiment_name = "SAIS-DIVSUFSORT-LCP"
     input_filename = os.listdir(input_folder_path)
     for f in input_filename:
-        input_file = os.path.join(input_folder_path, f)
-        output_file = os.path.join(output_folder_path, f+'.divsufsort.salcp')
 
-        print("SACA Divsufsort: ", f)
+        # Divsufsort + LCP have
+        # Terrible behaviour on artificial sequences, skip.
+        if(f == 'fib41' or f == 'rs.13' or f == 'tm29'):
+            print("Divsufort + LCP: Artificial Sequence", f, "skipping")
+            tt = [-1.0]
+            e.experiment_input.append(f)
+            e.experiment_time.append("{:.2f}".format(statistics.mean(tt)))
+            continue
+
+        input_file = os.path.join(input_folder_path, f)
+        output_file = os.path.join(output_folder_path, f+'-divsufsort')
+
+        print("SACA Divsufsort + LCP: ", f)
         tt = []
         for i in range(number_of_samples):
             start_time = time.perf_counter()  # Start time
@@ -346,7 +370,7 @@ def run_decode_saca(input_folder_path, output_folder_path):
     for f in input_filename:
         input_file = os.path.join(input_folder_path, f)
         compressed_file = os.path.join(output_folder_path, f+'.gcis')
-        output_file = os.path.join(output_folder_path, f+'.gics.sa')
+        output_file = os.path.join(output_folder_path, f+'-gcis')
 
         print("GCIS Compressing: ", f)
         if(os.path.isfile(compressed_file)):
@@ -378,7 +402,7 @@ def run_decode_saca_lcp(input_folder_path, output_folder_path):
     for f in input_filename:
         input_file = os.path.join(input_folder_path, f)
         compressed_file = os.path.join(output_folder_path, f+'.gcis')
-        output_file = os.path.join(output_folder_path, f+'.gics.salcp')
+        output_file = os.path.join(output_folder_path, f+'-gcis')
 
         print("GCIS Compressing: ", f)
         if(os.path.isfile(compressed_file)):
@@ -467,12 +491,12 @@ def run_saca(input_folder_path, output_folder_path):
                   decode_saca_divsufsort_data.experiment_name + ' Decompress',
                   decode_saca_divsufsort_data.experiment_name + ' SACA',
                   decode_saca_divsufsort_data.experiment_name,
-                  decode_saca_yuta_lcp_data.experiment_name,
                   decode_saca_yuta_lcp_data.experiment_name + ' Decompress',
                   decode_saca_yuta_lcp_data.experiment_name + ' SACA',
-                  decode_saca_divsufsort_lcp_data.experiment_name,
+                  decode_saca_yuta_lcp_data.experiment_name,
                   decode_saca_divsufsort_lcp_data.experiment_name + ' Decompress',
-                  decode_saca_divsufsort_lcp_data.experiment_name + ' SACA']
+                  decode_saca_divsufsort_lcp_data.experiment_name + ' SACA',
+                  decode_saca_divsufsort_lcp_data.experiment_name]
 
         writer.writerow(header)
 
@@ -488,8 +512,8 @@ def run_saca(input_folder_path, output_folder_path):
                         decode_saca_nong_data.experiment_time,
                         decode_saca_yuta_data.experiment_time,
                         decode_saca_divsufsort_data.experiment_time,
-                    decode_saca_yuta_lcp_data.experiment_time,
-                    decode_saca_divsufsort_lcp_data.experiment_time))
+                        decode_saca_yuta_lcp_data.experiment_time,
+                        decode_saca_divsufsort_lcp_data.experiment_time))
 
         for i, t in enumerate(time):
 
@@ -499,6 +523,37 @@ def run_saca(input_folder_path, output_folder_path):
             writer.writerow(row)
 
 
+
+def check_saca(input_folder,results_folder):
+    input_filename = os.listdir(input_folder)
+    suffixes = ['-gcis','-divsufsort','-yuta','-nong','-decode-nong','-decode-yuta','-decode-divsufsort']
+    for f in input_filename:
+        for i in range(len(suffixes)):
+            for j in range(i+1,len(suffixes)):
+                f1 = os.path.join(results_folder,f + suffixes[i])
+                f2 = os.path.join(results_folder,f + suffixes[j])
+                f1sa = f1+'.sa'
+                f2sa = f2+'.sa'
+                f1lcp = f1+'.lcp'
+                f2lcp = f2+'.lcp'
+
+                print('SA: Comparing',os.path.basename(f1sa),'and',os.path.basename(f2sa))
+                if(filecmp.cmp(f1sa, f2sa, shallow=False)):
+                    print('Ok')
+                else:
+                    print('Differ')
+
+                if( (f == 'fib41' or f == 'rs.13' or f == 'tm29') and
+                suffixes[i].endswith('divsufsort') or suffixes[j].endswith('divsufsort')):
+                    continue                
+
+                print('LCP: Comparing',os.path.basename(f1lcp),'and',os.path.basename(f2lcp))
+                if(filecmp.cmp(f1sa, f2sa, shallow=False)):
+                    print('Ok')
+                else:
+                    print('Differ')
+
+
 # argv[1] contains the path to the experiments folder
 # argv[2] contains the path to the output folder
 if __name__ == "__main__":
@@ -506,3 +561,4 @@ if __name__ == "__main__":
         print("Error")
         print("Usage: run-decode-saca.py <input_folder> <results_folder>")
     run_saca(sys.argv[1], sys.argv[2])
+    check_saca(sys.argv[1],sys.argv[2])

@@ -29,9 +29,9 @@ int main(int argc, char *argv[]) {
     char *str;
     load_string_from_file(str, argv[1]);
 
-    size_t n = strlen(str) + 1;
+    size_t n = strlen(str)+1;
     int *SA = new int[n];
-    int* LCP = new int[n-1];
+    int* LCP = new int[n];
 
     std::cout << "Building SA+LCP with SAIS-LCP-YUTA." << std::endl;
     auto start = timer::now();
@@ -40,13 +40,25 @@ int main(int argc, char *argv[]) {
 
     cout << "input:\t" << strlen(str) << " bytes" << endl;
 
-    std::ofstream output(argv[2], std::ios::binary);
-    // output.write((const char*) &n,sizeof(n));
-    // output.write((const char*)SA,sizeof(sa_int32_t)*n);
-    output.close();
-
     cout << "time: "
          << (double)duration_cast<milliseconds>(stop - start).count() / 1000.0
          << " seconds" << endl;
+
+
+    string ouf_basename(argv[2]);
+    std::ofstream output(ouf_basename+".sa", std::ios::binary);
+
+    n--;
+    output.write((const char*) &n,sizeof(n));
+    output.write((const char*) &SA[1],sizeof(int)*n);
+
+    std::ofstream output_lcp(ouf_basename+".lcp", std::ios::binary);
+    output_lcp.write((const char*) &n,sizeof(n));
+    output_lcp.write((const char*)&LCP[1],sizeof(int)*n);
+
+
+    output.close();
+    output_lcp.close();
+
     return 0;
 }

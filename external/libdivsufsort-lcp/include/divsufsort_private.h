@@ -78,7 +78,7 @@ extern "C" {
 # define sssort sssort64
 # define trsort trsort64
 #else
-# include "divsufsort.h"
+# include "divsufsort-lcp.h"
 #endif
 
 

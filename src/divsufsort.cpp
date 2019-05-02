@@ -39,13 +39,14 @@ int main(int argc, char *argv[]) {
     divsufsort((sauchar_t*) str, SA, n);
     auto stop = timer::now();
 
-    std::ofstream output(argv[2], std::ios::binary);
-
-    // We don't store the data for performance reasons
-    // output.write((const char*) &n,sizeof(n));
-    // output.write((const char*)SA,sizeof(int32_t)*n);
     cout << "time: " << (double)duration_cast<milliseconds>(stop - start).count()/1000.0
          << " seconds" << endl;
+
+
+    string ouf = argv[2];
+    std::ofstream output(ouf+".sa", std::ios::binary);
+    output.write((const char*) &n,sizeof(n));
+    output.write((const char*)SA,sizeof(saidx_t)*n);
     output.close();
     return 0;
 }

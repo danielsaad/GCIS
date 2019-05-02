@@ -1,13 +1,15 @@
+#include "divsufsort-lcp.h"
 #include <chrono>
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include "divsufsort-lcp.h"
 
 using namespace std;
 
 using namespace std::chrono;
 using timer = std::chrono::high_resolution_clock;
+
+
 
 void load_string_from_file(char *&str, char *filename) {
     std::ifstream f(filename, std::ios::binary);
@@ -19,7 +21,6 @@ void load_string_from_file(char *&str, char *filename) {
     str[size] = 0;
     f.close();
 };
-
 
 int main(int argc, char *argv[]) {
 
@@ -36,16 +37,17 @@ int main(int argc, char *argv[]) {
     saidx_t *LCP = new saidx_t[n];
 
     std::cout << "Building SA + LCP with Divsufsort." << std::endl;
-    divsuflcpsort((sauchar_t*) str, SA,LCP, n);
+    divsuflcpsort((sauchar_t *)str, SA, LCP, n);
     auto stop = timer::now();
 
-    std::ofstream output(argv[2], std::ios::binary);
-
-    // We don't store the data for performance reasons
-    // output.write((const char*) &n,sizeof(n));
-    // output.write((const char*)SA,sizeof(int32_t)*n);
-    cout << "time: " << (double)duration_cast<milliseconds>(stop - start).count()/1000.0
-         << " seconds" << endl;
+    string output_file_basename(argv[2]);
+    std::ofstream output(output_file_basename + ".sa", std::ios::binary);
+    std::ofstream output_lcp(output_file_basename + ".lcp", std::ios::binary);
+    output.write((const char *)&n, sizeof(n));
+    output.write((const char *)SA, sizeof(saidx_t) * n);
+    output_lcp.write((const char *)&n, sizeof(n));
+    output_lcp.write((const char *)LCP, sizeof(saidx_t) * n);
     output.close();
+    output_lcp.close();
     return 0;
 }

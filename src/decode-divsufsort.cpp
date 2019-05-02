@@ -19,7 +19,6 @@ int main(int argc, char *argv[]) {
     auto start = timer::now();
     gcis_dictionary<gcis_eliasfano_codec> d;
     std::ifstream compressed_file(argv[1], std::ios::binary);
-    std::ofstream output_file(argv[2], std::ios::binary);
     cout << "Loading " << argv[2] << endl;
     d.load(compressed_file);
     cout << "Decompressing " << argv[2] << endl;
@@ -36,13 +35,16 @@ int main(int argc, char *argv[]) {
 
     cout << "input:\t" << strlen(str) << " bytes" << endl;
 
-    // We just want to compute the suffix array, we do not need to store it.
-    // output.write((const char*)&n,sizeof(n));
-    // output.write((const char*)SA,sizeof(sa_int32_t)*n);
-    output_file.close();
     stop = timer::now();
 
     cout << "Suffix Array Construction Time: " << (double)duration_cast<milliseconds>(stop - start).count()/1000.0
          << " seconds" << endl;
+
+    string output_file_basename(argv[2]);
+    std::ofstream output(output_file_basename + ".sa", std::ios::binary);
+    output.write((const char *)&n, sizeof(n));
+    output.write((const char *)SA, sizeof(saidx_t) * n);
+    output.close();
+
     return 0;
 }

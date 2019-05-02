@@ -40,13 +40,16 @@ int main(int argc, char *argv[]) {
 
     cout << "input:\t" << strlen(str) << " bytes" << endl;
 
-    std::ofstream output(argv[2], std::ios::binary);
-    // output.write((const char*) &n,sizeof(n));
-    // output.write((const char*)SA,sizeof(sa_int32_t)*n);
-    output.close();
-
     cout << "time: "
          << (double)duration_cast<milliseconds>(stop - start).count() / 1000.0
          << " seconds" << endl;
+
+    std::ofstream output(argv[2]+'.sa', std::ios::binary);
+
+    n--;    
+    output.write((const char*) &n,sizeof(n));
+    output.write((const char*)&SA[1],sizeof(sa_int32_t)*n);
+    output.close();
+
     return 0;
 }
