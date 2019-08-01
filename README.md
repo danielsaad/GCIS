@@ -46,7 +46,9 @@ There are two CODECs which can be used on the GCIS algorithm:
 - Simple8b and;
 - Elias-Fano.
 
-They can be chosen specifying in the command line the flags -s8b and -ef respectively.
+They can be chosen specifying in the command line the flags `-s8b` and `-ef` respectively.
+
+Simple8b has some limitations, despite being able do encode and decode, it  cannot neither compute the SA and LCP arrays from decompression nor extract substrings.
 
 
 ### Compression
