@@ -3,7 +3,7 @@ import random
 import sys
 
 
-number_of_substrings = 1000
+number_of_substrings = 10000
 substring_size = [1, 10, 100, 1000, 10000]
 
 

@@ -100,6 +100,7 @@ def extract(data_folder, results_folder):
 
             # Append RepairSC bps
             bps.append(8*float(file_size_rp_sc)/sz)
+            print('BPS GCIS =',bps[-1])
 
             out, err = run_repair_sn.extract_repair_s(
                 repair_sc_binary, dictionary, query_file, parameter)
@@ -129,7 +130,8 @@ def extract(data_folder, results_folder):
             file_size_rp_sn = os.path.getsize(os.path.join(dictionary))
 
             # Append RepairSC bps
-            bps.append(8*float(file_size_rp_sc)/sz)
+            bps.append(8*float(file_size_rp_sn)/sz)
+            print('BPS RepairSC =',bps[-1])
 
             out, err = run_repair_sn.extract_repair_s(
                 repair_sn_binary, dictionary, query_file, parameter)

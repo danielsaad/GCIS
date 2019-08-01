@@ -34,10 +34,3 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/test)
 add_subdirectory(${CMAKE_SOURCE_DIR}/lib)
 
 #add_subdirectory(${CMAKE_SOURCE_DIR}/benchmark)
-
-## Run make install to place executables in /bin
-#
-#add_custom_target(install_${PROJECT_NAME}
-#        $(MAKE) install
-#        DEPENDS ${PROJECT_NAME}
-#        COMMENT "Installing ${PROJECT_NAME}")

@@ -16,7 +16,8 @@ def plot_mem_peak_compress(expnames,gcisVmPeakMB,repairVmPeakMB,output_folder_pa
     locs2 = [x+width for x in locs]
     ax.bar(locs, gcisVmPeakMB, width=width, label='GCIS',color='green')
     ax.bar(locs2,repairVmPeakMB,width=width,label='RePair',color='red')
-    ax.set_yticks(np.arange(0,max([max(gcisVmPeakMB),max(repairVmPeakMB)])+.1,500))
+    max_y = max([max(gcisVmPeakMB),max(repairVmPeakMB)])
+    ax.set_yticks(np.arange(0,max_y),max_y/10.0)
     ax.set_title('Memory Peak for Compression')
     ax.set_ylabel("Memory Peak (MB)")
     ax.grid(True)
@@ -24,8 +25,11 @@ def plot_mem_peak_compress(expnames,gcisVmPeakMB,repairVmPeakMB,output_folder_pa
     repairLabels = ['RePair' for x in repairVmPeakMB]
     plt.xticks([x+width/2.0 for x in locs], expnames,rotation='vertical')
     ax.legend(loc='best')
-    output_path = os.path.join(output_folder_path,'memory-peak-compression.png')
-    plt.savefig(output_path,format='png',bbox_inches='tight',dpi=300)
+    output_path = os.path.join(output_folder_path,'memory-peak-compression.pdf')
+    plt.savefig(output_path,format='pdf',bbox_inches='tight',dpi=600)
+
+    print('GCIS COMPRESS PEAK',gcisVmPeakMB)
+    print('REPAIR COMPRESS PEAK',repairVmPeakMB)
 
 
 def plot_mem_peak_decompress(expnames,gcisVmPeakMB,repairVmPeakMB,output_folder_path):
@@ -37,7 +41,8 @@ def plot_mem_peak_decompress(expnames,gcisVmPeakMB,repairVmPeakMB,output_folder_
     locs2 = [x+width for x in locs]
     ax.bar(locs, gcisVmPeakMB, width=width, label='GCIS',color='green')
     ax.bar(locs2,repairVmPeakMB,width=width,label='RePair',color='red')
-    ax.set_yticks(np.arange(0,max([max(gcisVmPeakMB),max(repairVmPeakMB)])+.1,500))
+    max_y = max([max(gcisVmPeakMB),max(repairVmPeakMB)])
+    ax.set_yticks(np.arange(0,max_y),max_y/10.0)
     ax.set_title('Memory Peak for Decompression')
     ax.set_ylabel("Memory Peak (MB)")
     ax.grid(True)
@@ -45,8 +50,13 @@ def plot_mem_peak_decompress(expnames,gcisVmPeakMB,repairVmPeakMB,output_folder_
     repairLabels = ['RePair' for x in repairVmPeakMB]
     plt.xticks([x+width/2.0 for x in locs], expnames,rotation='vertical')
     ax.legend(loc='best')
-    output_path = os.path.join(output_folder_path,'memory-peak-decompression.png')
-    plt.savefig(output_path,format='png',bbox_inches='tight',dpi=300)
+    output_path = os.path.join(output_folder_path,'memory-peak-decompression.pdf')
+    plt.savefig(output_path,format='pdf',bbox_inches='tight',dpi=600)
+
+    print('GCIS DECOMPRESS PEAK',gcisVmPeakMB)
+    print('REPAIR DECOMPRESS PEAK',repairVmPeakMB)
+
+
 
 ''' Plot the peak memory for GCIS and RePair Regarding all experiments '''
 def memory2plot(input_folder_path,output_folder_path):
@@ -59,10 +69,8 @@ def memory2plot(input_folder_path,output_folder_path):
     filescompress = [f for f in files if re.search(regexcompress,f)]
     filesdecompress = [f for f in files if re.search(regexdecompress,f)]
 
-    filescompress.sort()
-    filesdecompress.sort()
-
- #   print(filescompress,'\n',filesdecompress)
+    filescompress = sorted(filescompress,key=lambda s: s.lower())
+    filesdecompress = sorted(filesdecompress,key=lambda s: s.lower())
 
     vmPeakMB = []
     for f in filescompress:
@@ -73,7 +81,7 @@ def memory2plot(input_folder_path,output_folder_path):
     gcisVmPeakMB = [vpeak for i,vpeak in enumerate(vmPeakMB) if i%2==0]
     repairVmPeakMB = [vpeak for i,vpeak in enumerate(vmPeakMB) if i%2!=0]
     expnames = list(set([f.split('-')[0] for f in filescompress]))
-    expnames.sort()
+    expnames = sorted(expnames,key=lambda s: s.lower())
 
 
     plot_mem_peak_compress(expnames,gcisVmPeakMB,repairVmPeakMB,output_folder_path)

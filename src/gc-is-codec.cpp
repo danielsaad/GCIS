@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 
     // Dictionary type
 
-    gcis_dictionary<gcis_eliasfano_codec> d;
+    gcis_dictionary<gcis_s8b_codec> d;
     char *mode = argv[1];
     if (strcmp(mode, "-c") == 0) {
         char *str;

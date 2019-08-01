@@ -12,7 +12,7 @@ import repair
 
 enable_benchmark = True
 
-enable_gz = True
+enable_gz = False
 enable_7z = True
 enable_gc_is = True
 enable_repair = True

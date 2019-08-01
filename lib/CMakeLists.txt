@@ -27,6 +27,7 @@ ADD_LIBRARY(gc-is-statistics STATIC
         gcis_gap_codec.cpp
         eliasfano.cpp
         sais_nong.cpp
+        ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
         ../include/gcis_eliasfano.hpp
@@ -37,3 +38,4 @@ ADD_LIBRARY(gc-is-statistics STATIC
 
 target_compile_definitions(gc-is-statistics PRIVATE  MEM_MONITOR REPORT )
 install (TARGETS gc-is ARCHIVE DESTINATION ${CMAKE_SOURCE_DIR}/lib)
+install (TARGETS gc-is-statistics ARCHIVE DESTINATION ${CMAKE_SOURCE_DIR}/lib)

@@ -40,9 +40,14 @@ int main(int argc, char *argv[]) {
     divsuflcpsort((sauchar_t *)str, SA, LCP, n);
     auto stop = timer::now();
 
+    cout << "time: "
+         << (double)duration_cast<milliseconds>(stop - start).count() / 1000.0
+         << " seconds" << endl;
+
     string output_file_basename(argv[2]);
     std::ofstream output(output_file_basename + ".sa", std::ios::binary);
     std::ofstream output_lcp(output_file_basename + ".lcp", std::ios::binary);
+    n--;
     output.write((const char *)&n, sizeof(n));
     output.write((const char *)SA, sizeof(saidx_t) * n);
     output_lcp.write((const char *)&n, sizeof(n));

@@ -58,14 +58,14 @@ class gcis_dictionary<gcis_eliasfano_codec>
         auto first = std::chrono::high_resolution_clock::now();
         auto total_time = std::chrono::high_resolution_clock::now();
         for (auto p : query) {
-            cout << "Extracting"
-                 << "[" << p.first << "," << p.second << "]" << endl;
+            // cout << "Extracting"
+            //      << "[" << p.first << "," << p.second << "]" << endl;
             auto t0 = std::chrono::high_resolution_clock::now();
             extract(p.first, p.second, extracted_text, tmp_text);
             auto t1 = std::chrono::high_resolution_clock::now();
             total_time += t1-t0;
             for (uint64_t i = p.first; i <= p.second; i++) {
-                cout << (char)extracted_text[i - p.first];
+                cout << (unsigned char)extracted_text[i - p.first];
             }
             cout << endl;
         }

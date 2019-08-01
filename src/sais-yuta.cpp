@@ -44,7 +44,8 @@ int main(int argc, char *argv[]) {
          << (double)duration_cast<milliseconds>(stop - start).count() / 1000.0
          << " seconds" << endl;
 
-    std::ofstream output(argv[2]+'.sa', std::ios::binary);
+    string ouf = argv[2];
+    std::ofstream output(ouf+".sa", std::ios::binary);
 
     n--;    
     output.write((const char*) &n,sizeof(n));

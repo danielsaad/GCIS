@@ -523,35 +523,31 @@ def run_saca(input_folder_path, output_folder_path):
             writer.writerow(row)
 
 
-
-def check_saca(input_folder,results_folder):
+def check_saca(input_folder, results_folder):
     input_filename = os.listdir(input_folder)
-    suffixes = ['-gcis','-divsufsort','-yuta','-nong','-decode-nong','-decode-yuta','-decode-divsufsort']
+    suffixes = ['-gcis', '-divsufsort', '-yuta', '-nong',
+                '-decode-nong', '-decode-yuta', '-decode-divsufsort']
     for f in input_filename:
         for i in range(len(suffixes)):
-            for j in range(i+1,len(suffixes)):
-                f1 = os.path.join(results_folder,f + suffixes[i])
-                f2 = os.path.join(results_folder,f + suffixes[j])
+            for j in range(i+1, len(suffixes)):
+                f1 = os.path.join(results_folder, f + suffixes[i])
+                f2 = os.path.join(results_folder, f + suffixes[j])
                 f1sa = f1+'.sa'
                 f2sa = f2+'.sa'
                 f1lcp = f1+'.lcp'
                 f2lcp = f2+'.lcp'
 
-                print('SA: Comparing',os.path.basename(f1sa),'and',os.path.basename(f2sa))
-                if(filecmp.cmp(f1sa, f2sa, shallow=False)):
-                    print('Ok')
-                else:
-                    print('Differ')
+                if(not filecmp.cmp(f1sa, f2sa, shallow=False)):
+                    print('Files', os.path.basename(f1sa),'and',os.path.basename(f2sa), 'Differ')
 
-                if( (f == 'fib41' or f == 'rs.13' or f == 'tm29') and
-                suffixes[i].endswith('divsufsort') or suffixes[j].endswith('divsufsort')):
-                    continue                
+                if((f == 'fib41' or f == 'rs.13' or f == 'tm29') and
+                        (suffixes[i].endswith('divsufsort')
+                         or suffixes[j].endswith('divsufsort'))
+                        or (suffixes[i].endswith('nong') or suffixes[j].endswith('nong'))):
+                    continue
 
-                print('LCP: Comparing',os.path.basename(f1lcp),'and',os.path.basename(f2lcp))
-                if(filecmp.cmp(f1sa, f2sa, shallow=False)):
-                    print('Ok')
-                else:
-                    print('Differ')
+                if(not filecmp.cmp(f1lcp, f2lcp, shallow=False)):
+                    print('Files', os.path.basename(f1lcp),'and',os.path.basename(f2lcp), 'Differ')
 
 
 # argv[1] contains the path to the experiments folder
@@ -561,4 +557,4 @@ if __name__ == "__main__":
         print("Error")
         print("Usage: run-decode-saca.py <input_folder> <results_folder>")
     run_saca(sys.argv[1], sys.argv[2])
-    check_saca(sys.argv[1],sys.argv[2])
+    check_saca(sys.argv[1], sys.argv[2])

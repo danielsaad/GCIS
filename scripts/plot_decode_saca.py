@@ -17,10 +17,15 @@ class experiment_data:
 
 def plot(e, output_folder):
     gap = .2
-    width = .1
+    width = .08
     colors = ['black', 'green', 'red', 'blue',
               'orange', 'yellow', 'blue', 'blue', 'blue']
     labels = e.experiment_name
+    for i,l in enumerate(labels):
+        if(l.startswith('SAIS-YUTA')):
+            labels[i] = 'SAIS'
+        if(l.startswith('SAIS-DIVSUFSORT')):
+            labels[i] = 'divsufsort'
     print(labels)
     locs = [x for x in [[gap*loc] for loc in range(len(colors))]]
     print('Locs = ', locs)
@@ -56,7 +61,7 @@ def plot(e, output_folder):
         ax.bar(locs[1], values[1], width=width, label=labels[1], color='green')
         value = [values[2][0] - values[1][0]]
         ax.bar(locs[1], value, width=width,
-               bottom=values[1], color='green', hatch='////')
+               bottom=values[1], color='green', hatch='////',edgecolor='black',linewidth=0)
 
         # SAIS Yuta + LCP
         ax.bar(locs[2], values[0], width=width, color='black')
@@ -64,7 +69,7 @@ def plot(e, output_folder):
                bottom=values[0], label=labels[4], color='yellow')
         value = [values[19][0] - values[13][0]]
         ax.bar(locs[2], value, width=width, bottom=[
-               values[13][0]], color='yellow', hatch='////')
+               values[13][0]], color='yellow', hatch='////',edgecolor='black',linewidth=0)
 
         # SAIS DIVSUFSORT + LCP
 
@@ -74,16 +79,16 @@ def plot(e, output_folder):
         if(values[22][0] > 0):
             value = [values[22][0] - values[16][0]]
             ax.bar(locs[3], value, width=width, bottom=[
-                   values[16][0]], color='orange', hatch='////')
+                   values[16][0]], color='orange', hatch='////',edgecolor='black',linewidth=0)
 
         h, l = ax.get_legend_handles_labels()
         white_hatch = mpatches.Patch(
             facecolor='white', alpha=0.6, hatch=r'////', label='LCP-CALC')
 
         h += [white_hatch]
-        ax.legend(bbox_to_anchor=(1.04, 1), handles=h, loc="upper left")
+        ax.legend(frameon=False, handles=h, loc="upper left")
         plt.savefig(os.path.join(
-            output_folder, e.input_name[i]+'.png'), format='png', bbox_inches='tight', dpi=600)
+            output_folder, e.input_name[i]+'.pdf'), format='pdf', bbox_inches='tight', dpi=600)
 
 
 def setup(results_folder):
