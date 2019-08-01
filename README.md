@@ -109,11 +109,28 @@ The GCIS library has the following types and functions
 gc_is_dictionary<lcp_coder>;
 
 // Grammar compress the str by using the induced suffix sorting framework
-gc_is_dictionary<lcp_coder>::encode(char* str);
+void gc_is_dictionary<lcp_coder>::encode(char* str);
 
 // Grammar decompress the dictionary into the original string.
-gc_is_dictionary<lcp_coder>::decode(char* str);
+char* gc_is_dictionary<lcp_coder>::decode(char* str);
+
+// Extract substrings T[l,r] described by a pairs [l,r]
+void gc_is_dictionary<lcp_coder>::extract_batch(vector<pair<int,int>>);
+
+// Compute SA and LCP arrays and returns decoded text
+char* gc_is_dictionary<lcp_coder>::decode_saca(uint_t** SA, int_t **LCP);
+
+// Compute SA and LCP arrays and returns decoded text
+char* gc_is_dictionary<lcp_coder>::decode_saca_lcp(uint_t** SA, int_t **LCP);
 
 // Outputs the total number of bytes to represent the grammar.
-gc_is_dictionary<lcp_coder>::size_in_bytes();
+uint64_t gc_is_dictionary<lcp_coder>::size_in_bytes();
+
+// Serialize compressor data into a binary file
+void gc_is_dictionary<lcp_coder>::serialize(std::ostream&);
+
+// Load the binary file containing the compressor into main memory
+void gc_is_dictionary<lcp_coder>::load(std::istream &i) = 0;
+
+
 ```
