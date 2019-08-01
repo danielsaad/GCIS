@@ -59,7 +59,19 @@ void stack_push(t_pair* STACK, int_t *top, uint_t idx, int_t lcp){
 }
 /**/
 
-template <class codec_t> class gcis_abstract {
+class gcis_interface{
+public:
+    virtual void encode(char *s) = 0;
+    virtual char *decode() = 0;
+    virtual void extract_batch(vector<pair<int,int>>& v_query) = 0;
+    virtual unsigned char* decode_saca(uint_t** SA) = 0;
+    virtual unsigned char* decode_saca_lcp(uint_t** SA, int_t **LCP) = 0;
+    virtual uint64_t size_in_bytes() = 0;
+    virtual void serialize(std::ostream &o) = 0;
+    virtual void load(std::istream &i) = 0;
+};
+
+template <class codec_t> class gcis_abstract : public gcis_interface{
   public:
     std::vector<codec_t> g;
     sdsl::int_vector<> reduced_string;
