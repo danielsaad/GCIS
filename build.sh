@@ -9,6 +9,12 @@ cd build
 cmake ..
 make install
 cd ../../../ # go to root folder
+# compile repair-navarro
+cd external/repair-navarro
+make -j
+mv repair repair-navarro
+mv despair despair-navarro
+cd ../../../ # go to root folder
 #compile sais
 cd external/sais-2.4.1
 mkdir -p build
@@ -38,4 +44,4 @@ make install
 cd ..
 
 # copy binaries in other projects to bin folder
-cp external/repair/bin/despair external/repair/bin/despair-memory external/repair/bin/repair external/repair/bin/repair-memory bin/
+cp external/repair-navarro/repair-navarro external/repair-navarro/despair-navarro external/repair/bin/despair external/repair/bin/despair-memory external/repair/bin/repair external/repair/bin/repair-memory bin/

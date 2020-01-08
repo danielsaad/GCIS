@@ -1,0 +1,15 @@
+bin/*
+**/build/*
+/external/sdsl-lite/*
+.idea/*
+.vscode/*
+include/gtest/*
+include/sdsl/*
+include/divsufsort*
+include/sais.h
+include/sais-lcp.h
+include/sais.hxx
+lib/*.a
+lib/pkgconfig*
+
+scripts/__pycache__
