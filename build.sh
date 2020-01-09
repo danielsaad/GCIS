@@ -7,6 +7,7 @@ cd external/repair
 mkdir -p build
 cd build
 cmake ..
+make -j
 make install
 cd ../../../ # go to root folder
 # compile repair-navarro
@@ -14,7 +15,7 @@ cd external/repair-navarro
 make -j
 mv repair repair-navarro
 mv despair despair-navarro
-cd ../../../ # go to root folder
+cd ../../ # go to root folder
 #compile sais
 cd external/sais-2.4.1
 mkdir -p build
