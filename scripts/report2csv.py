@@ -94,7 +94,7 @@ def report2csv_helper(report_path,csv_path):
             rule_suffix_width[i],rle_potential[i],
             avg_rle[i],tail_length[i],
             tail_width[i],dict_size[i] ])
-    writer.writerow([ 'Reduced String Length', 'Reduced String Width' ]);
+    writer.writerow([ 'Reduced String Length', 'Reduced String Width' ])
     writer.writerow([reduced_string_length[0],reduced_string_width[0]])
     csvfile.close()
 
