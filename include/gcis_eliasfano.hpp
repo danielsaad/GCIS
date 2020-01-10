@@ -929,11 +929,12 @@ class gcis_dictionary<gcis_eliasfano_codec>
         print_report("Alphabet Size = ", K, "\n");
         print_report("String Size = ", n, "\n");
         print_report("Number of Rules = ", name + 1, "\n");
+        print_report("Total rules length  = ",total_rule_len,"\n");
         print_report("Average Rule Length = ",
                      (double)total_rule_len / (name + 1), "\n");
         print_report("Number of Discarded Rules = ", discarded_rules_n, "\n");
         print_report("Average Discarded Rules Length = ",
-                     (double)discarded_rules_len / discarded_rules_n, "\n");
+                     discarded_rules_n > 0 ? (double)discarded_rules_len / discarded_rules_n : 0, "\n");
         print_report("Average LCP = ", (double)total_lcp / (name + 1), "\n");
         print_report("Average Rule Suffix Length = ",
                      (double)total_rule_suffix_length / (name + 1), "\n");

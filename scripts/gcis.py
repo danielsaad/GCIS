@@ -9,8 +9,8 @@ import report2csv
 '''
 
 
-def compress_gc_is(input, output):
-    process = Popen(['../bin/gc-is-codec', '-c', input, output])
+def compress_gc_is(input, output,codec='-ef'):
+    process = Popen(['../bin/gc-is-codec', '-c', input, output,codec])
     p = process.communicate()
     return p
 
@@ -73,8 +73,8 @@ def decompress_gc_is(input, output):
     return (float(decompress_time))
 
 
-def compress_gc_is_statistics(input, output):
-    process = Popen(['../bin/gc-is-codec-memory', '-c', input, output])
+def compress_gc_is_statistics(input, output,codec='-ef'):
+    process = Popen(['../bin/gc-is-codec-memory', '-c', input, output,codec])
     return process.communicate()
 
 

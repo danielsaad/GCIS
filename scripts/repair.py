@@ -21,9 +21,13 @@ def decompress_repair_statistics(input,output):
     process.communicate()
 
 
+''' 
+    Compresses the input with Navarro's version of repair
+    and returns the (stdout,stderr) pair 
+'''
 def compress_repair_navarro(input):
     process = Popen(['../bin/repair-navarro', input],stdout=PIPE,stderr=PIPE)
-    process.communicate()
+    return process.communicate()
 
 def decompress_repair_navarro(input):
     process = Popen(['../bin/despair-navarro', input],stdout=PIPE,stderr=PIPE)
