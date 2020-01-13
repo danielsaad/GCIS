@@ -6,6 +6,7 @@
 import os
 import sys
 import csv
+import math
 from matplotlib import pyplot as plt
 
 
@@ -25,6 +26,7 @@ def plot(csv_folder, plot_folder):
     gcis_grammar_size = []
     repair_grammar_size = []
     exp_name = []
+    exp_size = []
     for g, r in zip(gcis_files, rpn_files):
         print('Gathering data from', os.path.basename(g).split('-')[0])
         with open(g, 'r') as gcis_f, open(r, 'r') as rpn_f:
@@ -41,6 +43,7 @@ def plot(csv_folder, plot_folder):
                     break
                 if(first):
                     gcis_first_level_expansion.append(int(row[4]))
+                    exp_size.append(int(row[1]))
                     first = False
                 gcis_grammar_size[-1] += int(row[4])
                 gcis_rules_per_level.append(int(row[3]))
@@ -60,7 +63,7 @@ def plot(csv_folder, plot_folder):
 
     plot_number_of_rules_comparison(exp_name, gcis_total_rules,
                                     repair_total_rules, plot_folder)
-    plot_grammar_size_comparison(exp_name, gcis_grammar_size, gcis_total_rules,
+    plot_grammar_size_comparison(exp_name, exp_size, gcis_grammar_size, gcis_total_rules, gcis_first_level_expansion,
                                  repair_grammar_size, repair_total_rules, plot_folder)
     plot_first_level_rules(exp_name, gcis_first_level_rules,
                            gcis_total_rules, plot_folder)
@@ -168,20 +171,47 @@ def plot_number_of_rules_comparison(exp_name, a, b, plot_folder):
     plt.close('all')
 
 
-def plot_grammar_size_comparison(exp_name, grammar_size_gcis, number_of_rules_gcis,
+'''
+    calculates repair size in bits approximately
+    n = size of text
+    r = number of rules
+    c = size of grammar
+'''
+
+
+def calculate_repair_size(n, c, r):
+    return int(math.ceil(3*(c-r)*math.log2(r)+r*math.log2(n)))
+
+
+'''
+    calculates GCIS size in bits approximately
+    n = size of text
+    r = number of rules
+    c = size of grammar
+    a = sum of right had sides of rules which derivates terminals only
+'''
+
+
+def calculate_gcis_size(n, c, r, a):
+    return int(math.ceil(3*(c-r)*math.log2(r)+r*math.log2(n) - a*(math.log2(r)-math.log2(256))))
+
+
+def plot_grammar_size_comparison(exp_name, exp_size, grammar_size_gcis, number_of_rules_gcis, first_level_expansion_gcis,
                                  grammar_size_repair, number_of_rules_repair, plot_folder):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     gap = .3
     width = .1
-    a = [x-y for (x, y) in zip(grammar_size_gcis, number_of_rules_gcis)]
-    b = [x-y for (x, y) in zip(grammar_size_repair, number_of_rules_repair)]
+    a = [calculate_gcis_size(x, y, z, w) for (x, y, z, w) in zip(
+        exp_size, grammar_size_gcis, number_of_rules_gcis, first_level_expansion_gcis)]
+    b = [calculate_repair_size(x, y, z) for (x, y, z) in zip(
+        exp_size, grammar_size_repair, number_of_rules_repair)]
     locs = [width + x*gap for x in range(len(a))]
     locs2 = [x+width for x in locs]
     ax.bar(locs, a, width=width, label='GCIS', color='green')
     ax.bar(locs2, b, width=width, label='RePair', color='red')
     ax.set_title('GCIS vs RePair')
-    ax.set_ylabel('$\mathcal{G}-\mathcal{g}$')
+    ax.set_ylabel('Index Size in Bits (estimative)')
     ax.grid(True)
     ax.legend()
     x_labels = [x for x in exp_name]
