@@ -1,5 +1,7 @@
 add_executable(gc-is-codec gc-is-codec.cpp)
+add_executable(gcis-ef test-gcis-elias-fano.cpp)
 target_link_libraries(gc-is-codec gc-is sdsl pthread sais)
+target_link_libraries(gcis-ef sdsl pthread sais)
 add_executable(gc-is-codec-memory gc-is-codec.cpp ${CMAKE_SOURCE_DIR}/external/malloc_count/malloc_count.c)
 target_compile_definitions(gc-is-codec-memory PRIVATE MEM_MONITOR REPORT )
 target_link_libraries(gc-is-codec-memory gc-is-statistics sdsl pthread dl sais)
@@ -28,4 +30,4 @@ target_link_libraries(decode-sais-divsufsort gc-is sdsl divsufsort)
 target_link_libraries(decode-sais-divsufsort-lcp gc-is sdsl divsufsort-lcp)
 
 
-install(TARGETS sais-nong sais-yuta sais-lcp-yuta decode-sais-nong decode-sais-yuta decode-sais-lcp-yuta gc-is-codec gc-is-codec-memory sais-divsufsort sais-divsufsort-lcp decode-sais-divsufsort decode-sais-divsufsort-lcp RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+install(TARGETS sais-nong sais-yuta sais-lcp-yuta decode-sais-nong decode-sais-yuta decode-sais-lcp-yuta gc-is-codec gc-is-codec-memory sais-divsufsort sais-divsufsort-lcp decode-sais-divsufsort decode-sais-divsufsort-lcp gcis-ef RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/bin)
