@@ -250,9 +250,7 @@ class elias_fano_grammar {
     // Select support for rules_delim
     sdsl::sd_vector<>::select_1_type rules_delim_select;
     // Grammar info
-    elias_fano_grammar_info m_info;    
-    
-
+    elias_fano_grammar_info m_info;
 
     void copy_lcp(sdsl::int_vector<> &rules_derivation,
                   const uint_t cur_lcp_len, const uint_t prev_rule_len,
