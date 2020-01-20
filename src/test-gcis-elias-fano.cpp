@@ -11,9 +11,22 @@ void load_string_from_file(char *&str, const char *filename) {
     f.close();
 };
 
-int main() {
-    char* str = "AGCTTTTCATTCTGACTGCAACAGCTTTTCATTCTGACTGCAAC";
-    gcis::grammar_builder<gcis::elias_fano_grammar> builder;
-    auto g = builder.build(str);
-    std::cout << "Grammar has been built!\n";
+int main(int argc, char *argv[]) {
+    std::ofstream output(argv[3], std::ios::binary);
+    char *str;
+    if (strcmp(argv[1], "-c") == 0) {
+        load_string_from_file(str, argv[2]);
+        gcis::grammar_builder<gcis::elias_fano_grammar> builder;
+        auto g = builder.build(str);
+        g.serialize(output);
+        delete[] str;
+    } else if (strcmp(argv[1], "-d") == 0) {
+        ifstream grammar_file(argv[2], std::ifstream::in);
+        gcis::elias_fano_grammar g;
+        g.load(grammar_file);
+        str = g.decode();
+        output.write(str, strlen(str));
+        delete[] str;
+    }
+    output.close();
 }
