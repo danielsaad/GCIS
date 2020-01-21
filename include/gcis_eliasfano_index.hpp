@@ -152,7 +152,7 @@ class elias_fano_grammar {
             if (rule_idx < 256) {
                 // Will generate terminal symbols
                 // cout << "Generating terminal symbols from rule " << rule_idx
-                    //  << endl;
+                //  << endl;
                 str[idx++] = rule_idx;
 
                 // cout << endl;
