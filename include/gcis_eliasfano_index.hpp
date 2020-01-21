@@ -98,8 +98,8 @@ class elias_fano_grammar {
     }
 
     char *decode() {
-        // m_info.print();
-        char *str = new char[m_info.m_text_size[0]];
+        m_info.print();
+        char *str = new char[m_info.m_text_size[1]];
         // Decompress all the rules
         uint_t total_rules = std::accumulate(m_info.m_number_of_rules.begin(),
                                              m_info.m_number_of_rules.end(), 0);
@@ -143,24 +143,18 @@ class elias_fano_grammar {
         width = max(sdsl::bits::hi(total_rules) + 1, sdsl::bits::hi(256));
         int_t stack_idx = 0;
         sdsl::int_vector<> rule_stack(m_info.m_grammar_size, 0, width);
-        sdsl::int_vector<8> level_stack(m_info.m_grammar_size);
-        rule_stack[stack_idx] = m_xs;
-        level_stack[stack_idx++] = 0;
+        rule_stack[stack_idx++] = m_xs;
         while (stack_idx > 0) {
-            uint_t rule_idx = rule_stack[stack_idx - 1];
-            uint_t rule_level = level_stack[--stack_idx];
+            uint_t rule_idx = rule_stack[--stack_idx];
             uint_t pos = rules_pos[rule_idx];
             uint_t len = rules_pos[rule_idx + 1] - pos;
-            //  cout << "Decompressing rule " << rule_idx << " at level "
-            //   << rule_level << endl;
-            if (rule_level == m_info.m_level_n - 1) {
+            // cout << "Decompressing rule " << rule_idx << endl;
+            if (rule_idx < 256) {
                 // Will generate terminal symbols
                 // cout << "Generating terminal symbols from rule " << rule_idx
-                //      << endl;
-                for (uint_t i = 0; i < len; i++) {
-                    str[idx++] = rules_derivation[pos + i];
-                    // cout << str[idx - 1];
-                }
+                    //  << endl;
+                str[idx++] = rule_idx;
+
                 // cout << endl;
             } else {
                 // Will expand into non-terminal symbols
@@ -168,8 +162,7 @@ class elias_fano_grammar {
                     // cout << "Inserting rule " << rules_derivation[i]
                     //      << " with level " << rule_level + 1
                     //      << " into the stack" << endl;
-                    rule_stack[stack_idx] = rules_derivation[i];
-                    level_stack[stack_idx++] = rule_level + 1;
+                    rule_stack[stack_idx++] = rules_derivation[i];
                 }
             }
         }
@@ -236,7 +229,7 @@ class elias_fano_grammar {
         // cout << endl;
     }
 
-  private:
+  public:
     // stores the rules suffix in a single concatenated array
     sdsl::int_vector<0> rules_suffix;
     // stores the LCP encoding between rules using Elias-Fano encoding
@@ -356,7 +349,27 @@ class elias_fano_grammar_builder {
         // m_grammar_info.print();
     }
 
-    void pre_process() {}
+    /**
+     * @brief Preprocessing adds rules of type Xc->c in the grammar.
+     * Now, every non-terminal different from Xc has index >= 256. So we can
+     * differentiate a non-terminal from a Xc rule by looking to its index.
+     */
+    void pre_process() {
+        lcp_unary.resize(256);
+        rules_delim_unary.resize(512);
+        rules_concat.resize(256);
+        for (uint_t i = 0; i < 256; i++) {
+            lcp_unary[i] = 1;
+            rules_concat[i] = i;
+            rules_delim_unary[i << 1] = 0;
+            rules_delim_unary[(i << 1) + 1] = 1;
+        }
+        m_grammar_info.m_number_of_rules.push_back(256);
+        m_grammar_info.m_text_size.push_back(0);
+        m_grammar_info.m_alphabet_size.push_back(256);
+        m_grammar_info.m_grammar_size += 256;
+        m_last_tail_idx = 255;
+    }
     void post_process() {
         // Copy the data to the grammar and perform further compressions
         sdsl::util::bit_compress(rules_concat);

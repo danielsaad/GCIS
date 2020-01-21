@@ -8,6 +8,9 @@ ADD_LIBRARY(gc-is STATIC
         gcis_gap_codec.cpp
         eliasfano.cpp
         sais_nong.cpp
+        ../include/gcis_eliasfano_index.hpp
+        ../include/grammar_builder.hpp
+        ../include/index_builder.hpp
         ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
@@ -30,6 +33,9 @@ ADD_LIBRARY(gc-is-statistics STATIC
         gcis_gap_codec.cpp
         eliasfano.cpp
         sais_nong.cpp
+        ../include/gcis_eliasfano_index.hpp
+        ../include/grammar_builder.hpp
+        ../include/index_builder.hpp
         ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp

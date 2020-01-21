@@ -1,4 +1,5 @@
 #include "gcis_eliasfano_index.hpp"
+#include "index_builder.hpp"
 #include <fstream>
 void load_string_from_file(char *&str, const char *filename) {
     std::ifstream f(filename, std::ios::binary);
@@ -27,6 +28,11 @@ int main(int argc, char *argv[]) {
         str = g.decode();
         output.write(str, strlen(str));
         delete[] str;
+    } else if(strcmp(argv[1],"-i") == 0){
+        load_string_from_file(str,argv[2]);
+        gcis::grammar_builder<gcis::elias_fano_grammar> builder;
+        auto g = builder.build(str);
+        gcis::index_basics<gcis::elias_fano_grammar,sdsl::bit_vector> index(g,str);
     }
     output.close();
 }
