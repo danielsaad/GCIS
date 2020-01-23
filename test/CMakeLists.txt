@@ -57,10 +57,12 @@ include_directories(${GMOCK_INCLUDE_DIRS})
 add_executable(test_main test_main.cpp test_simple8b.cpp ../lib/gcis_s8b_codec.cpp test_eliasfano.cpp)
 add_executable(test_gcis_index_grid test_gcis_index_grid.cpp)
 add_executable(test_gcis_index_bs test_gcis_index_bs.cpp)
+add_executable(test_gcis_index test_gcis_index.cpp)
 
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 target_link_libraries(test_main gtest gc-is sdsl gmock pthread)
 target_link_libraries(test_gcis_index_grid gtest gtest_main gc-is sdsl gmock pthread)
+target_link_libraries(test_gcis_index gtest gtest_main gc-is sdsl gmock pthread)
 target_link_libraries(test_gcis_index_bs gtest gtest_main gc-is sdsl gmock pthread)
 
 # install(TARGETS test_main RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/bin)

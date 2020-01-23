@@ -11,6 +11,10 @@
 #include "gcis_index_grid.hpp"
 #include "gcis_index_dfuds.hpp"
 
+#define TOYEXAMPLE 1
+#define BUFFER_SIZE 1000;
+#define MSIGMA 256;
+
 namespace gcis_index_private{
 
 
@@ -38,6 +42,8 @@ namespace gcis_index_private{
             typedef gcis_index_dfuds<>::ul size_tree;
             typedef gcis_index_grid<t_gridwt,t_gridbv,sdsl::int_vector<>> t_grid; // typdef for grid
             typedef std::pair<size_tree,len_type> _node; // type to track secondary occ
+
+
 
             gcis_index();
             gcis_index( const gcis_index& );
@@ -91,16 +97,19 @@ namespace gcis_index_private{
             sdsl::sd_vector<>::select_1_type bvl_select1;
 
             uint sigma;
+            uint32_t n_rules;
+//            uint32_t n_suffixes;
 
         public:
 
             /**Compare a rule suffix with an string left partition*/
-            virtual int cmp_suffix_rule(const rule_type& , const std::string &,  len_type j);
+            virtual int cmp_suffix_rule(const rule_type& , const std::string &,  len_type& j) const;
+            virtual int cmp_suffix_rule_pre(const size_tree & , const std::string &,  len_type j) const;
             /**Compare a rule suffix with an string left partition*/
-            virtual int cmp_prefix_rule(const rule_type& , const std::string &,  len_type  &  );
+            virtual int cmp_prefix_rule(const rule_type& , const std::string &,  len_type  &  ) const;
 
             /**Compare a grammar suffix with an string right partition*/
-            virtual int cmp_suffix_grammar(size_tree , const std::string &,  len_type  j);
+            virtual int cmp_suffix_grammar(size_tree , const std::string &,  len_type & j) const;
 
 //            virtual void dfs_expand_rule(const rule_type& X, std::string& s, len_type& off, const len_type& i, const len_type& m, bool suffix) const;
 
@@ -287,7 +296,9 @@ namespace gcis_index_private{
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
     gcis_index<>::len_type
     gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::offset_node(const gcis_index::size_tree & node) const {
-        long long lrank = dfuds_tree.leaf_rank(node)+1;
+        long long lrank = dfuds_tree.leaf_rank(node-1)+1;
+//        if(dfuds_tree.is_leaf(node))
+//            --lrank;
         return bvl_select1.select(lrank);
     }
 
@@ -330,35 +341,20 @@ namespace gcis_index_private{
         return expand_prefix(dfuds_tree.pre_order_select(preorder_focc),s,m,off);
     }
 
-    /**
-     * @brief compare a suffix of the rule with the left part of pattern partition in reverse order cmp(X,str,j) rev(X) ?
-     * rev(str[1...j])
-     * @tparam t_mapfbv
-     * @tparam t_maptbv
-     * @tparam t_mapwt
-     * @tparam t_gridbv
-     * @tparam t_gridwt
-     * @param X rule to compare
-     * @param str pattern to compare
-     * @param j suffix pos
-     * @return
-     */
+
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
-    int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::cmp_suffix_rule(const gcis_index::rule_type & X,
-                                                                                      const std::string & str,
-                                                                                      len_type j) {
-
-
-        // compute the preorder node and node pos
-        size_tree pre = map_rule(X);
+    int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::cmp_suffix_rule_pre(const size_tree & pre,
+                                                                                     const std::string & str,
+                                                                                     len_type j) const{
+        rule_type X = map_node(pre);
         size_tree node = dfuds_tree.pre_order_select(pre);
         //case leaf
         if(  dfuds_tree.is_leaf(node)  )  //if it is a leaf then is a symbol
         {
-            if(str[j] == X) return 0;
-            if(str[j] > X) return 1;
+            if(str[j--] == X) return 0;
+            if(str[j--] > X) return 1;
 
-             return -1;
+            return -1;
 
         }
         // lambda function for recursively cmp
@@ -410,6 +406,108 @@ namespace gcis_index_private{
 
 
         return dfs_cmp_suffix(node,pre);
+
+    }
+        /**
+         * @brief compare a suffix of the rule with the left part of pattern partition in reverse order cmp(X,str,j) rev(X) ?
+         * rev(str[1...j])
+         * @tparam t_mapfbv
+         * @tparam t_maptbv
+         * @tparam t_mapwt
+         * @tparam t_gridbv
+         * @tparam t_gridwt
+         * @param X rule to compare
+         * @param str pattern to compare
+         * @param j suffix pos by reference return the number of ch drains
+         * @return 0 if the left partition is a suffix of the rule
+         */
+    template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
+    int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::cmp_suffix_rule(const gcis_index::rule_type & X,
+                                                                                      const std::string & str,
+                                                                                      len_type& j) const{
+
+
+        // compute the preorder node and node pos
+        size_tree pre = map_rule(X);
+        size_tree node = dfuds_tree.pre_order_select(pre);
+        //case leaf
+        if(  dfuds_tree.is_leaf(node)  )  //if it is a leaf then is a symbol
+        {
+#ifdef TOYEXAMPLE
+            char Y = X;
+            switch(Y){
+                case 0: Y = 65;
+                    break;
+                case 1: Y = 67;
+                    break;
+                case 10: Y = 71;
+                    break;
+                case 13: Y = 84;
+                    break;
+            }
+
+
+            if(str[j] < Y) return -1;
+            if(str[j] > Y) return 1;
+            --j;
+            return 0;
+#endif
+
+            if(str[j] < Y) return -1;
+            if(str[j] > Y) return 1;
+            --j;
+            return 0;
+
+        }
+        // lambda function for recursively cmp
+        std::function< int (const size_tree&, const size_tree&) > dfs_cmp_suffix;
+
+        dfs_cmp_suffix  = [this, &dfs_cmp_suffix, &str, &j ](const size_tree& node,const size_tree& pre_node){
+            // !!!!!!WE NEVER REACH A CHARACTER NODE
+            // case leaf
+            if(dfuds_tree.is_leaf(node)) // as we never reach a character node if we reach a leaf it has to be non-terminal leaf
+            {   //jump to it definition
+                rule_type Y = map_node(pre_node);
+                size_tree pre = map_rule(Y);
+                size_tree def_node = dfuds_tree.pre_order_select(pre);
+                int r = dfs_cmp_suffix(def_node,pre);
+                return r;
+            }
+
+            // check if it is a terminal node X->"AJSKLDJALKSJD"
+
+            size_tree ch = dfuds_tree.children(node);
+            size_tree lchild = dfuds_tree.ichild(node,ch);
+            size_tree pre_lchild =  dfuds_tree.pre_order(lchild);
+
+            if(dfuds_tree.is_leaf(lchild)){
+                auto r0 = pre_lchild - bvfocc_rank1(pre_lchild);
+                if( bvt[r0-1] ){ // is a terminal node (just compare characters) and return
+                    auto r1 = bvt_rank1.rank(r0);
+                    return cmp_block(r1-1,(uint) ch,str,j,true);
+                }
+            }
+            //
+
+            // compare first child, is already precomputed
+            int r = dfs_cmp_suffix(lchild,pre_lchild);
+            if( r != 0) return r; // return if missmatch
+
+            uint i = ch-1;
+            // compare the rest of children
+            while(j >= 0 && i > 0 )
+            {
+                lchild = dfuds_tree.ichild(node,i);
+                pre_lchild = dfuds_tree.pre_order(lchild);
+                r = dfs_cmp_suffix(lchild,pre_lchild);
+                if( r != 0) return r;
+                --i;
+            }
+            return 0;
+        };
+
+
+        return dfs_cmp_suffix(node,pre);
     }
 
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
@@ -447,7 +545,9 @@ namespace gcis_index_private{
      * @param str string to compare
      * @param i point partition string
      * @param dir direction to compare
-     * @return
+     * @return 0 if the left/right partition is suffix/prefix of the block
+     *         1 if the left/right partition is greater
+     *        -1 if is left
      */
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
     int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::cmp_block( gcis_index::len_type pos,
@@ -465,7 +565,7 @@ namespace gcis_index_private{
                 --l;
             }
 
-            if( i < 0 && l != 0 ) return -1;
+            //if( i < 0 && l != 0 ) return -1;
 
             return 0;
         }
@@ -479,9 +579,7 @@ namespace gcis_index_private{
             ++i;
             --l;
         }
-
-        if( i == ssz && l != 0 ) return -1;
-
+        //if( i == ssz && l != 0 ) return -1;
 
         return 0;
     }
@@ -494,13 +592,15 @@ namespace gcis_index_private{
      * @tparam t_gridwt
      * @param X
      * @param str
-     * @param j
-     * @return
+     * @param j by reference return how many character where drain
+     * @return 0 if the right partition is prefix of the rule
+     *          -1 if it is less
+     *          1 if it is greater
      */
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
     int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::cmp_prefix_rule(const gcis_index::rule_type & X,
                                                                                      const std::string & str,
-                                                                                     len_type  &j) {
+                                                                                     len_type  &j) const{
 
 
         // compute the preorder node and node pos
@@ -509,10 +609,30 @@ namespace gcis_index_private{
         //case leaf
         if(  dfuds_tree.is_leaf(node)  )  //if it is a leaf then is a symbol
         {
-            if(str[j] == X) return 0;
-            if(str[j] > X) return 1;
+#ifdef TOYEXAMPLE
+            char Y = X;
+            switch(Y){
+                case 0: Y = 65;
+                    break;
+                case 1: Y = 67;
+                    break;
+                case 10: Y = 71;
+                    break;
+                case 13: Y = 84;
+                    break;
+            }
 
-            return -1;
+
+            if(str[j] < Y) return -1;
+            if(str[j] > Y) return 1;
+            j++;
+            return 0;
+#endif
+
+            if(str[j] < Y) return -1;
+            if(str[j] > Y) return 1;
+            j++;
+            return 0;
 
         }
         // lambda function for recursively cmp
@@ -553,7 +673,7 @@ namespace gcis_index_private{
 
             uint i = 2;
             // compare the rest of children
-            while( i <= ch)
+            while( j < str.size() && i <= ch)
             {
                 fchild = dfuds_tree.ichild(node,i);
                 pre_fchild = dfuds_tree.pre_order(fchild);
@@ -578,29 +698,66 @@ namespace gcis_index_private{
      * @param pre_node
      * @param str
      * @param j
-     * @return
+     * @return 0 if the right partition is a prefix of suffix starting in the node
+     *          -1 if is less
+     *          1 if is greater
      */
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
     int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::cmp_suffix_grammar( gcis_index::size_tree pre_node,
                                                                                         const std::string & str,
-                                                                                         len_type  j) {
+                                                                                         len_type  &j) const{
 
         size_tree node = dfuds_tree.pre_order_select(pre_node);
         size_tree parent = dfuds_tree.parent(node);
         size_tree ch = dfuds_tree.children(parent);
         size_tree rch = dfuds_tree.childrank(node);
         rule_type Y = map_node(pre_node);
-        int r = cmp_prefix_rule(Y,str,j);
-        if(r != 0) return r;
 
-        for (size_tree i = rch+1; i <= ch ; ++i) {
+#ifdef TOYEXAMPLE
+
+        switch(Y){
+            case 65: Y = 0;
+                break;
+            case 67: Y = 1;
+                break;
+            case 71: Y = 10;
+                break;
+            case 84: Y = 13;
+                break;
+        }
+#endif
+        int r = cmp_prefix_rule(Y,str,j);
+//        if(j == str.size()) return 0;
+        if(r != 0) return r;
+//        if(r == 0 && j < str.size()) return 1;
+
+        for (size_tree i = rch+1; j > 0 && i <= ch ; ++i) {
 
             node = dfuds_tree.ichild(parent,i);
             pre_node = dfuds_tree.pre_order(node);
             Y = map_node(pre_node);
+
+#ifdef TOYEXAMPLE
+
+            switch(Y){
+                case 65: Y = 0;
+                    break;
+                case 67: Y = 1;
+                    break;
+                case 71: Y = 10;
+                    break;
+                case 84: Y = 13;
+                    break;
+            }
+#endif
             r = cmp_prefix_rule(Y,str,j);
+//            if(j == str.size()) return 0;
             if(r != 0) return r;
+//            if(r == 0 && j < str.size()) return 1;
         }
+
+        if(r == 0 && j < str.size()) return 1;
+
         return 0;
     }
 
@@ -625,17 +782,19 @@ namespace gcis_index_private{
             size_tree pre_parent = dfuds_tree.pre_order(parent);
             // this rule has to be a non-terminal so we search it in the golynski sequence
             rule_type X = map_node(pre_parent);
+            long long off =  v.second +  offset_node(node) - offset_node(parent);
+
             size_t nocc = this->wtnt.rank(wtnt.size(),X);
-            secc_node ts(pre_parent, parent, X, v.second);
+            secc_node ts(pre_parent, parent, X, off);
             S.emplace_back(ts);
 
-            for (int i = 2; i <= nocc ; ++i) {
+            for (int i = 1; i <= nocc ; ++i) {
 
                 auto ps = wtnt.select(i,X)+1;
                 auto bvt0 = bvt_sel0.select(ps)+1;
                 auto bvfocc0 = bvfocc_sel0(bvt0);
                 size_tree tnode = dfuds_tree.pre_order_select(bvfocc0+1);
-                secc_node t(bvfocc0+1, tnode, X, v.second);
+                secc_node t(bvfocc0+1, tnode, X, off);
                 S.emplace_back(t);
             }
         }
@@ -652,7 +811,7 @@ namespace gcis_index_private{
                     secc_node ts(pre,parent,X,off);
                     S.push_back(ts);
                     size_tree nocc = this->wtnt.rank(wtnt.size(),X);
-                    for (int i = 2; i <= nocc ; ++i) {
+                    for (int i = 1; i <= nocc ; ++i) {
 
                         auto ps = wtnt.select(i,X) + 1;
                         auto bvt0 = bvt_sel0.select(ps)+1;
@@ -679,6 +838,7 @@ namespace gcis_index_private{
         bvfocc_sel0  = typename t_mapfbv::select_0_type(&bvfocc) ;
         bvfocc_rank1 = typename t_mapfbv::rank_1_type(&bvfocc) ;
 
+
     }
 
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
@@ -697,6 +857,7 @@ namespace gcis_index_private{
     void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::set_pi(const sdsl::int_vector<> & _pi) {
         pi = _pi;
         inv_pi = sdsl::inv_perm_support<>(&pi);
+        n_rules = pi.size();
     }
 
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>

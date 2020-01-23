@@ -63,6 +63,8 @@ namespace gcis_index_private{
              * */
             void  labels_search_2d(const point&, const point&, std::vector<ltype>& ) const;
 
+            uint32_t n_cols() const{ return sb.size();}
+
     private:
             /** maps from virtual row to the position in XB bitvector */
             dtype  map(const dtype &) const;
@@ -106,6 +108,7 @@ namespace gcis_index_private{
         xb = B.xb;
         sl = B.sl;
         build_rank_select_structures();
+
     }
 
     template<typename wavelet_tree, typename XB_bit_vector, typename int_sequence>
@@ -115,7 +118,18 @@ namespace gcis_index_private{
         xb = B.xb;
         sl = B.sl;
         build_rank_select_structures();
-
+        std::cout<<"xb:";
+        for(uint i = 0 ; i < xb.size(); ++i)
+            std::cout<<xb[i];
+        std::cout<<std::endl;
+        std::cout<<"sb:";
+        for(uint i = 0 ; i < sb.size(); ++i)
+            std::cout<<sb[i]<<" ";
+        std::cout<<std::endl;
+        std::cout<<"sl:";
+        for(uint i = 0 ; i < sl.size(); ++i)
+            std::cout<<sl[i]<<" ";
+        std::cout<<std::endl;
         return *this;
     }
 
@@ -181,7 +195,7 @@ namespace gcis_index_private{
          * map the rows to the real position in the wavelet tree sequence
          * */
         p1 = map(X.first);
-        p2 = map(Y.first + 1); --p2;
+        p2 = map(Y.first + 1);  --p2;
 
         if (p1 > p2 || p2 < 0) return;
 
@@ -339,8 +353,6 @@ namespace gcis_index_private{
         xb_rank1 =  typename XB_bit_vector::rank_1_type(&xb);
 
     }
-
-
 
 };
 

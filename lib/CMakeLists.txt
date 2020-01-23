@@ -17,6 +17,7 @@ ADD_LIBRARY(gc-is STATIC
         ../include/gcis_gap.hpp
         ../include/sais_nong.hpp
         ../include/gcis_index.hpp
+        ../include/gcis_index_bs.hpp
         ../include/gcis_index_grid.hpp
         ../include/gcis_index_dfuds.hpp)
 
@@ -39,6 +40,7 @@ ADD_LIBRARY(gc-is-statistics STATIC
         ../include/gcis_gap.hpp
         ../include/sais_nong.hpp
         ../include/gcis_index.hpp
+        ../include/gcis_index_bs.hpp
         ../include/gcis_index_grid.hpp
         ../include/gcis_index_dfuds.hpp
         )

@@ -1,14 +1,20 @@
+//
+// Created by ale on 22-01-20.
+//
+
+//
+// Created by ale on 14-01-20.
+//
+
 
 #include <ostream>
 #include <fstream>
 #include "gtest/gtest.h"
-#include "gcis_index_bs.hpp"
+#include "gcis_index.hpp"
 
 using namespace gcis_index_private;
 
-gcis_index_bs<> GCIS_index_toy;
-
-
+struct dumbGrammar;
 std::string T = "AGCTTTTCATTCTGACTGCAACAGCTTTTCATTCTGACTGCAAC";
 
 std::map<char, uint32_t> sigma = {
@@ -17,16 +23,15 @@ std::map<char, uint32_t> sigma = {
         {'G',10},
         {'T',13},
 };
-
 std::vector<gcis_index_grid<>::lpoint> points = {
-        {{ 6,1}, 43},
-        {{ 7,2}, 32},
+        {{11,1}, 43},
+        {{ 6,2}, 32},
         {{ 1,3}, 35},
         {{13,4}, 26},
         {{13,5}, 42},
         {{ 3,6}, 37},
-        {{ 10,7}, 39},
-        {{ 9,8}, 17},
+        {{ 9,7}, 39},
+        {{ 8,8}, 17},
         {{14,9}, 16},
         {{11,10}, 31},
         {{ 1,11}, 36},
@@ -35,8 +40,8 @@ std::vector<gcis_index_grid<>::lpoint> points = {
         {{ 1,14}, 28},
         {{12,15}, 10},
         {{12,16}, 38},
-        {{ 1,17}, 9},
-        {{14,18}, 25},
+        {{ 9,17}, 9},
+        {{ 2,18}, 25},
         {{14,19}, 30},
         {{14,20}, 21},
         {{14,21}, 15},
@@ -168,6 +173,10 @@ sdsl::int_vector<>wt   = {11,7,14,12,5,2};
 //////////////////////////A,C,G,T,A,G,C,T,T,T,T,C,A,T,T,C,T,G,A,C,T,G,C,A,A,C,A,G,C,T,T,T,T,C,A,T,T,C,T,G,A,C,T,G,C,A,A,C
 sdsl::bit_vector l     = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,1,0,0,1,0,0,1,0,0,0,0,1,0,0};
 
+
+
+gcis_index<> GCIS_index_toy;
+
 void load_toy_example(){
 
 
@@ -175,8 +184,6 @@ void load_toy_example(){
     sdsl::wt_gmr<> gmrwt;
     sdsl::construct_im(gmrwt,wt);
 
-    gcis_index_grid<> m_grid (points, 15, 24);
-    GCIS_index_toy.set_grid(m_grid);
     GCIS_index_toy.set_bvfocc(sdsl::sd_vector<>(focc));
     GCIS_index_toy.set_tree(dfuds);
     GCIS_index_toy.set_bvt(sdsl::sd_vector<>(t));
@@ -193,82 +200,147 @@ TEST(dumbSuite, dumb){
     ASSERT_TRUE(true);
 }
 
-//
-//TEST(gcisIndexBSToyExample,lowerBound)
-//{
-//    for (int i = 2; i <= 100 ; ++i) {
-//        uint64_t l = 1, r = 100;
-//        bool f = GCIS_index_toy.bsearch_lowerBound(l,r,[&i](const uint64_t& X) -> int{
-//            return (i == X)?0:( i > X )?1:-1;
-//        });
-//        ASSERT_EQ(l,i);
-//        ASSERT_FALSE(!f);
-//     }
-//
-//}
-//TEST(gcisIndexBSToyExample,upperBound)
-//{
-//    for (int i = 2; i <= 100 ; ++i) {
-//        uint64_t l = 1, r = 100;
-//        bool f = GCIS_index_toy.bsearch_upperBound(l,r,[&i](const uint64_t& X) -> int{
-//            return (i == X)?0:( i > X )?1:-1;
-//        });
-//        ASSERT_EQ(r,i);
-//        ASSERT_FALSE(!f);
-//    }
-//
-//}
-//
-//TEST(gcisIndexToyExampleBS,findRange){
-//
-//    load_toy_example();
-//
-//    for (const auto &sfx : suffixes) {
-////        std::cout<<sfx.second<<std::endl;
-//        std::vector< gcis_index<>::_node > nodes;
-//        GCIS_index_toy.find_range(sfx.second,nodes);
-//    }
-//
-//}
+TEST(gcisIndexToyExample,map_preorder){
+    load_toy_example();
+    for (int i = 0; i < X.size() ; ++i) {
+//        std::cout<<i<<std::endl;
+        auto c = GCIS_index_toy.map_node(i+1);
+        ASSERT_EQ( c > 14 ? sigma[c]:c,X[i]);
+    }
+}
+TEST(gcisIndexToyExample,map_rule){
+    load_toy_example();
+    for (uint32_t i = 0; i < 14 ; ++i) {
+//        std::cout<<i<<std::endl;
+        ASSERT_EQ(GCIS_index_toy.map_rule(i),rule_pre[i]);
+    }
+}
+TEST(gcisIndexToyExample,offset){
+    load_toy_example();
+    for (const auto &item : off) {
+//        std::cout<<item.first<<std::endl;
+        ASSERT_EQ(GCIS_index_toy.offset_node(item.first),item.second + 4);
+    }
+}
 
-TEST(gcisIndexToyExampleBS,locate){
-
-
+TEST(gcisIndexToyExample, display)
+{
     load_toy_example();
     srand(time(nullptr));
-    for (uint i = 0; i < 100000 ; ++i) {
 
-        uint l = rand()%T.size();
-        uint r = rand()%T.size();
+    for (int i = 0; i < 1000000; ++i)
+    {
+        uint p = rand()%T.size();
+        uint m = rand()%(T.size() - p);
 
-        if( l > r ) std::swap(l,r);
-        uint m = r - l + 1 ;
-        if( m < 5  ) r+=5;
-        if(r >= T.size() || m == 1) continue;
+        std::string str,s;
+        s.resize(m);
+        std::copy(T.begin()+p,T.begin()+p+m,s.begin());
+        str.reserve(m);
+//        std::cout<<p<<","<<m<<" s:"<<s<<std::endl;
+        GCIS_index_toy.display(p,m,str);
+        ASSERT_EQ(str,s);
+    }
+}
+//
+//TEST(gcisIndexToyExample, cmp_prefix_rule)
+//{
+//    load_toy_example();
+//    srand(time(nullptr));
+//
+//    for (int i = 0; i < 1000000; ++i)
+//    {
+//        uint p =  rand()%T.size();
+//        uint m = rand()%(T.size() - p);
+//        uint rule = rand()%15;
+//        while(rule == 0 ||rule == 1 || rule == 13 ||rule == 10 || rule == 4  ) rule = rand()%15;
+//
+//        std::string str,s;
+//        s.resize(m);
+//        std::copy(T.begin()+p,T.begin()+p+m,s.begin());
+////        std::cout<<p<<","<<m<<" s:"<<s<<std::endl;
+////        std::cout<<"rule:"<<rule<<std::endl;
+//        long long j = 0;
+//
+//        int t = GCIS_index_toy.cmp_prefix_rule(rule,s,j);
+//
+//        if(t == 0){
+//            size_t f = s.find_first_of(non_t_exp[rule].c_str());
+//            ASSERT_EQ(f,0);
+//        }else{
+//            int t2 = std::strcmp(s.c_str(),non_t_exp[rule].c_str());
+//
+//            t2 = (t2 > 0)?1:((t2 < 0)?-1:0);
+//            ASSERT_EQ(t2,t);
+//        }
+//
+//    }
+//}
+//TEST(gcisIndexToyExample, cmp_suffix_rule)
+//{
+//    load_toy_example();
+//    srand(time(nullptr));
+//
+//    for (int i = 0; i < 1000000; ++i)
+//    {
+//        uint p = rand()%T.size();
+//        uint m = rand()%(T.size() - p);
+//        uint rule = rand()%15;
+//
+////        std::cout<<p<<","<<m<<","<<rule<<std::endl;
+//        if(!m)continue;
+//        if(rule == 0 ||rule == 1 || rule == 13 ||rule == 10 || rule == 4  ) continue;
+//
+//        std::string str,s;
+//        s.resize(m);
+//        std::copy(T.begin()+p,T.begin()+p+m,s.begin());
+////        std::cout<<p<<","<<m<<" s:"<<s<<std::endl;
+////        std::cout<<"rule:"<<rule<<std::endl;
+//        uint j = s.size()-1;
+//
+//        int t = GCIS_index_toy.cmp_suffix_rule(rule,s,j);
+//
+//        std::string ss = s;
+//        std::reverse(ss.begin(),ss.end());
+//        std::string sr = non_t_exp[rule];
+//        std::reverse(sr.begin(),sr.end());
+//
+//        if(t == 0){
+//
+//            size_t f = ss.find_first_of(sr.c_str());
+//            ASSERT_EQ(f,0);
+//
+//        }else{
+//            int t2 = std::strcmp(ss.c_str(),sr.c_str());
+//
+//            t2 = (t2 > 0)?1:((t2 < 0)?-1:0);
+//            ASSERT_EQ(t2,t);
+//        }
+//
+//
+//    }
+//}
+//TEST(gcisIndexToyExample, cmp_suffix_grammar)
+//{
+//    load_toy_example();
+//    srand(time(nullptr));
+//    for (int i = 0; i < suffixes.size(); ++i)
+//    {
+//        std::string sfx = suffixes[i+1];
+//      //  std::cout<<i<<std::endl;
+//        int r = GCIS_index_toy.cmp_suffix_grammar(points[i].second,sfx,0);
+//        ASSERT_EQ(r,0);
+//    }
+//}
 
-        std::string s; s.resize(m);
-        std::copy(T.begin()+l,T.begin()+l+m, s.begin());
-        std::vector< gcis_index<>::len_type > occ;
-//        s = "AG";
-        GCIS_index_toy.locate(s,occ);
-        std::sort(occ.begin(),occ.end());
-
-        size_t pos = T.find(s.c_str(),0);
-        std::vector<gcis_index<>::len_type > test_occ;
-        while(pos!= std::string::npos){
-            test_occ.push_back(pos);
-            pos = T.find(s.c_str(),pos+1);
-        }
-
-        for (int i = 0 ; i < occ.size(); ++i) occ[i]-=4;
-
-//        std::cout<<s<<std::endl;
-
-        ASSERT_EQ(test_occ,occ);
+TEST(gcisIndexToyExample, findSecondaryOcc)
+{
+    for (int i = 2; i < 43; ++i)
+    {
+        gcis_index_private::gcis_index<>::_node n = std::make_pair(i,0);
+        std::vector<gcis_index_private::gcis_index<>::len_type > occ;
+        GCIS_index_toy.find_secondary_occ(n,occ);
 
     }
-
-
-
 }
 
