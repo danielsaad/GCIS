@@ -1,7 +1,7 @@
 add_executable(gc-is-codec gc-is-codec.cpp)
 add_executable(gcis-ef test-gcis-elias-fano.cpp)
 target_link_libraries(gc-is-codec gc-is sdsl pthread sais)
-target_link_libraries(gcis-ef sdsl pthread sais)
+target_link_libraries(gcis-ef sdsl gc-is divsufsort divsufsort64)
 add_executable(gc-is-codec-memory gc-is-codec.cpp ${CMAKE_SOURCE_DIR}/external/malloc_count/malloc_count.c)
 target_compile_definitions(gc-is-codec-memory PRIVATE MEM_MONITOR REPORT )
 target_link_libraries(gc-is-codec-memory gc-is-statistics sdsl pthread dl sais)

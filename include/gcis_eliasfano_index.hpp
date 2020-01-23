@@ -36,6 +36,9 @@ class elias_fano_grammar_info {
     uint_t m_level_n = 0;
     // Grammar size (sum of right-hand)
     uint_t m_grammar_size = 0;
+    // Length of the right-hand side concatenation from the rules in the first
+    // level (the ones that derives terminals)
+    uint_t m_first_level_expansion_len = 0;
 
     void serialize(ofstream &o) {
         util::serialize(m_number_of_rules, o);
@@ -43,6 +46,7 @@ class elias_fano_grammar_info {
         util::serialize(m_alphabet_size, o);
         util::serialize(m_level_n, o);
         util::serialize(m_grammar_size, o);
+        util::serialize(m_first_level_expansion_len, o);
     }
     void load(ifstream &in) {
         util::load(m_number_of_rules, in);
@@ -50,6 +54,7 @@ class elias_fano_grammar_info {
         util::load(m_alphabet_size, in);
         util::load(m_level_n, in);
         util::load(m_grammar_size, in);
+        util::load(m_first_level_expansion_len, in);
     }
     void print() {
         using std::cout;
@@ -60,6 +65,8 @@ class elias_fano_grammar_info {
             cout << "Alphabet size = " << m_alphabet_size[i] << endl;
             cout << "Number of rules = " << m_number_of_rules[i] << endl;
             cout << "Grammar size = " << m_grammar_size << endl;
+            cout << "First level expansion = " << m_first_level_expansion_len
+                 << endl;
         }
     }
 };
@@ -448,6 +455,10 @@ class elias_fano_grammar_builder {
             int_t pos = m_SA[i];
             int_t lcp_len = lcp[i];
             int_t rule_len = get_lms_substring_len(pos);
+            // If it is the first level
+            if (m_level == 0) {
+                m_grammar_info.m_first_level_expansion_len += rule_len;
+            }
             m_grammar_info.m_grammar_size += rule_len;
             copy_lms_substring(pos, rules_cat_idx, rule_len, lcp_len, offset);
             set_unary(rules_delim_unary, rules_delim_idx, rule_len - lcp_len);
@@ -483,6 +494,7 @@ class elias_fano_grammar_builder {
                 // cout << rules_concat[base + i];
             }
             // cout << endl;
+            m_grammar_info.m_first_level_expansion_len += tail_len;
         } else {
             // Resize rule delimiters bitvector and set the last entry to
             // tail_len
