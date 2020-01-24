@@ -17,9 +17,13 @@ struct rule_info {
     uint_t pos;
     // The lenght of this rule
     uint_t len;
+    void print() const { cout << id << " " << len << " " << pos << endl; }
 };
 
 struct suffix_info {
+  public:
+    suffix_info(uint_t id, uint_t prev_rule, uint_t pos, uint_t len)
+        : id(id), prev_rule(prev_rule), pos(pos), len(len) {}
     // Preorder id of the node
     uint_t id;
     // Previous sibling of the rule
@@ -28,6 +32,9 @@ struct suffix_info {
     uint_t pos;
     // The lenght of the suffix expansion
     uint_t len;
+    void print() const {
+        cout << id << " " << prev_rule << " " << pos << " " << len << endl;
+    }
 };
 
 /**
@@ -39,15 +46,42 @@ struct suffix_info {
 template <class info_t = rule_info> class sorter {
   public:
     void sort(std::vector<info_t> &v, char *text) {
-        pre_process(v);
+        pre_process(v, text);
         build_data_structures(text);
         std::sort(v.begin(), v.end(),
                   [this](const info_t &lhs, const info_t &rhs) {
-                      auto rmq = m_rmq(m_ISA[lhs.pos], m_ISA[lhs.pos]);
-                      if (lhs.len <= rmq) {
+                      // lhs.print();
+                      // rhs.print();
+                      if (m_ISA[lhs.pos] == m_ISA[rhs.pos]) {
+                          return lhs.len <= rhs.len;
+                      }
+                      uint_t rmq;
+                      if (m_ISA[lhs.pos] < m_ISA[rhs.pos]) {
+                          rmq = m_rmq(m_ISA[lhs.pos] + 2, m_ISA[rhs.pos] + 1);
+                      } else {
+                          rmq = m_rmq(m_ISA[rhs.pos] + 2, m_ISA[lhs.pos] + 1);
+                      }
+
+                      cout << "Id " << endl;
+                      cout << lhs.id << " " << rhs.id << endl;
+                      cout << "Positions" << endl;
+                      cout << lhs.pos << " " << rhs.pos << endl;
+                      cout << "Len " << endl;
+                      cout << lhs.len << " " << rhs.len << endl;
+                      cout << "ISA positions" << endl;
+                      cout << m_ISA[lhs.pos] << " " << m_ISA[rhs.pos] << endl;
+                      cout << "rmq" << endl;
+                      cout << rmq << endl;
+                      cout << "LCP[RMQ]" << endl;
+                      cout << m_lcp[rmq] << endl;
+                      if (lhs.len <= m_lcp[rmq] && rhs.len <= m_lcp[rmq]) {
+                          return lhs.len <= rhs.len;
+                      } else if (lhs.len <= m_lcp[rmq]) {
+                          cout << "true" << endl;
                           // lhs is a prefix of rhs
                           return true;
-                      } else if (rhs.len <= rmq) {
+                      } else if (rhs.len <= m_lcp[rmq]) {
+                          cout << "false" << endl;
                           // rhs is a prefix os lhs
                           return false;
                       } else {
@@ -55,13 +89,27 @@ template <class info_t = rule_info> class sorter {
                            * Neither is a prefix of the other. Use ISA to find
                            *the order
                            ***/
+                          if (m_ISA[lhs.pos] < m_ISA[rhs.pos]) {
+                              cout << "true cmp" << endl;
+                          } else {
+                              cout << "false cmp" << endl;
+                          }
                           return m_ISA[lhs.pos] < m_ISA[rhs.pos];
                       }
                   });
     }
 
   private:
-    virtual void pre_process(std::vector<info_t> &v) {}
+    virtual void pre_process(std::vector<info_t> &v, char *text) {
+        uint_t size = strlen(text) + 1;
+        for (uint_t i = 0; i < v.size(); i++) {
+            v[i].pos = size - v[i].pos - v[i].len;
+            if (v[i].pos > 0)
+                v[i].pos--;
+
+            // cout << v[i].id << " " << v[i].pos << endl;
+        }
+    }
 
     /**
      * @brief Builds the suffix array, the inverse suffix array,
@@ -72,6 +120,18 @@ template <class info_t = rule_info> class sorter {
      */
     virtual void build_data_structures(char *text) {
 
+        // string abra_text = "abracadabra";
+        // uint_t abra_size = abra_text.size();
+        // sdsl::int_vector<> abra_sa(abra_size, 0);
+        // sdsl::algorithm::calculate_sa((unsigned char*)abra_text.c_str(),
+        //                               abra_size, abra_sa);
+        // sdsl::lcp_dac<> abra_lcp;
+        // sdsl::construct_im(abra_lcp, abra_text, 1);
+        // cout << "It works!" << endl;
+        // for (uint_t i = 0; i < abra_size; i++) {
+        //     cout << i << " " << abra_sa[i] << " " << abra_lcp[i] << endl;
+        // }
+
         /***
          * Computes the text reverse
          */
@@ -81,17 +141,34 @@ template <class info_t = rule_info> class sorter {
             rev_text[i] = text[text_size - i - 1];
         }
         rev_text[text_size] = 0;
+        // string foo(rev_text);
+        // cout << "Foo size = " << foo.size();
+        // cout << "Comparison" << strcmp(foo.c_str(), rev_text) << endl;
+        // const char *bar = foo.c_str();
+        // for (uint_t i = 0; i < foo.size()+1; i++) {
+        //     cout << i << (int) *(bar + i) << endl;
+        // }
         // Builds suffix array
+        m_SA = sdsl::int_vector<>(text_size, sdsl::bits::hi(text_size) + 1);
+        // sdsl::algorithm::calculate_sa((unsigned char *)foo.c_str(),
+        // text_size,
+        //                               m_SA);
         sdsl::algorithm::calculate_sa((const unsigned char *)rev_text,
-                                      text_size + 1, m_SA);
+                                      text_size, m_SA);
         // Builds the inverse suffix array
         m_ISA = sdsl::inv_perm_support<>(&m_SA);
         // Builds the LCP information
-        sdsl::construct_im(m_lcp, text, sizeof(unsigned char));
+        // sdsl::construct_im(m_lcp, foo.c_str(), sizeof(char));
+        sdsl::construct_im(m_lcp, (const char *)rev_text, sizeof(char));
         // Builds the RMQ Support.
         m_rmq = sdsl::rmq_succinct_sada<>(&m_lcp);
+        // std::cout << "LCP SIZE = " << m_lcp.size() << std::endl;
         // The SA  and the reverse text are not needed anymore
-        sdsl::util::clear(m_SA);
+        // for (uint_t i = 0; i < text_size; i++) {
+        //     cout << i << " " << m_SA[i] << " " << m_ISA[i] << " " << m_lcp[i]
+        //          << endl;
+        // }
+        // cout << m_lcp[m_lcp.size() - 1] << endl;
         delete[] rev_text;
     }
 
@@ -120,7 +197,7 @@ template <class info_t = rule_info> class sorter {
     }
     sdsl::int_vector<> m_SA;
     sdsl::inv_perm_support<> m_ISA;
-    sdsl::lcp_bitcompressed<> m_lcp;
+    sdsl::lcp_bitcompressed<> m_lcp; // TODO: change type for faster sorting
     sdsl::rmq_succinct_sada<> m_rmq;
 };
 
@@ -128,21 +205,19 @@ template <class info_t = rule_info> class sorter {
  * Specializes the methods for sorting the suffixes
  ***/
 template <>
-void sorter<suffix_info>::pre_process(std::vector<suffix_info> &v) {}
+void sorter<suffix_info>::pre_process(std::vector<suffix_info> &v, char *text) {
+}
 template <> void sorter<suffix_info>::build_data_structures(char *text) {
 
     uint_t text_size = strlen(text);
-    // Builds suffix array
-    sdsl::algorithm::calculate_sa((const unsigned char *)text, text_size + 1,
-                                  m_SA);
+    m_SA = sdsl::int_vector<>(text_size, sdsl::bits::hi(text_size) + 1);
+    sdsl::algorithm::calculate_sa((unsigned char *)text, text_size, m_SA);
     // Builds the inverse suffix array
     m_ISA = sdsl::inv_perm_support<>(&m_SA);
     // Builds the LCP information
-    sdsl::construct_im(m_lcp, text, sizeof(unsigned char));
+    sdsl::construct_im(m_lcp, (const char *)text, sizeof(char));
     // Builds the RMQ Support.
     m_rmq = sdsl::rmq_succinct_sada<>(&m_lcp);
-    // The SA  and the reverse text are not needed anymore
-    sdsl::util::clear(m_SA);
 }
 
 class elias_fano_dfs_helper {
@@ -156,6 +231,7 @@ class elias_fano_dfs_helper {
                           sdsl::int_vector<> &pi, std::vector<int_t> &inv_pi,
                           sdsl::int_vector<> &wt, string &str,
                           std::vector<uint_t> &rules_expansion_len,
+                          sdsl::int_vector<> &suffixes_expansion_len,
                           sdsl::int_vector<> &prev_rule, uint_t root,
                           uint_t &bv_idx)
         : m_rules_derivation(rules_derivation), m_rules_pos(rules_pos),
@@ -163,6 +239,7 @@ class elias_fano_dfs_helper {
           m_suffixes_expansion_pos(suffixes_expansion_pos), m_focc(focc),
           m_l(l), m_bv_dfuds(bv_dfuds), m_t(t), m_pi(pi), m_inv_pi(inv_pi),
           m_wt(wt), m_str(str), m_rules_expansion_len(rules_expansion_len),
+          m_suffixes_espansion_len(suffixes_expansion_len),
           m_prev_rule(prev_rule), m_root(root), m_bv_idx(bv_idx) {}
 
     /**
@@ -171,16 +248,21 @@ class elias_fano_dfs_helper {
      */
     void dfs() {
         /***
-         * Make a dfs from every children of the root
+         * Make a dfs from every children of the root,
+         * except for the one which expands to 0
          */
         uint_t pos = m_rules_pos[m_root];
         uint_t len = m_rules_pos[m_root + 1] - pos;
         uint_t offset = 0;
-        for (uint_t i = pos; i < pos + len; i++) {
-            m_suffixes_expansion_pos[global_dfs_idx] = offset;
+        // pos-len-1 because we want to exclude rules which expands to 0
+        for (uint_t i = pos; i < pos + len - 1; i++) {
             uint_t node = m_rules_derivation[i];
             if (i > pos) {
+                m_suffixes_expansion_pos[global_dfs_idx] = offset;
                 m_prev_rule[global_dfs_idx] = m_rules_derivation[i - 1];
+                // -1 to discard the rule 0
+                m_suffixes_espansion_len[global_dfs_idx] =
+                    m_rules_expansion_len[m_root] - offset - 1;
             }
             dfs(node, offset);
             offset += m_rules_expansion_len[node];
@@ -189,7 +271,6 @@ class elias_fano_dfs_helper {
     }
 
   private:
-    uint_t dfs(uint_t rule_idx);
     sdsl::int_vector<> &m_rules_pos;
     sdsl::int_vector<> &m_rules_derivation;
     sdsl::bit_vector &m_focc;
@@ -202,6 +283,7 @@ class elias_fano_dfs_helper {
     std::vector<uint_t> &m_rules_expansion_len;
     sdsl::int_vector<> &m_rules_expansion_pos;
     sdsl::int_vector<> &m_suffixes_expansion_pos;
+    sdsl::int_vector<> &m_suffixes_espansion_len;
     sdsl::int_vector<> &m_prev_rule;
     string &m_str;
 
@@ -226,6 +308,7 @@ class elias_fano_dfs_helper {
      * @ param offset offset from the text beginning.
      */
     void dfs(uint_t rule_idx, uint_t offset) {
+        cout << "Rule idx = " << rule_idx << endl;
         if (rule_idx < 256) {
             /**
              * It is a terminal.
@@ -259,14 +342,20 @@ class elias_fano_dfs_helper {
                 m_bv_dfuds[m_bv_idx + len] = 0;
                 m_bv_idx += len + 1;
 
+                uint_t discarded_len = 0;
+
                 for (int_t i = pos; i < pos + len; i++) {
                     global_dfs_idx++;
                     if (i > pos) {
                         m_prev_rule[global_dfs_idx] = m_rules_derivation[i - 1];
                         m_suffixes_expansion_pos[global_dfs_idx] = local_offset;
+                        m_suffixes_espansion_len[global_dfs_idx] =
+                            m_rules_expansion_len[rule_idx] - discarded_len;
                     }
                     dfs(m_rules_derivation[i], local_offset);
                     local_offset +=
+                        m_rules_expansion_len[m_rules_derivation[i]];
+                    discarded_len +=
                         m_rules_expansion_len[m_rules_derivation[i]];
                 }
                 m_rules_expansion_pos[rule_idx] = offset;
@@ -378,7 +467,9 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
     uint_t root_arity = rules_pos[m_gref.m_xs + 1] - rules_pos[m_gref.m_xs];
     uint_t bv_idx = 512 + 3 + root_arity + 1;
     int_t stack_idx = 0;
-    m_pi.resize(total_rules);
+    cout << "Number of levels = " << m_gref.m_info.m_level_n << endl;
+    // Important: We have to remove the rules which expands to 0
+    m_pi.resize(total_rules - m_gref.m_info.m_level_n + 1);
     /***
      * Inverse permutation: indicates whether the rules already appeared or
      * not. In affirmative case, points to an index in the original
@@ -433,16 +524,24 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
     sdsl::int_vector<> suffixes_expansion_pos(
         m_gref.m_info.m_grammar_size, 0,
         sdsl::bits::hi(m_gref.m_info.m_text_size[1]) + 1);
+    /***
+     * This will store the len of each rule suffix expansion.
+     ***/
+    sdsl::int_vector<> suffixes_expansion_len(
+        m_gref.m_info.m_grammar_size, 0,
+        sdsl::bits::hi(m_gref.m_info.m_text_size[1]) + 1);
+
     /**
      * This will store the previous sibling of each suffix of a right-hand
      */
     sdsl::int_vector<> prev_rule(m_gref.m_info.m_grammar_size, 0,
                                  sdsl::bits::hi(total_rules) + 1);
 
-    elias_fano_dfs_helper dfs_h(
-        rules_derivation, rules_pos, rules_expansion_pos,
-        suffixes_expansion_pos, focc, l, m_bv_dfuds, t, m_pi, inv_pi, wt, m_str,
-        rules_expansion_len, prev_rule, m_gref.m_xs, bv_idx);
+    elias_fano_dfs_helper dfs_h(rules_derivation, rules_pos,
+                                rules_expansion_pos, suffixes_expansion_pos,
+                                focc, l, m_bv_dfuds, t, m_pi, inv_pi, wt, m_str,
+                                rules_expansion_len, suffixes_expansion_len,
+                                prev_rule, m_gref.m_xs, bv_idx);
     dfs_h.dfs();
     sdsl::construct_im(m_wt, wt);
     m_l = l;
@@ -455,7 +554,8 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
     rules[0].id = m_gref.m_xs;
     rules[0].len = m_gref.m_info.m_text_size[1];
     rules[0].pos = 0;
-    cout << rules[0].id << " " << rules[0].len << " " << rules[0].pos << endl;
+    cout << '0' << " " << rules[0].id << " " << rules[0].len << " "
+         << rules[0].pos << endl;
 
     for (uint_t i = 257; i < m_pi.size(); i++) {
         rules[i - 256].id = m_pi[i];
@@ -467,6 +567,95 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
 
     sorter<rule_info> s;
     s.sort(rules, m_text);
+    cout << endl;
+    for (uint_t i = 0; i < rules.size(); i++) {
+        cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
+             << endl;
+    }
+    cout << endl;
+
+    cout << "Printing the suffixes " << endl;
+    std::vector<suffix_info> suffixes;
+    for (uint_t i = 0; i < suffixes_expansion_len.size(); i++) {
+        if (suffixes_expansion_len[i] != 0) {
+            suffixes.emplace_back(suffix_info(i, prev_rule[i],
+                                              suffixes_expansion_pos[i],
+                                              suffixes_expansion_len[i]));
+            suffixes.back().print();
+        }
+    }
+    cout << "Finished" << endl;
+    sorter<suffix_info> s2;
+    s2.sort(suffixes, m_text);
+
+    cout << " Printing the suffixes after sorting" << endl;
+
+    for (uint_t i = 0; i < suffixes.size(); i++) {
+        suffixes[i].print();
+    }
+
+    cout << "Printing the rules before relabeling " << endl;
+    for (uint_t i = 0; i < rules.size(); i++) {
+        cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
+             << endl;
+    }
+    cout << endl;
+
+    cout << " Printing the suffixes before relabeling" << endl;
+
+    for (uint_t i = 0; i < suffixes.size(); i++) {
+        suffixes[i].print();
+    }
+
+    /***
+     * Relabel the permutation and the wavelet Tree
+     */
+
+    /** Compute the inverse permutation from the rules ordering **/
+    std::fill(inv_pi.begin(), inv_pi.end(), -1);
+    for (uint_t i = 0; i < 256; i++) {
+        inv_pi[i] = i;
+    }
+    for (uint_t i = 0; i < rules.size(); i++) {
+        inv_pi[rules[i].id] = i + 256;
+    }
+
+    /** Relabel the permutation **/
+    for (uint_t i = 0; i < m_pi.size(); i++) {
+        m_pi[i] = inv_pi[m_pi[i]];
+    }
+
+    /** Relabel the Wavelet Tree **/
+    for (uint_t i = 0; i < wt.size(); i++) {
+        wt[i] = inv_pi[wt[i]];
+    }
+
+    /***
+     * Relabel the tree root
+     ***/
+    m_gref.m_xs = inv_pi[m_gref.m_xs];
+
+    /***
+     * Relabel the previous rules label from the suffixes ordering.
+     */
+
+    for (uint_t i = 0; i < suffixes.size(); i++) {
+        suffixes[i].prev_rule = inv_pi[suffixes[i].prev_rule];
+    }
+
+    cout << "Printing the rules after relabeling " << endl;
+    for (uint_t i = 0; i < rules.size(); i++) {
+        rules[i].id = inv_pi[rules[i].id];
+        cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
+             << endl;
+    }
+    cout << endl;
+
+    cout << " Printing the suffixes after relabeling" << endl;
+
+    for (uint_t i = 0; i < suffixes.size(); i++) {
+        suffixes[i].print();
+    }
 }
 
 } // namespace gcis
