@@ -118,18 +118,6 @@ namespace gcis_index_private{
         xb = B.xb;
         sl = B.sl;
         build_rank_select_structures();
-        std::cout<<"xb:";
-        for(uint i = 0 ; i < xb.size(); ++i)
-            std::cout<<xb[i];
-        std::cout<<std::endl;
-        std::cout<<"sb:";
-        for(uint i = 0 ; i < sb.size(); ++i)
-            std::cout<<sb[i]<<" ";
-        std::cout<<std::endl;
-        std::cout<<"sl:";
-        for(uint i = 0 ; i < sl.size(); ++i)
-            std::cout<<sl[i]<<" ";
-        std::cout<<std::endl;
         return *this;
     }
 

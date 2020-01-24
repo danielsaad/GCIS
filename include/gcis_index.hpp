@@ -11,6 +11,7 @@
 #include "gcis_index_grid.hpp"
 #include "gcis_index_dfuds.hpp"
 
+
 //#define TOYEXAMPLE 1
 
 
@@ -60,7 +61,7 @@ namespace gcis_index_private{
             void set_vt( const std::string& );
             void set_pi( const sdsl::int_vector<>& );
             void set_nt( const t_mapwt &);
-            void set_l(const sdsl::bit_vector & );
+            void set_l(const sdsl::sd_vector<> & );
             void set_sigma( const uint& );
 
             /** Return the positions of the text where the pattern occurs */
@@ -893,7 +894,7 @@ namespace gcis_index_private{
     }
 
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
-    void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::set_l(const sdsl::bit_vector & _l) {
+    void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::set_l(const sdsl::sd_vector<> & _l) {
         bvl = _l;
         bvl_rank1 = sdsl::sd_vector<>::rank_1_type (&bvl);
         bvl_select1 = sdsl::sd_vector<>::select_1_type (&bvl);
