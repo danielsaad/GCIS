@@ -394,8 +394,8 @@ class index_basics {
     sparse_bv_t m_l;
     std::string m_str;
     sdsl::bit_vector m_bv_dfuds;
-
     char *m_text;
+    std::vector<suffix_info> m_grid_points;
 };
 
 template <> void index_basics<elias_fano_grammar>::dfs() {
@@ -656,6 +656,7 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
     for (uint_t i = 0; i < suffixes.size(); i++) {
         suffixes[i].print();
     }
+    m_grid_points = std::move(suffixes);
 }
 
 } // namespace gcis
