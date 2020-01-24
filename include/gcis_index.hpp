@@ -11,9 +11,8 @@
 #include "gcis_index_grid.hpp"
 #include "gcis_index_dfuds.hpp"
 
-#define TOYEXAMPLE 1
-#define BUFFER_SIZE 1000;
-#define MSIGMA 256;
+//#define TOYEXAMPLE 1
+
 
 namespace gcis_index_private{
 
@@ -52,6 +51,7 @@ namespace gcis_index_private{
 
             virtual void serialize(std::ofstream& ) const;
             virtual void load(std::ifstream& );
+            virtual size_t size_in_bytes()const;
 
             void set_grid(const t_grid& );
             void set_tree(const sdsl::bit_vector & );
@@ -98,7 +98,7 @@ namespace gcis_index_private{
 
             uint sigma;
             uint32_t n_rules;
-//            uint32_t n_suffixes;
+            uint32_t n_suffixes;
 
         public:
 
@@ -137,10 +137,6 @@ namespace gcis_index_private{
             /** take a character node and compare the block of it and its siblings to the string*/
             int cmp_block( len_type pos,  uint l,const std::string& str,  len_type & i, const bool& dir) const;
 
-
-
-
-
     };
 
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
@@ -172,6 +168,16 @@ namespace gcis_index_private{
         dfuds_tree.load(f);
     }
 
+    template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
+    size_t gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::size_in_bytes() const {
+        return  _grid.size_in_bytes() +
+                sdsl::size_in_bytes(bvfocc) +
+                sdsl::size_in_bytes(pi) +
+                sdsl::size_in_bytes(bvt) +
+                sdsl::size_in_bytes(wtnt) +
+                dfuds_tree.size_in_bytes() +
+                sizeof(n_rules) + sizeof(n_suffixes);
+    }
     /***
      * @brief This function return the preorder of the node where the first occ of rule appears,
      * @tparam t_mapfbv
@@ -299,7 +305,7 @@ namespace gcis_index_private{
         long long lrank = dfuds_tree.leaf_rank(node-1)+1;
 //        if(dfuds_tree.is_leaf(node))
 //            --lrank;
-        return bvl_select1.select(lrank);
+        return bvl_select1.select(lrank) - 256 ;
     }
 
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
@@ -351,9 +357,9 @@ namespace gcis_index_private{
         //case leaf
         if(  dfuds_tree.is_leaf(node)  )  //if it is a leaf then is a symbol
         {
-            if(str[j--] == X) return 0;
-            if(str[j--] > X) return 1;
-
+            if(str[j] == X) return 0;
+            if(str[j] > X) return 1;
+            j--;
             return -1;
 
         }
@@ -453,8 +459,8 @@ namespace gcis_index_private{
             return 0;
 #endif
 
-            if(str[j] < Y) return -1;
-            if(str[j] > Y) return 1;
+            if(str[j] < X) return -1;
+            if(str[j] > X) return 1;
             --j;
             return 0;
 
@@ -629,8 +635,8 @@ namespace gcis_index_private{
             return 0;
 #endif
 
-            if(str[j] < Y) return -1;
-            if(str[j] > Y) return 1;
+            if(str[j] < X) return -1;
+            if(str[j] > X) return 1;
             j++;
             return 0;
 
@@ -866,6 +872,7 @@ namespace gcis_index_private{
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
     void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::set_grid(const gcis_index::t_grid & g) {
         _grid = g;
+        n_suffixes = _grid.n_cols();
     }
 
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
@@ -897,62 +904,6 @@ namespace gcis_index_private{
         sigma = s;
     }
 
-
-
-
-//    /**
-//     *
-//     * @tparam _gcis
-//     * @param v is a pair< node bfs-order, initial offset occ >
-//     * @param occ is the vector for storing occ
-//     */
-//    template<typename _gcis>
-//    void gcis_index<_gcis>::find_secondary_occ(const gcis_index::_node & v, std::vector<len_type> & occ) const
-//    {
-//        std::deque<_node> S;
-//
-//        {
-//            typename _gcis::rule X = sequence_tree[v.first];
-//            t_wt::size_type n_occ = sequence_tree.rank(sequence_tree.size(),v.first);
-//
-//            /**
-//             * Initialize the deque with all the occ of v
-//             * */
-//            S.push_back(v);
-//            for (int i = 1; i < n_occ ; ++i)
-//                S.emplace_back(sequence_tree.select(i+1,v.first)+1,v.second);
-//
-//        }
-//
-//        while(!S.empty())
-//        {
-//            /** base case we reach the root of the tree */
-//            if(S.front().first == 1) occ.push_back(S.front().second);
-//            else
-//                {
-//                    /**
-//                    * find the parent of the current node
-//                    * */
-//                    size_tree vp = loud_tree.node_pos(S.front().first);
-//                    size_tree parent_v;
-//                    size_tree ch_rank = loud_tree.child_rank(vp,parent_v);
-//                    t_wt::size_type label = sequence_tree[loud_tree.node_id(parent_v)];
-//                    /** Compute offset and insert the node to a future processing*/
-//                    auto off = S.front().second + _grammar->offset(label,ch_rank);
-//                    S.emplace_back(label,(len_type)off);
-//
-//                    /** Compute total occ of the node */
-//                    t_wt::size_type n_occ = sequence_tree.rank( sequence_tree.size(),label);
-//
-//                    for (int i = 1; i < n_occ ; ++i)
-//                        S.emplace_back(sequence_tree.select(i+1,label)+1,off);
-//                }
-//
-//            /**Remove the processed node*/
-//            S.pop_front();
-//        }
-//
-//    }
 
 }
 

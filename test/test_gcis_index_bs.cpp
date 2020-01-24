@@ -1,6 +1,7 @@
 
 #include <ostream>
 #include <fstream>
+#include <sdsl/lcp_bitcompressed.hpp>
 #include "gtest/gtest.h"
 #include "gcis_index_bs.hpp"
 
@@ -230,7 +231,12 @@ TEST(dumbSuite, dumb){
 //    }
 //
 //}
+TEST( sdsltest, lcp_build){
+    std::string a = "abracadabra";
+    sdsl::lcp_bitcompressed<> LCP;
+    sdsl::construct_im(LCP,a.c_str(),1);
 
+}
 TEST(gcisIndexToyExampleBS,locate){
 
 
