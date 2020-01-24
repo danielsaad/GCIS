@@ -43,7 +43,10 @@ namespace gcis_index_private {
 
     public:
         /**Implement an strategy to find the range of valid points of the grid*/
-        void find_range(const std::string &s, std::vector<_node> &bfs_nodes) const;
+        void find_primary_occ(const std::string &s, std::vector<_node> &bfs_nodes) const;
+
+
+        bool find_partition_range(const std::string &s, const uint & i, point& X, point&Y, bool ) const ;
 
         /**binary search lower bound*/
         template<typename C>
@@ -139,130 +142,93 @@ namespace gcis_index_private {
     }
 
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
-    void gcis_index_bs<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::find_range(const std::string &s,
-                                                                                    std::vector<_node> &nodes) const {
+    bool gcis_index_bs<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::find_partition_range(const std::string &s,
+                                                                                              const uint &i,
+                                                                                              gcis_index_bs::point &X,
+                                                                                              gcis_index_bs::point &Y,
+                                                                                              bool ch) const {
 
+            uint64_t r_1 = 256, r_2 = this->n_rules;
+
+            if(ch){
+                 r_1 = 0; r_2 = 255;
+            }
+
+            /**
+             * Binary search over rules
+             * */
+            bool stop = false;
+
+            if (!bsearch_lowerBound(r_1, r_2, [this, &s](const uint32_t &mid) {
+                len_type j = 0;
+                int r = this->cmp_suffix_rule(mid - 1, s, j);
+                if (r == 0 && j < 0) return 0; //string drain
+                if (r == 0) return 1;// string not drain
+                return r;//string differents
+            })) return false;
+
+            if (!stop && !bsearch_upperBound(r_1, r_2, [this, &s](const uint32_t &mid) {
+                len_type j = 0;
+                int r = this->cmp_suffix_rule(mid - 1, s, j);
+                if (r == 0 && j < 0) return 0; //string drain
+                if (r == 0) return 1;// string not drain
+                return r;//string differents
+            })) return false;
+
+
+            uint64_t c_1 = 1, c_2 = this->n_suffixes;
+            /**
+             * Binary search over suffix rules
+             *
+             * */
+            if (!stop && !bsearch_lowerBound(c_1, c_2, [this, &s](const uint32_t &mid) {
+                auto sfx = this->_grid.first_column_point(mid);
+                len_type j = 1;
+                int r = this->cmp_suffix_grammar(sfx, s, j);
+                if (r == 0 && j < s.size()) return 1;
+                if (j == s.size()) return 0;
+                return r;
+
+            })) return false;
+
+            if (!stop && !bsearch_upperBound(c_1, c_2, [this, &s](const uint32_t &mid) {
+                auto sfx = this->_grid.first_column_point(mid);
+                len_type j = 1;
+                int r = this->cmp_suffix_grammar(sfx, s, 1);
+                if (r == 0 && j < s.size()) return 1;
+                if (j == s.size()) return 0;
+                return r;
+
+            })) return false;
+
+            X = std::make_pair(r_1, c_1);
+            Y = std::make_pair(r_2, c_2);
+    }
+
+
+
+    template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
+    void gcis_index_bs<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::find_primary_occ(const std::string &s,
+                                                                                    std::vector<_node> &nodes) const
+    {
         size_t n_s = s.size();
-        uint64_t n_suffixes = this->_grid.n_cols();
 
-//        // first case when the left partition is just one character
-//        {
-//            uint64_t r_1 = 0, r_2 = 256;
-//            /**
-//                 * Binary search over rules
-//                 * */
-//            bool stop = false;
-//            if (!stop && !bsearch_lowerBound(r_1, r_2, [this, &s](const uint32_t &mid) {
-//                return this->cmp_suffix_rule_pre(mid, s, 1);
-//            }))
-//                stop = true;
-//            ++r_1;
-//            if (!stop && !bsearch_upperBound(r_1, r_2, [this, &s](const uint32_t &mid) {
-//                return this->cmp_suffix_rule_pre(mid, s, 1);
-//            }))
-//                stop = true;
-//            --r_2;
-//
-//            uint64_t c_1 = 1, c_2 = n_suffixes;
-//            /**
-//             * Binary search over suffix rules
-//             * */
-//            if (!stop && !bsearch_lowerBound(c_1, c_2, [this, &s](const uint32_t &mid) {
-//                return this->cmp_suffix_grammar(mid, s, 1);
-//            }))
-//                stop = true;
-//            --c_1;
-//            if (!stop && !bsearch_upperBound(c_1, c_2, [this, &s](const uint32_t &mid) {
-//                return this->cmp_suffix_grammar(mid, s, 1);
-//            }))
-//                stop = true;
-//            ++c_2;
-//            /**
-//             * search points in the grid
-//             *
-//             * */
-//            if (!stop) {
-//                point X = std::make_pair(r_1, c_1), Y = std::make_pair(r_2, c_2);
-//
-//                std::vector<uint32_t> labels;
-//
-//                this->_grid.labels_search_2d(X, Y, labels);
-//
-//                for (const auto &item : labels)
-//                    nodes.push_back(std::make_pair(item, 1));
-//            }
-//
-//
-//        }
-        // second case when the left partition is more that one character
+        this->n_suffixes = this->_grid.n_cols();
+
+        for (uint i = 1; i < n_s; ++i)
         {
-
-//            for (uint i = 2; i < n_s; ++i) {
-//                uint64_t r_1 = 256, r_2 = this->n_rules;
-            for (long i = 1; i < n_s; ++i) {
-                uint64_t r_1 = 1, r_2 = this->n_rules;
-
-                if (!bsearch_lowerBound(r_1, r_2, [this, &s, &i](const uint32_t &mid) {
-                    len_type j = i - 1;
-                    int r = this->cmp_suffix_rule(mid - 1, s, j);
-                    if (r == 0 && j < 0) return 0; //string drain
-                    if (r == 0) return 1;// string not drain
-                    return r;//string differents
-                }))
-                    continue;
-
-
-                if (!bsearch_upperBound(r_1, r_2, [this, &s, &i](const uint32_t &mid) {
-                    len_type j = i - 1;
-                    int r = this->cmp_suffix_rule(mid - 1, s, j);
-                    if (r == 0 && j < 0) return 0; //string drain
-                    if (r == 0) return 1; // string not drain
-                    return r; //string differents
-                }))
-                    continue;
-
-
-                uint64_t c_1 = 1, c_2 = n_suffixes;
-                /**
-                 * Binary search over suffix rules
-                 * */
-                if (!bsearch_lowerBound(c_1, c_2, [this, &s, &i](const uint32_t &mid) {
-                    auto sfx = this->_grid.first_column_point(mid);
-                    len_type j = i;
-                    int r = this->cmp_suffix_grammar(sfx, s, j);
-                    if (r == 0 && j < s.size()) return 1;
-                    if (j == s.size()) return 0;
-                    return r;
-
-                }))
-                    continue;
-
-                if (!bsearch_upperBound(c_1, c_2, [this, &s, &i](const uint32_t &mid) {
-                    auto sfx = this->_grid.first_column_point(mid);
-                    len_type j = i;
-                    int r = this->cmp_suffix_grammar(sfx, s, j);
-                    if (r == 0 && j < s.size()) return 1;
-                    if (j == s.size()) return 0;
-                    return r;
-
-                }))
-                    continue;
+                point X,Y;
+                find_partition_range(s,i,X,Y,(i == 1));
                 /**
                  * search points in the grid
-                 *
                  * */
-
-                point X = std::make_pair(r_1, c_1), Y = std::make_pair(r_2, c_2);
-
                 std::vector<uint32_t> labels;
-
                 this->_grid.labels_search_2d(X, Y, labels);
-
                 for (const auto &item : labels)
                     nodes.push_back(std::make_pair(item, -1*i));
 
-            }
         }
+
 
     }
 
@@ -274,7 +240,7 @@ namespace gcis_index_private {
         * Find occ that cross boundaries grammar partition
         * */
         std::vector<_node> primary_occ;
-        find_range(s, primary_occ);
+        find_primary_occ(s, primary_occ);
         /**
          * Find all secondary occurences
          * */

@@ -98,7 +98,7 @@ namespace gcis_index_private{
 
             uint sigma;
             uint32_t n_rules;
-//            uint32_t n_suffixes;
+            uint32_t n_suffixes;
 
         public:
 
@@ -136,10 +136,6 @@ namespace gcis_index_private{
             void append_block( const size_tree&, const size_tree&, std::string&) const;
             /** take a character node and compare the block of it and its siblings to the string*/
             int cmp_block( len_type pos,  uint l,const std::string& str,  len_type & i, const bool& dir) const;
-
-
-
-
 
     };
 
@@ -866,6 +862,7 @@ namespace gcis_index_private{
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
     void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::set_grid(const gcis_index::t_grid & g) {
         _grid = g;
+        n_suffixes = _grid.n_cols();
     }
 
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
