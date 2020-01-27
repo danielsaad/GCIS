@@ -137,7 +137,12 @@ namespace gcis_index_private{
     void gcis_index_grid<wavelet_tree, XB_bit_vector, int_sequence>::serialize(std::ofstream & fout) const
     {
         sdsl::serialize(sb,fout);
+
         sdsl::serialize(xb,fout);
+        sdsl::serialize(xb_rank1,fout);
+        sdsl::serialize(xb_sel0,fout);
+        sdsl::serialize(xb_sel1,fout);
+
         sdsl::serialize(sl,fout);
     }
 
@@ -146,7 +151,16 @@ namespace gcis_index_private{
     {
         sdsl::load(sb,fin);
         sdsl::load(xb,fin);
+
+        sdsl::load(xb_rank1,fin);
+        sdsl::load(xb_sel0 ,fin);
+        sdsl::load(xb_sel1 ,fin);
+
         sdsl::load(sl,fin);
+
+        xb_sel0.set_vector(&xb);
+        xb_sel1.set_vector(&xb);
+        xb_rank1.set_vector(&xb);
 
     }
 

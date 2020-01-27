@@ -229,8 +229,6 @@ namespace gcis_index_private {
                     for (const auto &item : labels)
                         nodes.push_back(std::make_pair(item + 1, -1*i));
                 }
-
-
         }
 
         point X,Y;

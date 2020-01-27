@@ -169,11 +169,27 @@ namespace gcis_index_private{
 
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
     void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::serialize(std::ofstream &f) const {
+
         _grid.serialize(f);
+
         sdsl::serialize(bvfocc,f);
+        sdsl::serialize(bvfocc_sel0,f);
+        sdsl::serialize(bvfocc_rank1,f);
+        sdsl::serialize(bvfocc_sel1,f);
         sdsl::serialize(pi,f);
+        sdsl::serialize(inv_pi,f);
         sdsl::serialize(bvt,f);
+        sdsl::serialize(bvt_rank1,f);
+        sdsl::serialize(bvt_sel0,f);
         sdsl::serialize(wtnt,f);
+
+        size_t sz = vt.size();
+        f.write((const char*)&sz,sizeof(sz));
+        f.write((const char*)vt.data(),sizeof(char)*vt.size());
+
+        sdsl::serialize(bvl,f);
+        sdsl::serialize(bvl_select1,f);
+        sdsl::serialize(bvl_rank1,f);
         dfuds_tree.serialize(f);
     }
 
@@ -182,9 +198,37 @@ namespace gcis_index_private{
 
         _grid.load(f);
         sdsl::load(bvfocc,f);
+        sdsl::load(bvfocc_sel0,f);
+        sdsl::load(bvfocc_rank1,f);
+        sdsl::load(bvfocc_sel1,f);
         sdsl::load(pi,f);
+        sdsl::load(inv_pi,f);
         sdsl::load(bvt,f);
+        sdsl::load(bvt_rank1,f);
+        sdsl::load(bvt_sel0,f);
         sdsl::load(wtnt,f);
+
+        size_t sz;
+        f.read((char*)&sz,sizeof(sz));
+        vt.resize(sz);
+        f.read((char*)vt.data(),sizeof(char)*vt.size());
+
+        sdsl::load(bvl,f);
+        sdsl::load(bvl_select1,f);
+        sdsl::load(bvl_rank1,f);
+
+        bvl_select1.set_vector(&bvl);
+        bvl_rank1.set_vector(&bvl);
+
+        bvt_rank1.set_vector(&bvt);
+        bvt_sel0.set_vector(&bvt);
+
+        inv_pi.set_vector(&pi);
+
+        bvfocc_sel0.set_vector(&bvfocc);
+        bvfocc_sel1.set_vector(&bvfocc);
+        bvfocc_rank1.set_vector(&bvfocc);
+
         dfuds_tree.load(f);
     }
 

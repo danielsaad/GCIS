@@ -45,6 +45,10 @@ bool test_locate(const gcis_index_private::gcis_index_bs<> &G, std::string &T,
 
     auto fmidx = build_fm_index(text_file);
 
+
+
+
+
     srand(time(nullptr));
     size_t N = T.size();
     for (uint i = 0; i < 1000; ++i) {
