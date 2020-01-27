@@ -239,8 +239,7 @@ namespace gcis_index_private{
                 sdsl::size_in_bytes(pi) +
                 sdsl::size_in_bytes(bvt) +
                 sdsl::size_in_bytes(wtnt) +
-                dfuds_tree.size_in_bytes() +
-                sizeof(n_rules) + sizeof(n_suffixes);
+                dfuds_tree.size_in_bytes() ;
     }
     /***
      * @brief This function return the preorder of the node where the first occ of rule appears,
