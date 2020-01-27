@@ -203,14 +203,26 @@ namespace gcis_index_private{
         {
             sdsl::load(bit_vector,f);
             bps         = bp_sup(&bit_vector);
-            rank_00     = rank_00_sup (&bit_vector);
-            select_00   = select_00_sup(&bit_vector);
-            select_0    = bv_select_0(&bit_vector);
+//            sdsl::load(bps,f);
+            sdsl::load(rank_00,f);
+            sdsl::load(select_00,f);
+            sdsl::load(select_0,f);
+
+            bps.set_vector(&bit_vector);
+            rank_00.set_vector(&bit_vector);
+            select_0.set_vector(&bit_vector);
+            select_00.set_vector(&bit_vector);
+
         }
 
         void serialize(std::ofstream & f) const
         {
             sdsl::serialize(bit_vector,f);
+//            sdsl::serialize(bps,f);
+            sdsl::serialize(rank_00,f);
+            sdsl::serialize(select_00,f);
+            sdsl::serialize(select_0,f);
+
         }
 
 

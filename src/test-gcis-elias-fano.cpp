@@ -1,6 +1,7 @@
 #include "gcis_eliasfano_index.hpp"
 #include "index_builder.hpp"
 #include "gcis_index_bs.hpp"
+#include <sdsl/suffix_arrays.hpp>
 
 #include <fstream>
 
@@ -33,6 +34,10 @@ bool test_display(const gcis_index_private::gcis_index_bs<>& G, std::string& T)
 
 
 bool test_locate(const gcis_index_private::gcis_index_bs<>& G, std::string& T){
+
+
+
+
 
     srand(time(nullptr));
     size_t N = T.size();
