@@ -12,7 +12,7 @@ using namespace sdsl;
 
 bool test_display(const gcis_index_private::gcis_index_bs<> &G,
                   std::string &T) {
-    srand(time(nullptr));
+    // srand(time(nullptr));
     size_t N = T.size();
 
     for (int i = 0; i < 1000000; ++i) {
@@ -34,20 +34,16 @@ bool test_display(const gcis_index_private::gcis_index_bs<> &G,
     return true;
 }
 
-csa_wt<wt_huff<rrr_vector<255>>, 512, 1024> build_fm_index(const char *file) {
-    csa_wt<wt_huff<rrr_vector<255>>, 512, 1024> fmidx;
+csa_wt<wt_huff<rrr_vector<>>, 32, 32> build_fm_index(const char *file) {
+    csa_wt<wt_huff<rrr_vector<>>, 32, 32> fmidx;
     construct(fmidx, file, 1);
-    return fmidx;
+        return fmidx;
 }
 
 bool test_locate(const gcis_index_private::gcis_index_bs<> &G, std::string &T,
                  const char *text_file) {
 
     auto fmidx = build_fm_index(text_file);
-
-
-
-
 
     srand(time(nullptr));
     size_t N = T.size();
@@ -56,14 +52,17 @@ bool test_locate(const gcis_index_private::gcis_index_bs<> &G, std::string &T,
         // uint l = rand() % N;
         // uint r = std::min<int>(N - 1, l + PATTERN_LEN);
 
-        uint l = 255983;
-        uint r = 255993;
+        uint_t r = std::max<int>(rand() % N, PATTERN_LEN - 1);
+        uint_t l = r - PATTERN_LEN + 1;
+        // uint l = 494988;
+        // uint r = 494997;
 
         cout << "[l,r] = "
              << "[" << l << "," << r << "]" << endl;
         std::string s;
         s.resize(r - l + 1);
         std::copy(T.begin() + l, T.begin() + r + 1, s.begin());
+        cout << "Pattern = " << s << endl;
         std::vector<gcis_index_private::gcis_index<>::len_type> occ;
         cout << "GCIS locating" << endl;
         G.locate(s, occ);
@@ -77,6 +76,9 @@ bool test_locate(const gcis_index_private::gcis_index_bs<> &G, std::string &T,
         for (uint64_t i = 0; i < test_occ_ctnr.size(); i++) {
             test_occ.push_back(test_occ_ctnr[i]);
         }
+
+        cout << "Number of occurences: " << occ.size() << endl;
+        cout << "Number of occurences (FM): " << test_occ.size() << endl;
 
         if (test_occ != occ) {
             return false;
@@ -98,20 +100,23 @@ void load_string_from_file(char *&str, const char *filename) {
 };
 
 int main(int argc, char *argv[]) {
-    std::ofstream output(argv[3], std::ios::binary);
     char *str;
     if (strcmp(argv[1], "-c") == 0) {
+        std::ofstream output(argv[3], std::ios::binary);
         load_string_from_file(str, argv[2]);
         gcis::grammar_builder<gcis::elias_fano_grammar> builder;
         auto g = builder.build(str);
         g.serialize(output);
+        output.close();
         delete[] str;
     } else if (strcmp(argv[1], "-d") == 0) {
+        std::ofstream output(argv[3], std::ios::binary);
         ifstream grammar_file(argv[2], std::ifstream::in);
         gcis::elias_fano_grammar g;
         g.load(grammar_file);
         str = g.decode();
         output.write(str, strlen(str));
+        output.close();
         delete[] str;
     } else if (strcmp(argv[1], "-i") == 0) {
         std::cout << "INDEX CASE\n";
@@ -147,11 +152,14 @@ int main(int argc, char *argv[]) {
 
         std::cout << "size in bytes:" << gcisIndexBs.size_in_bytes()
                   << std::endl;
+        std::ofstream output(argv[3], std::ios::binary);
         gcisIndexBs.serialize(output);
+        output.close();
     } else if (strcmp(argv[1], "-p") == 0) {
-        ifstream index_file(argv[2], std::ifstream::in);
+        ifstream index_file(argv[3], std::ifstream::in);
         gcis_index_private::gcis_index_bs<> gcisIndexBs;
         gcisIndexBs.load(index_file);
+        load_string_from_file(str, argv[2]);
         std::string ss = str;
         //        if(!test_display(gcisIndexBs,ss)){
         //            std::cout<<"TEST DISPLAY DOES NOT PASS\n";
@@ -165,6 +173,4 @@ int main(int argc, char *argv[]) {
         }
         std::cout << "TEST LOCATE PASSED\n";
     }
-
-    output.close();
 }

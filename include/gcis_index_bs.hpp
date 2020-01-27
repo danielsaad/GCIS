@@ -215,8 +215,6 @@ namespace gcis_index_private {
     {
         size_t n_s = s.size();
 
-//        this->n_suffixes = this->_grid.n_cols();
-
         for (long i = 1; i < n_s; ++i)
         {
                 point X,Y;

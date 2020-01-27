@@ -62,26 +62,25 @@ template <class info_t = rule_info> class sorter {
                           rmq = m_rmq(m_ISA[rhs.pos] + 2, m_ISA[lhs.pos] + 1);
                       }
 
-                    //   cout << "Id " << endl;
-                    //   cout << lhs.id << " " << rhs.id << endl;
-                    //   cout << "Positions" << endl;
-                    //   cout << lhs.pos << " " << rhs.pos << endl;
-                    //   cout << "Len " << endl;
-                    //   cout << lhs.len << " " << rhs.len << endl;
-                    //   cout << "ISA positions" << endl;
-                    //   cout << m_ISA[lhs.pos] << " " << m_ISA[rhs.pos] << endl;
-                    //   cout << "rmq" << endl;
-                    //   cout << rmq << endl;
-                    //   cout << "LCP[RMQ]" << endl;
-                    //   cout << m_lcp[rmq] << endl;
+                      //   cout << "Id " << endl;
+                      //   cout << lhs.id << " " << rhs.id << endl;
+                      //   cout << "Positions" << endl;
+                      //   cout << lhs.pos << " " << rhs.pos << endl;
+                      //   cout << "Len " << endl;
+                      //   cout << lhs.len << " " << rhs.len << endl;
+                      //   cout << "ISA positions" << endl;
+                      //   cout << m_ISA[lhs.pos] << " " << m_ISA[rhs.pos] <<
+                      //   endl; cout << "rmq" << endl; cout << rmq << endl;
+                      //   cout << "LCP[RMQ]" << endl;
+                      //   cout << m_lcp[rmq] << endl;
                       if (lhs.len <= m_lcp[rmq] && rhs.len <= m_lcp[rmq]) {
                           return lhs.len <= rhs.len;
                       } else if (lhs.len <= m_lcp[rmq]) {
-                        //   cout << "true" << endl;
+                          //   cout << "true" << endl;
                           // lhs is a prefix of rhs
                           return true;
                       } else if (rhs.len <= m_lcp[rmq]) {
-                        //   cout << "false" << endl;
+                          //   cout << "false" << endl;
                           // rhs is a prefix os lhs
                           return false;
                       } else {
@@ -90,9 +89,9 @@ template <class info_t = rule_info> class sorter {
                            *the order
                            ***/
                           if (m_ISA[lhs.pos] < m_ISA[rhs.pos]) {
-                            //   cout << "true cmp" << endl;
+                              //   cout << "true cmp" << endl;
                           } else {
-                            //   cout << "false cmp" << endl;
+                              //   cout << "false cmp" << endl;
                           }
                           return m_ISA[lhs.pos] < m_ISA[rhs.pos];
                       }
@@ -636,6 +635,11 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
         m_pi[i] = inv_pi[m_pi[i]];
     }
 
+    // for (auto e : m_pi) {
+    //     cout << e << " ";
+    // }
+    // cout << endl;
+
     /** Relabel the Wavelet Tree **/
     for (uint_t i = 0; i < wt.size(); i++) {
         wt[i] = inv_pi[wt[i]];
@@ -658,8 +662,8 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
     // cout << "Printing the rules after relabeling " << endl;
     for (uint_t i = 0; i < rules.size(); i++) {
         rules[i].id = inv_pi[rules[i].id];
-    //     cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
-    //          << endl;
+        //     cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
+        //          << endl;
     }
     // cout << endl;
 
