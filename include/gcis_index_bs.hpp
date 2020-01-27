@@ -148,10 +148,10 @@ namespace gcis_index_private {
                                                                                               gcis_index_bs::point &Y,
                                                                                               bool ch) const {
 
-            uint64_t r_1 = 256, r_2 = this->n_rules;
+            uint64_t r_1 = 256, r_2 = this->n_rules-1;
 
             if(ch){
-                 r_1 = 0; r_2 = 255;
+                 r_1 = 1; r_2 = 255;
             }
 
             /**
@@ -159,17 +159,17 @@ namespace gcis_index_private {
              * */
             bool stop = false;
 
-            if (!bsearch_lowerBound(r_1, r_2, [this, &s](const uint32_t &mid) {
-                len_type j = 0;
-                int r = this->cmp_suffix_rule(mid - 1, s, j);
+            if (!bsearch_lowerBound(r_1, r_2, [this, &s, &i](const uint32_t &mid) {
+                len_type j = i-1;
+                int r = this->cmp_suffix_rule(mid , s, j);
                 if (r == 0 && j < 0) return 0; //string drain
                 if (r == 0) return 1;// string not drain
                 return r;//string differents
             })) return false;
 
-            if (!stop && !bsearch_upperBound(r_1, r_2, [this, &s](const uint32_t &mid) {
-                len_type j = 0;
-                int r = this->cmp_suffix_rule(mid - 1, s, j);
+            if (!stop && !bsearch_upperBound(r_1, r_2, [this, &s,&i](const uint32_t &mid) {
+                len_type j = i-1;
+                int r = this->cmp_suffix_rule(mid , s, j);
                 if (r == 0 && j < 0) return 0; //string drain
                 if (r == 0) return 1;// string not drain
                 return r;//string differents
@@ -181,9 +181,9 @@ namespace gcis_index_private {
              * Binary search over suffix rules
              *
              * */
-            if (!stop && !bsearch_lowerBound(c_1, c_2, [this, &s](const uint32_t &mid) {
+            if (!stop && !bsearch_lowerBound(c_1, c_2, [this, &s,&i](const uint32_t &mid) {
                 auto sfx = this->_grid.first_column_point(mid);
-                len_type j = 1;
+                len_type j = i;
                 int r = this->cmp_suffix_grammar(sfx, s, j);
                 if (r == 0 && j < s.size()) return 1;
                 if (j == s.size()) return 0;
@@ -191,10 +191,10 @@ namespace gcis_index_private {
 
             })) return false;
 
-            if (!stop && !bsearch_upperBound(c_1, c_2, [this, &s](const uint32_t &mid) {
+            if (!stop && !bsearch_upperBound(c_1, c_2, [this, &s,&i](const uint32_t &mid) {
                 auto sfx = this->_grid.first_column_point(mid);
-                len_type j = 1;
-                int r = this->cmp_suffix_grammar(sfx, s, 1);
+                len_type j = i;
+                int r = this->cmp_suffix_grammar(sfx, s, j);
                 if (r == 0 && j < s.size()) return 1;
                 if (j == s.size()) return 0;
                 return r;
@@ -203,6 +203,8 @@ namespace gcis_index_private {
 
             X = std::make_pair(r_1, c_1);
             Y = std::make_pair(r_2, c_2);
+
+            return true;
     }
 
 
@@ -213,19 +215,21 @@ namespace gcis_index_private {
     {
         size_t n_s = s.size();
 
-        this->n_suffixes = this->_grid.n_cols();
+//        this->n_suffixes = this->_grid.n_cols();
 
         for (uint i = 1; i < n_s; ++i)
         {
                 point X,Y;
-                find_partition_range(s,i,X,Y,(i == 1));
-                /**
-                 * search points in the grid
-                 * */
-                std::vector<uint32_t> labels;
-                this->_grid.labels_search_2d(X, Y, labels);
-                for (const auto &item : labels)
-                    nodes.push_back(std::make_pair(item, -1*i));
+                if(find_partition_range(s,i,X,Y,(i == 1))){
+                    /**
+                     * search points in the grid
+                     * */
+                    std::vector<uint32_t> labels;
+                    this->_grid.labels_search_2d(X, Y, labels);
+                    for (const auto &item : labels)
+                        nodes.push_back(std::make_pair(item, -1*i));
+                }
+
 
         }
 

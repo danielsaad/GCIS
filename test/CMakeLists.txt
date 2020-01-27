@@ -61,8 +61,8 @@ add_executable(test_gcis_index test_gcis_index.cpp)
 
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 target_link_libraries(test_main gtest gc-is sdsl gmock pthread)
-target_link_libraries(test_gcis_index_grid gtest gtest_main gc-is sdsl gmock pthread)
-target_link_libraries(test_gcis_index gtest gtest_main gc-is sdsl gmock pthread)
-target_link_libraries(test_gcis_index_bs gtest gtest_main gc-is sdsl gmock pthread)
+target_link_libraries(test_gcis_index_grid gtest gtest_main gc-is sdsl divsufsort divsufsort64 gmock pthread)
+target_link_libraries(test_gcis_index gtest gtest_main gc-is sdsl divsufsort divsufsort64 gmock pthread)
+target_link_libraries(test_gcis_index_bs gtest gtest_main gc-is sdsl divsufsort divsufsort64  gmock pthread)
 
 # install(TARGETS test_main RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/bin)
