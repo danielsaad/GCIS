@@ -62,26 +62,26 @@ template <class info_t = rule_info> class sorter {
                           rmq = m_rmq(m_ISA[rhs.pos] + 2, m_ISA[lhs.pos] + 1);
                       }
 
-                      cout << "Id " << endl;
-                      cout << lhs.id << " " << rhs.id << endl;
-                      cout << "Positions" << endl;
-                      cout << lhs.pos << " " << rhs.pos << endl;
-                      cout << "Len " << endl;
-                      cout << lhs.len << " " << rhs.len << endl;
-                      cout << "ISA positions" << endl;
-                      cout << m_ISA[lhs.pos] << " " << m_ISA[rhs.pos] << endl;
-                      cout << "rmq" << endl;
-                      cout << rmq << endl;
-                      cout << "LCP[RMQ]" << endl;
-                      cout << m_lcp[rmq] << endl;
+                    //   cout << "Id " << endl;
+                    //   cout << lhs.id << " " << rhs.id << endl;
+                    //   cout << "Positions" << endl;
+                    //   cout << lhs.pos << " " << rhs.pos << endl;
+                    //   cout << "Len " << endl;
+                    //   cout << lhs.len << " " << rhs.len << endl;
+                    //   cout << "ISA positions" << endl;
+                    //   cout << m_ISA[lhs.pos] << " " << m_ISA[rhs.pos] << endl;
+                    //   cout << "rmq" << endl;
+                    //   cout << rmq << endl;
+                    //   cout << "LCP[RMQ]" << endl;
+                    //   cout << m_lcp[rmq] << endl;
                       if (lhs.len <= m_lcp[rmq] && rhs.len <= m_lcp[rmq]) {
                           return lhs.len <= rhs.len;
                       } else if (lhs.len <= m_lcp[rmq]) {
-                          cout << "true" << endl;
+                        //   cout << "true" << endl;
                           // lhs is a prefix of rhs
                           return true;
                       } else if (rhs.len <= m_lcp[rmq]) {
-                          cout << "false" << endl;
+                        //   cout << "false" << endl;
                           // rhs is a prefix os lhs
                           return false;
                       } else {
@@ -90,9 +90,9 @@ template <class info_t = rule_info> class sorter {
                            *the order
                            ***/
                           if (m_ISA[lhs.pos] < m_ISA[rhs.pos]) {
-                              cout << "true cmp" << endl;
+                            //   cout << "true cmp" << endl;
                           } else {
-                              cout << "false cmp" << endl;
+                            //   cout << "false cmp" << endl;
                           }
                           return m_ISA[lhs.pos] < m_ISA[rhs.pos];
                       }
@@ -308,7 +308,7 @@ class elias_fano_dfs_helper {
      * @ param offset offset from the text beginning.
      */
     void dfs(uint_t rule_idx, uint_t offset) {
-        cout << "Rule idx = " << rule_idx << endl;
+        // cout << "Rule idx = " << rule_idx << endl;
         if (rule_idx < 256) {
             /**
              * It is a terminal.
@@ -486,9 +486,10 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
 
     // Account for the root and the terminal leaves
     // Accout for the rightmost path which expands to 0.
-    m_bv_dfuds = sdsl::bit_vector(3 + 2 * (m_gref.m_info.m_grammar_size + 1) -
-                                      1 - 2 * (m_gref.m_info.m_level_n - 1) - 1,
-                                  1);
+    m_bv_dfuds =
+        sdsl::bit_vector(3 + 2 * (m_gref.m_info.m_grammar_size + 1) - 1 -
+                             2 * (m_gref.m_info.m_level_n - 1) - 1 - 1,
+                         1);
     m_bv_dfuds[2] = 0;
     /**
      * Initialize the dfuds tree with the information from the root and the
@@ -499,8 +500,6 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
         m_bv_dfuds[i] = 0;
     }
 
-    m_bv_dfuds.resize(m_bv_dfuds.size() - 2 * (m_gref.m_info.m_level_n - 1) -
-                      2);
     /**
      * Initializes the permutation and its inverse. The first occurrence
      * bitvector is also initialized.
@@ -587,33 +586,33 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
             suffixes.emplace_back(suffix_info(i, prev_rule[i],
                                               suffixes_expansion_pos[i],
                                               suffixes_expansion_len[i]));
-            suffixes.back().print();
+            // suffixes.back().print();
         }
     }
-    cout << "Finished" << endl;
+    // cout << "Finished" << endl;
     sorter<suffix_info> s2;
-    cout << " Sorting suffixes " << endl;
+    // cout << " Sorting suffixes " << endl;
 
     s2.sort(suffixes, m_text);
 
-    cout << " Printing the suffixes after sorting" << endl;
+    // cout << " Printing the suffixes after sorting" << endl;
 
-    for (uint_t i = 0; i < suffixes.size(); i++) {
-        suffixes[i].print();
-    }
+    // for (uint_t i = 0; i < suffixes.size(); i++) {
+    //     suffixes[i].print();
+    // }
 
-    cout << "Printing the rules before relabeling " << endl;
-    for (uint_t i = 0; i < rules.size(); i++) {
-        cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
-             << endl;
-    }
-    cout << endl;
+    // cout << "Printing the rules before relabeling " << endl;
+    // for (uint_t i = 0; i < rules.size(); i++) {
+    //     cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
+    //          << endl;
+    // }
+    // cout << endl;
 
-    cout << " Printing the suffixes before relabeling" << endl;
+    // cout << " Printing the suffixes before relabeling" << endl;
 
-    for (uint_t i = 0; i < suffixes.size(); i++) {
-        suffixes[i].print();
-    }
+    // for (uint_t i = 0; i < suffixes.size(); i++) {
+    //     suffixes[i].print();
+    // }
 
     /***
      * Relabel the permutation and the wavelet Tree
@@ -628,6 +627,10 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
         inv_pi[rules[i].id] = i + 256;
     }
 
+    // for (auto e : m_pi) {
+    //     cout << e << " ";
+    // }
+    // cout << endl;
     /** Relabel the permutation **/
     for (uint_t i = 0; i < m_pi.size(); i++) {
         m_pi[i] = inv_pi[m_pi[i]];
@@ -652,19 +655,23 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
         suffixes[i].prev_rule = inv_pi[suffixes[i].prev_rule];
     }
 
-    cout << "Printing the rules after relabeling " << endl;
+    // cout << "Printing the rules after relabeling " << endl;
     for (uint_t i = 0; i < rules.size(); i++) {
         rules[i].id = inv_pi[rules[i].id];
-        cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
-             << endl;
+    //     cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
+    //          << endl;
     }
-    cout << endl;
+    // cout << endl;
 
-    cout << " Printing the suffixes after relabeling" << endl;
+    // cout << " Printing the suffixes after relabeling" << endl;
 
-    for (uint_t i = 0; i < suffixes.size(); i++) {
-        suffixes[i].print();
-    }
+    // for (uint_t i = 0; i < suffixes.size(); i++) {
+    //     suffixes[i].print();
+    // }
+    // for (auto e : m_bv_dfuds) {
+    //     cout << e;
+    // }
+    // cout << endl;
     m_grid_points = std::move(suffixes);
 }
 

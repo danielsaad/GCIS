@@ -1,76 +1,85 @@
 #include "gcis_eliasfano_index.hpp"
-#include "index_builder.hpp"
 #include "gcis_index_bs.hpp"
-
+#include "index_builder.hpp"
+#include "sdsl/csa_wt.hpp"
+#include "sdsl/suffix_arrays.hpp"
+#include "sdsl/wavelet_trees.hpp"
 #include <fstream>
 
+const int PATTERN_LEN = 10;
 
-bool test_display(const gcis_index_private::gcis_index_bs<>& G, std::string& T)
-{
+using namespace sdsl;
+
+bool test_display(const gcis_index_private::gcis_index_bs<> &G,
+                  std::string &T) {
     srand(time(nullptr));
     size_t N = T.size();
 
-    for (int i = 0; i < 1000000; ++i)
-    {
-        uint p = 9;//rand()%N;
-        uint m = 16;///rand()%(N - p);
+    for (int i = 0; i < 1000000; ++i) {
+        uint p = 9;  // rand()%N;
+        uint m = 16; /// rand()%(N - p);
 
-        std::string str,s;
+        std::string str, s;
         s.resize(m);
-        std::copy(T.begin()+p,T.begin()+p+m,s.begin());
+        std::copy(T.begin() + p, T.begin() + p + m, s.begin());
         str.reserve(m);
-        G.display(p,m,str);
-        if(str != s){
-            std::cout<<"s:"<<s<<"\n display:"<<str<<std::endl;
-   //         G.display(p,m,str);
+        G.display(p, m, str);
+        if (str != s) {
+            std::cout << "s:" << s << "\n display:" << str << std::endl;
+            //         G.display(p,m,str);
             return false;
         }
-
     }
 
     return true;
 }
 
+csa_wt<wt_huff<rrr_vector<255>>, 512, 1024> build_fm_index(const char *file) {
+    csa_wt<wt_huff<rrr_vector<255>>, 512, 1024> fmidx;
+    construct(fmidx, file, 1);
+    return fmidx;
+}
 
-bool test_locate(const gcis_index_private::gcis_index_bs<>& G, std::string& T){
+bool test_locate(const gcis_index_private::gcis_index_bs<> &G, std::string &T,
+                 const char *text_file) {
+
+    auto fmidx = build_fm_index(text_file);
 
     srand(time(nullptr));
     size_t N = T.size();
-    for (uint i = 0; i < 100000 ; ++i) {
+    for (uint i = 0; i < 1000; ++i) {
 
-        uint l = rand()%N;
-        uint r = rand()%N;
+        // uint l = rand() % N;
+        // uint r = std::min<int>(N - 1, l + PATTERN_LEN);
 
-        if( l > r ) std::swap(l,r);
-        uint m = r - l + 1 ;
-        if( m < 5  ) r+=5;
-        if(r >= T.size() || m == 1) continue;
+        uint l = 255983;
+        uint r = 255993;
 
-        std::string s; s.resize(m);
-        std::copy(T.begin()+l,T.begin()+l+m, s.begin());
-        std::vector< gcis_index_private::gcis_index<>::len_type > occ;
-        G.locate(s,occ);
-        std::sort(occ.begin(),occ.end());
-
-        size_t pos = T.find(s.c_str(),0);
-        std::vector<gcis_index_private::gcis_index<>::len_type > test_occ;
-
-        while(pos!= std::string::npos)
-        {
-            test_occ.push_back(pos);
-            pos = T.find(s.c_str(),pos+1);
+        cout << "[l,r] = "
+             << "[" << l << "," << r << "]" << endl;
+        std::string s;
+        s.resize(r - l + 1);
+        std::copy(T.begin() + l, T.begin() + r + 1, s.begin());
+        std::vector<gcis_index_private::gcis_index<>::len_type> occ;
+        cout << "GCIS locating" << endl;
+        G.locate(s, occ);
+        std::sort(occ.begin(), occ.end());
+        std::cout << "GCIS finished" << endl;
+        cout << "FM-Index locating" << endl;
+        auto test_occ_ctnr = sdsl::locate(fmidx, s.begin(), s.end());
+        std::cout << "FM-Index finished" << endl;
+        std::sort(test_occ_ctnr.begin(), test_occ_ctnr.end());
+        vector<gcis_index_private::gcis_index<>::len_type> test_occ;
+        for (uint64_t i = 0; i < test_occ_ctnr.size(); i++) {
+            test_occ.push_back(test_occ_ctnr[i]);
         }
 
-
-//        std::cout<<s<<std::endl;
-
-        if(test_occ != occ) {
+        if (test_occ != occ) {
             return false;
         }
     }
 
     return true;
-
 }
 
 void load_string_from_file(char *&str, const char *filename) {
@@ -101,17 +110,17 @@ int main(int argc, char *argv[]) {
         output.write(str, strlen(str));
         delete[] str;
     } else if (strcmp(argv[1], "-i") == 0) {
-        std::cout<<"INDEX CASE\n";
-//        sleep(5);
+        std::cout << "INDEX CASE\n";
+        //        sleep(5);
         load_string_from_file(str, argv[2]);
         gcis::grammar_builder<gcis::elias_fano_grammar> builder;
         auto g = builder.build(str);
         gcis::index_basics<gcis::elias_fano_grammar> index(g, str);
-        std::cout<<"gcis::index_basics<gcis::elias_fano_grammar>\n";
-//        sleep(5);
+        std::cout << "gcis::index_basics<gcis::elias_fano_grammar>\n";
+        //        sleep(5);
         gcis_index_private::gcis_index_bs<> gcisIndexBs;
-        std::cout<<"default gcis_index_private::gcis_index_bs<>\n";
-//        sleep(5);
+        std::cout << "default gcis_index_private::gcis_index_bs<>\n";
+        //        sleep(5);
         gcisIndexBs.set_bvfocc(index.m_focc);
         gcisIndexBs.set_vt(index.m_str);
         gcisIndexBs.set_bvt(index.m_t);
@@ -119,32 +128,38 @@ int main(int argc, char *argv[]) {
         gcisIndexBs.set_nt(index.m_wt);
         gcisIndexBs.set_tree(index.m_bv_dfuds);
         gcisIndexBs.set_l(index.m_l);
-        std::cout<<"loading index structures\n";
+        std::cout << "loading index structures\n";
         gcisIndexBs.print();
 
-        std::vector<gcis_index_private::gcis_index_grid<>::lpoint> points(index.m_grid_points.size());
+        std::vector<gcis_index_private::gcis_index_grid<>::lpoint> points(
+            index.m_grid_points.size());
         for (uint i = 0; i < points.size(); ++i)
-            points[i] = {{index.m_grid_points[i].prev_rule+1,i+1},index.m_grid_points[i].id};
-        gcis_index_private::gcis_index_grid<> _grid(points, index.m_pi.size(), index.m_grid_points.size());
-        std::cout<<"gcis_index_private::gcis_index_grid<> _grid"<<std::endl;
+            points[i] = {{index.m_grid_points[i].prev_rule + 1, i + 1},
+                         index.m_grid_points[i].id};
+        gcis_index_private::gcis_index_grid<> _grid(points, index.m_pi.size(),
+                                                    index.m_grid_points.size());
+        std::cout << "gcis_index_private::gcis_index_grid<> _grid" << std::endl;
         gcisIndexBs.set_grid(_grid);
 
-        std::cout<<"size in bytes:"<<gcisIndexBs.size_in_bytes()<<std::endl;
+        std::cout << "size in bytes:" << gcisIndexBs.size_in_bytes()
+                  << std::endl;
         gcisIndexBs.serialize(output);
+    } else if (strcmp(argv[1], "-p") == 0) {
+        ifstream index_file(argv[2], std::ifstream::in);
+        gcis_index_private::gcis_index_bs<> gcisIndexBs;
+        gcisIndexBs.load(index_file);
         std::string ss = str;
-//        if(!test_display(gcisIndexBs,ss)){
-//            std::cout<<"TEST DISPLAY DOES NOT PASS\n";
-//            return 0;
-//        }
-//        std::cout<<"TEST DISPLAY PASSED\n";
+        //        if(!test_display(gcisIndexBs,ss)){
+        //            std::cout<<"TEST DISPLAY DOES NOT PASS\n";
+        //            return 0;
+        //        }
+        //        std::cout<<"TEST DISPLAY PASSED\n";
 
-        if(!test_locate(gcisIndexBs,ss)){
-            std::cout<<"TEST LOCATE DOES NOT PASS\n";
+        if (!test_locate(gcisIndexBs, ss, argv[2])) {
+            std::cout << "TEST LOCATE DOES NOT PASS\n";
             return 0;
         }
-        std::cout<<"TEST LOCATE PASSED\n";
-
-
+        std::cout << "TEST LOCATE PASSED\n";
     }
 
     output.close();
