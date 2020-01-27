@@ -70,6 +70,25 @@ namespace gcis_index_private{
             virtual void display(const len_type& , const len_type& , std::string& ) const ;
 
 
+            virtual void print(){
+
+                std::cout<<"Printing mapping"<<std::endl;
+                std::cout<<"bvfocc:";
+                for(uint i = 0 ; i < bvfocc.size(); i++) std::cout<<bvfocc[i]<<" ";
+                std::cout<<"\npi:";
+                for(int i = 0 ; i < pi.size(); i++) std::cout<<pi[i]<<" ";
+                std::cout<<"\nIpi:";
+                for(int i = 0 ; i < pi.size(); i++) std::cout<<inv_pi[i]<<" ";
+                std::cout<<"\nbvt:";
+                for(uint i = 0 ; i < bvt.size(); i++) std::cout<<bvt[i]<<" ";
+                std::cout<<"\nwt:";
+                for(uint i = 0 ; i < wtnt.size(); i++) std::cout<<wtnt[i]<<" ";
+                std::cout<<"\ns:" <<vt<<std::endl;
+                std::cout<<"\ndfuds:";
+                dfuds_tree.print();
+
+            }
+
         protected:
 
             /** grid for primary occurrences */
@@ -194,6 +213,9 @@ namespace gcis_index_private{
     gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::map_rule(const gcis_index::rule_type & X) const {
 
         unsigned long p = inv_pi[X];
+//        std::cout<<pi.size()<<std::endl;
+//        for(int i  = 0; i < pi.size(); ++i)
+//            std::cout<<"elem["<<i<<"]:"<<pi[i]<<std::endl;
         auto pre = bvfocc_sel1.select(p+1);
         return pre+1;
     }
@@ -225,6 +247,10 @@ namespace gcis_index_private{
         }
         //non-terminal
         auto sr0 = r0 - bvt_rank1.rank(r0);
+//        for (int i = 0; i < wtnt.size() ; ++i) {
+//            std::cout<<wtnt[i]<<" ";
+//        }
+//        std::cout<<std::endl;
         return wtnt[sr0-1];
     }
     /**
@@ -244,13 +270,15 @@ namespace gcis_index_private{
                                                                               std::string & str) const
     {
 
-        len_type i = ii + sigma;
-        /**found leaf containing the position rank [1...i+1) */
-        len_type leaf_boundary = bvl_rank1.rank(i+1);
-        size_tree leaf_pos = bvl_select1(leaf_boundary);
+        len_type i = ii + 256;
+        /**found leaf containing the position rank [1...i+1)
+         * the 256 terminals symbols are not included in the L bitvector
+         * */
+        len_type leaf_boundary = bvl_rank1.rank(ii+1);
+        size_tree leaf_pos = bvl_select1(leaf_boundary) + 256 ;
         len_type off = i-leaf_pos;
         /**found the associated leaf node */
-        size_tree node = dfuds_tree.leaf_select(leaf_boundary);
+        size_tree node = dfuds_tree.leaf_select(leaf_boundary + 256);
         // in case that is a single character
 
         std::string sblock;
@@ -433,39 +461,45 @@ namespace gcis_index_private{
                                                                                       const std::string & str,
                                                                                       len_type& j) const{
 
-
-        // compute the preorder node and node pos
-        size_tree pre = map_rule(X);
-        size_tree node = dfuds_tree.pre_order_select(pre);
-        //case leaf
-        if(  dfuds_tree.is_leaf(node)  )  //if it is a leaf then is a symbol
-        {
-#ifdef TOYEXAMPLE
-            char Y = X;
-            switch(Y){
-                case 0: Y = 65;
-                    break;
-                case 1: Y = 67;
-                    break;
-                case 10: Y = 71;
-                    break;
-                case 13: Y = 84;
-                    break;
-            }
-
-
-            if(str[j] < Y) return -1;
-            if(str[j] > Y) return 1;
-            --j;
-            return 0;
-#endif
-
+        if(X < 256){
             if(str[j] < X) return -1;
             if(str[j] > X) return 1;
             --j;
             return 0;
 
         }
+        // compute the preorder node and node pos
+        size_tree pre = map_rule(X);
+        size_tree node = dfuds_tree.pre_order_select(pre);
+        //case leaf
+//        if(  dfuds_tree.is_leaf(node)  )  //if it is a leaf then is a symbol
+//        {
+//#ifdef TOYEXAMPLE
+//            char Y = X;
+//            switch(Y){
+//                case 0: Y = 65;
+//                    break;
+//                case 1: Y = 67;
+//                    break;
+//                case 10: Y = 71;
+//                    break;
+//                case 13: Y = 84;
+//                    break;
+//            }
+//
+//
+//            if(str[j] < Y) return -1;
+//            if(str[j] > Y) return 1;
+//            --j;
+//            return 0;
+//#endif
+//
+//            if(str[j] < X) return -1;
+//            if(str[j] > X) return 1;
+//            --j;
+//            return 0;
+//
+//        }
         // lambda function for recursively cmp
         std::function< int (const size_tree&, const size_tree&) > dfs_cmp_suffix;
 
@@ -610,38 +644,45 @@ namespace gcis_index_private{
                                                                                      len_type  &j) const{
 
 
-        // compute the preorder node and node pos
-        size_tree pre = map_rule(X);
-        size_tree node = dfuds_tree.pre_order_select(pre);
-        //case leaf
-        if(  dfuds_tree.is_leaf(node)  )  //if it is a leaf then is a symbol
-        {
-#ifdef TOYEXAMPLE
-            char Y = X;
-            switch(Y){
-                case 0: Y = 65;
-                    break;
-                case 1: Y = 67;
-                    break;
-                case 10: Y = 71;
-                    break;
-                case 13: Y = 84;
-                    break;
-            }
-
-
-            if(str[j] < Y) return -1;
-            if(str[j] > Y) return 1;
-            j++;
-            return 0;
-#endif
-
+        if(X < 256){
             if(str[j] < X) return -1;
             if(str[j] > X) return 1;
             j++;
             return 0;
-
         }
+
+        // compute the preorder node and node pos
+        size_tree pre = map_rule(X);
+        size_tree node = dfuds_tree.pre_order_select(pre);
+        //case leaf
+//        if(  dfuds_tree.is_leaf(node)  )  //if it is a leaf then is a symbol
+//        {
+//#ifdef TOYEXAMPLE
+//            char Y = X;
+//            switch(Y){
+//                case 0: Y = 65;
+//                    break;
+//                case 1: Y = 67;
+//                    break;
+//                case 10: Y = 71;
+//                    break;
+//                case 13: Y = 84;
+//                    break;
+//            }
+//
+//
+//            if(str[j] < Y) return -1;
+//            if(str[j] > Y) return 1;
+//            j++;
+//            return 0;
+//#endif
+//
+//            if(str[j] < X) return -1;
+//            if(str[j] > X) return 1;
+//            j++;
+//            return 0;
+//
+//        }
         // lambda function for recursively cmp
         std::function< int (const size_tree&, const size_tree&) > dfs_cmp_prefix;
 
@@ -738,7 +779,7 @@ namespace gcis_index_private{
         if(r != 0) return r;
 //        if(r == 0 && j < str.size()) return 1;
 
-        for (size_tree i = rch+1; j > 0 && i <= ch ; ++i) {
+        for (size_tree i = rch+1; j < str.size() && i <= ch ; ++i) {
 
             node = dfuds_tree.ichild(parent,i);
             pre_node = dfuds_tree.pre_order(node);

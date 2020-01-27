@@ -44,6 +44,23 @@ namespace gcis_index_private{
 
         virtual ~gcis_index_dfuds(){};
 
+        void print(){
+            uint count = 0, pre = 0;
+            for (uint i = 0; i < bit_vector.size() ; ++i) {
+                if(bit_vector[i] == 0){
+                    std::cout<<bit_vector[i]<<"["<<count<<"]"<<"<"<<i<<","<<++pre<<">"<<std::endl;
+                    count = 0;
+                }else{
+                    count++;
+                    std::cout<<bit_vector[i];
+                }
+
+
+            }
+            std::cout<<std::endl;
+
+        }
+
         void set_tree( const sdsl::bit_vector& b)
         {
             bit_vector = b;

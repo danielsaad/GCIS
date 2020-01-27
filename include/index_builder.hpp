@@ -37,6 +37,8 @@ struct suffix_info {
     }
 };
 
+
+
 /**
  * @brief This class is responsible for sorting the rules or the rules suffixes
  * expansion according
@@ -465,7 +467,7 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
     auto l = sdsl::bit_vector(m_gref.m_info.m_text_size[1], 0);
     idx = 0;
     uint_t root_arity = rules_pos[m_gref.m_xs + 1] - rules_pos[m_gref.m_xs];
-    uint_t bv_idx = 512 + 3 + root_arity + 1;
+    uint_t bv_idx = 512 + 3 + root_arity -1 + 1;
     int_t stack_idx = 0;
     cout << "Number of levels = " << m_gref.m_info.m_level_n << endl;
     // Important: We have to remove the rules which expands to 0
@@ -492,10 +494,11 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
      * Initialize the dfuds tree with the information from the root and the
      * terminal leaves.
      */
-    for (uint_t i = 3 + root_arity + 256; i <= 512 + 3 + root_arity; i++) {
+    for (uint_t i = 3 + root_arity - 1 + 256; i <= 512 + 3 + root_arity - 1; i++) {
         m_bv_dfuds[i] = 0;
     }
 
+    m_bv_dfuds.resize(m_bv_dfuds.size() - 2*(m_gref.m_info.m_level_n-1)-2);
     /**
      * Initializes the permutation and its inverse. The first occurrence
      * bitvector is also initialized.
@@ -561,20 +564,20 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
         rules[i - 256].id = m_pi[i];
         rules[i - 256].len = rules_expansion_len[m_pi[i]];
         rules[i - 256].pos = rules_expansion_pos[m_pi[i]];
-        cout << i - 256 << " " << rules[i - 256].id << " " << rules[i - 256].len
-             << " " << rules[i - 256].pos << endl;
+//        cout << i - 256 << " " << rules[i - 256].id << " " << rules[i - 256].len
+//             << " " << rules[i - 256].pos << endl;
     }
 
     sorter<rule_info> s;
     s.sort(rules, m_text);
-    cout << endl;
-    for (uint_t i = 0; i < rules.size(); i++) {
-        cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
-             << endl;
-    }
-    cout << endl;
+//    cout << endl;
+//    for (uint_t i = 0; i < rules.size(); i++) {
+//        cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
+//             << endl;
+//    }
+//    cout << endl;
 
-    cout << "Printing the suffixes " << endl;
+//    cout << "Printing the suffixes " << endl;
     std::vector<suffix_info> suffixes;
     for (uint_t i = 0; i < suffixes_expansion_len.size(); i++) {
         if (suffixes_expansion_len[i] != 0) {
@@ -586,6 +589,8 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
     }
     cout << "Finished" << endl;
     sorter<suffix_info> s2;
+    cout << " Sorting suffixes " << endl;
+
     s2.sort(suffixes, m_text);
 
     cout << " Printing the suffixes after sorting" << endl;
@@ -629,6 +634,7 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
     for (uint_t i = 0; i < wt.size(); i++) {
         wt[i] = inv_pi[wt[i]];
     }
+    sdsl::construct_im(m_wt, wt);
 
     /***
      * Relabel the tree root
