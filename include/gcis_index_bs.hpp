@@ -182,7 +182,7 @@ namespace gcis_index_private {
              *
              * */
             if (!stop && !bsearch_lowerBound(c_1, c_2, [this, &s,&i](const uint32_t &mid) {
-                auto sfx = this->_grid.first_column_point(mid);
+                auto sfx = this->_grid.first_column_point(mid)+1;
                 len_type j = i;
                 int r = this->cmp_suffix_grammar(sfx, s, j);
                 if (r == 0 && j < s.size()) return 1;
@@ -192,7 +192,7 @@ namespace gcis_index_private {
             })) return false;
 
             if (!stop && !bsearch_upperBound(c_1, c_2, [this, &s,&i](const uint32_t &mid) {
-                auto sfx = this->_grid.first_column_point(mid);
+                auto sfx = this->_grid.first_column_point(mid)+1;
                 len_type j = i;
                 int r = this->cmp_suffix_grammar(sfx, s, j);
                 if (r == 0 && j < s.size()) return 1;
@@ -201,8 +201,8 @@ namespace gcis_index_private {
 
             })) return false;
 
-            X = std::make_pair(r_1, c_1);
-            Y = std::make_pair(r_2, c_2);
+            X = std::make_pair(r_1+1, c_1);
+            Y = std::make_pair(r_2+1, c_2);
 
             return true;
     }
@@ -217,7 +217,7 @@ namespace gcis_index_private {
 
 //        this->n_suffixes = this->_grid.n_cols();
 
-        for (uint i = 1; i < n_s; ++i)
+        for (long i = 1; i < n_s; ++i)
         {
                 point X,Y;
                 if(find_partition_range(s,i,X,Y,(i == 1))){
@@ -227,11 +227,24 @@ namespace gcis_index_private {
                     std::vector<uint32_t> labels;
                     this->_grid.labels_search_2d(X, Y, labels);
                     for (const auto &item : labels)
-                        nodes.push_back(std::make_pair(item, -1*i));
+                        nodes.push_back(std::make_pair(item + 1, -1*i));
                 }
 
 
         }
+
+        point X,Y;
+
+        if(find_partition_range(s,1,X,Y,false)){
+            /**
+             * search points in the grid
+             * */
+            std::vector<uint32_t> labels;
+            this->_grid.labels_search_2d(X, Y, labels);
+            for (const auto &item : labels)
+                nodes.push_back(std::make_pair(item + 1, -1));
+        }
+
 
 
     }

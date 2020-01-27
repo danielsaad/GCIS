@@ -331,10 +331,12 @@ namespace gcis_index_private{
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
     gcis_index<>::len_type
     gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::offset_node(const gcis_index::size_tree & node) const {
+
+
+        if(node == 3) return 0;
+
         long long lrank = dfuds_tree.leaf_rank(node-1)+1;
-//        if(dfuds_tree.is_leaf(node))
-//            --lrank;
-        return bvl_select1.select(lrank) - 256 ;
+        return bvl_select1.select( lrank - 256 )  ;
     }
 
     template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>

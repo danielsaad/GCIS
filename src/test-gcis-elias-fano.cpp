@@ -38,8 +38,8 @@ bool test_locate(const gcis_index_private::gcis_index_bs<>& G, std::string& T){
     size_t N = T.size();
     for (uint i = 0; i < 100000 ; ++i) {
 
-        uint l = 9;//rand()%N;
-        uint r = 39;//rand()%N;
+        uint l = rand()%N;
+        uint r = rand()%N;
 
         if( l > r ) std::swap(l,r);
         uint m = r - l + 1 ;
@@ -62,11 +62,11 @@ bool test_locate(const gcis_index_private::gcis_index_bs<>& G, std::string& T){
         }
 
 
+//        std::cout<<s<<std::endl;
+
         if(test_occ != occ) {
             return false;
         }
-        std::cout<<s<<std::endl;
-
     }
 
     return true;
@@ -132,11 +132,11 @@ int main(int argc, char *argv[]) {
         std::cout<<"size in bytes:"<<gcisIndexBs.size_in_bytes()<<std::endl;
         gcisIndexBs.serialize(output);
         std::string ss = str;
-        if(!test_display(gcisIndexBs,ss)){
-            std::cout<<"TEST DISPLAY DOES NOT PASS\n";
-            return 0;
-        }
-        std::cout<<"TEST DISPLAY PASSED\n";
+//        if(!test_display(gcisIndexBs,ss)){
+//            std::cout<<"TEST DISPLAY DOES NOT PASS\n";
+//            return 0;
+//        }
+//        std::cout<<"TEST DISPLAY PASSED\n";
 
         if(!test_locate(gcisIndexBs,ss)){
             std::cout<<"TEST LOCATE DOES NOT PASS\n";

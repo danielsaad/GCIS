@@ -48,7 +48,7 @@ namespace gcis_index_private{
             uint count = 0, pre = 0;
             for (uint i = 0; i < bit_vector.size() ; ++i) {
                 if(bit_vector[i] == 0){
-                    std::cout<<bit_vector[i]<<"["<<count<<"]"<<"<"<<i<<","<<++pre<<">"<<std::endl;
+                    std::cout<<bit_vector[i]<<"["<<count<<"]"<<"<"<<i<<","<<pre++<<">"<<std::endl;
                     count = 0;
                 }else{
                     count++;
