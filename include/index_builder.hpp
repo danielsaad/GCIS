@@ -464,7 +464,8 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
 
     auto l = sdsl::bit_vector(m_gref.m_info.m_text_size[1], 0);
     idx = 0;
-    uint_t root_arity = rules_pos[m_gref.m_xs + 1] - rules_pos[m_gref.m_xs];
+    // -1 for the rightmost path which expands to 0
+    uint_t root_arity = rules_pos[m_gref.m_xs + 1] - rules_pos[m_gref.m_xs] - 1;
     uint_t bv_idx = 512 + 3 + root_arity + 1;
     int_t stack_idx = 0;
     cout << "Number of levels = " << m_gref.m_info.m_level_n << endl;
@@ -485,8 +486,10 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
                           (m_gref.m_info.m_first_level_expansion_len));
 
     // Account for the root and the terminal leaves
-    m_bv_dfuds =
-        sdsl::bit_vector(3 + 2 * (m_gref.m_info.m_grammar_size + 1) - 1, 1);
+    // Accout for the rightmost path which expands to 0.
+    m_bv_dfuds = sdsl::bit_vector(3 + 2 * (m_gref.m_info.m_grammar_size + 1) -
+                                      1 - 2* (m_gref.m_info.m_level_n - 1) - 1,
+                                  1);
     m_bv_dfuds[2] = 0;
     /**
      * Initialize the dfuds tree with the information from the root and the
