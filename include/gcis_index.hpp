@@ -80,6 +80,9 @@ class gcis_index {
         std::cout << "-----------"  <<  std::endl;
 
         std::cout << "pi:" << sdsl::size_in_bytes(pi) <<  std::endl;
+        auto t_pi = pi;
+        sdsl::util::bit_compress(t_pi);
+        std::cout << "pi(bit_compress):" << sdsl::size_in_bytes(t_pi) <<  std::endl;
         std::cout << "inv_pi_support:" << sdsl::size_in_bytes(inv_pi) <<  std::endl;
 
 
