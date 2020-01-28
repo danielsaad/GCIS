@@ -73,6 +73,8 @@ namespace gcis_index_private{
                 std::cout << "xb_select_0:" << sdsl::size_in_bytes(xb_sel0) <<  std::endl;
                 std::cout << "wt_sb:" << sdsl::size_in_bytes(sb) <<  std::endl;
                 std::cout << "int_vector_sl:" << sdsl::size_in_bytes(sl) <<  std::endl;
+                auto t_sl = sl;sdsl::util::bit_compress(t_sl);
+                std::cout << "int_vector_sl (bit_compress):" << sdsl::size_in_bytes(t_sl) <<  std::endl;
 
 
             }
