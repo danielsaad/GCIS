@@ -50,8 +50,6 @@ template <class info_t = rule_info> class sorter {
         build_data_structures(text);
         std::sort(v.begin(), v.end(),
                   [this](const info_t &lhs, const info_t &rhs) {
-                      // lhs.print();
-                      // rhs.print();
                       if (m_ISA[lhs.pos] == m_ISA[rhs.pos]) {
                           return lhs.len <= rhs.len;
                       }
@@ -61,39 +59,17 @@ template <class info_t = rule_info> class sorter {
                       } else {
                           rmq = m_rmq(m_ISA[rhs.pos] + 2, m_ISA[lhs.pos] + 1);
                       }
-
-                      //   cout << "Id " << endl;
-                      //   cout << lhs.id << " " << rhs.id << endl;
-                      //   cout << "Positions" << endl;
-                      //   cout << lhs.pos << " " << rhs.pos << endl;
-                      //   cout << "Len " << endl;
-                      //   cout << lhs.len << " " << rhs.len << endl;
-                      //   cout << "ISA positions" << endl;
-                      //   cout << m_ISA[lhs.pos] << " " << m_ISA[rhs.pos] <<
-                      //   endl; cout << "rmq" << endl; cout << rmq << endl;
-                      //   cout << "LCP[RMQ]" << endl;
-                      //   cout << m_lcp[rmq] << endl;
                       if (lhs.len <= m_lcp[rmq] && rhs.len <= m_lcp[rmq]) {
                           return lhs.len <= rhs.len;
                       } else if (lhs.len <= m_lcp[rmq]) {
-                          //   cout << "true" << endl;
-                          // lhs is a prefix of rhs
                           return true;
                       } else if (rhs.len <= m_lcp[rmq]) {
-                          //   cout << "false" << endl;
-                          // rhs is a prefix os lhs
                           return false;
                       } else {
                           /***
                            * Neither is a prefix of the other. Use ISA to find
                            *the order
                            ***/
-                          return m_ISA[lhs.pos] < m_ISA[rhs.pos];
-                          if (m_ISA[lhs.pos] < m_ISA[rhs.pos]) {
-                              //   cout << "true cmp" << endl;
-                          } else {
-                              //   cout << "false cmp" << endl;
-                          }
                           return m_ISA[lhs.pos] < m_ISA[rhs.pos];
                       }
                   });
@@ -119,17 +95,6 @@ template <class info_t = rule_info> class sorter {
      */
     virtual void build_data_structures(char *text) {
 
-        // string abra_text = "abracadabra";
-        // uint_t abra_size = abra_text.size();
-        // sdsl::int_vector<> abra_sa(abra_size, 0);
-        // sdsl::algorithm::calculate_sa((unsigned char*)abra_text.c_str(),
-        //                               abra_size, abra_sa);
-        // sdsl::lcp_dac<> abra_lcp;
-        // sdsl::construct_im(abra_lcp, abra_text, 1);
-        // cout << "It works!" << endl;
-        // for (uint_t i = 0; i < abra_size; i++) {
-        //     cout << i << " " << abra_sa[i] << " " << abra_lcp[i] << endl;
-        // }
 
         /***
          * Computes the text reverse
@@ -140,27 +105,28 @@ template <class info_t = rule_info> class sorter {
             rev_text[i] = text[text_size - i - 1];
         }
         rev_text[text_size] = 0;
-        // string foo(rev_text);
-        // cout << "Foo size = " << foo.size();
-        // cout << "Comparison" << strcmp(foo.c_str(), rev_text) << endl;
-        // const char *bar = foo.c_str();
-        // for (uint_t i = 0; i < foo.size()+1; i++) {
-        //     cout << i << (int) *(bar + i) << endl;
-        // }
+
         // Builds suffix array
         m_SA = sdsl::int_vector<>(text_size, sdsl::bits::hi(text_size) + 1);
         m_ISA = sdsl::int_vector<>(text_size, sdsl::bits::hi(text_size) + 1);
 
+        cout << "Building the suffix array for the text reverse." << endl;
         sdsl::algorithm::calculate_sa((const unsigned char *)rev_text,
                                       text_size, m_SA);
+        cout << "Finish building the suffix array for the text reverse" << endl;
+
         // Builds the inverse suffix array
         for (uint_t i = 0; i < m_SA.size(); i++) {
             m_ISA[m_SA[i]] = i;
         }
+
         // We don't need the SA anymore
         sdsl::util::clear(m_SA);
+
         // Builds the LCP information
+        cout << "Building the LCP information" << endl;
         sdsl::construct_im(m_lcp, (const char *)rev_text, sizeof(char));
+        cout << "Finish building the LCP information" << endl;
 
         // Builds the RMQ Support.
         m_rmq = sdsl::rmq_succinct_sada<>(&m_lcp);
@@ -209,7 +175,9 @@ template <> void sorter<suffix_info>::build_data_structures(char *text) {
     m_SA = sdsl::int_vector<>(text_size, sdsl::bits::hi(text_size) + 1);
     m_ISA = sdsl::int_vector<>(text_size, sdsl::bits::hi(text_size) + 1);
 
+    cout << "Building the suffix array for the text" << endl;
     sdsl::algorithm::calculate_sa((const unsigned char *)text, text_size, m_SA);
+    cout << "End building the suffix array for the text" << endl;
     // Builds the inverse suffix array
     for (uint_t i = 0; i < m_SA.size(); i++) {
         m_ISA[m_SA[i]] = i;
@@ -217,7 +185,9 @@ template <> void sorter<suffix_info>::build_data_structures(char *text) {
     // We don't need the SA anymore
     sdsl::util::clear(m_SA);
     // Builds the LCP information
+    cout << "Building the LCP information" << endl;
     sdsl::construct_im(m_lcp, (const char *)text, sizeof(char));
+    cout << "Finishing the LCP information" << endl;
 
     // Builds the RMQ Support.
     m_rmq = sdsl::rmq_succinct_sada<>(&m_lcp);
