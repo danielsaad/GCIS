@@ -96,5 +96,10 @@ def gcis_extract(inf, query_file):
     return p.communicate()
 
 
+def gcis_build_index(inf,ouf):
+    command = ['../bin/gcis-ef','-i',inf,ouf]
+    p = Popen(command,stdout=PIPE,stderr=PIPE);
+    return p.communicate();
+
 if __name__ == "__main__":
     pass

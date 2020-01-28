@@ -110,7 +110,6 @@ template <class T> void serialize(T &x, std::ofstream &o) {
     o.write((const char *)&x, sizeof(x));
 }
 
-
 template <class T> void serialize(std::vector<T> &v, std::ofstream &o) {
     size_t sz = v.size();
     serialize(sz, o);
@@ -127,7 +126,6 @@ template <class T> void load(T &x, std::ifstream &in) {
     in.read((char *)&x, sizeof(x));
 }
 
-
 template <class T> void load(std::vector<T> &v, std::ifstream &in) {
     size_t sz;
     load(sz, in);
@@ -141,8 +139,6 @@ template <class T> void load(std::vector<T> &v, std::ifstream &in) {
 //     s.resize(sz);
 //     in.read((char *)s.data(), sizeof(char) * sz);
 // }
-
-
 
 template <class T> class identity { typedef T type; };
 

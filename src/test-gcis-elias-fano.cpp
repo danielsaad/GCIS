@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
         gcisIndexBs.set_tree(index.m_bv_dfuds);
         gcisIndexBs.set_l(index.m_l);
         std::cout << "loading index structures\n";
-        gcisIndexBs.print();
+        // gcisIndexBs.print();
 
         std::vector<gcis_index_private::gcis_index_grid<>::lpoint> points(
             index.m_grid_points.size());
