@@ -88,6 +88,7 @@ template <class info_t = rule_info> class sorter {
                            * Neither is a prefix of the other. Use ISA to find
                            *the order
                            ***/
+                          return m_ISA[lhs.pos] < m_ISA[rhs.pos];
                           if (m_ISA[lhs.pos] < m_ISA[rhs.pos]) {
                               //   cout << "true cmp" << endl;
                           } else {
@@ -105,7 +106,6 @@ template <class info_t = rule_info> class sorter {
             v[i].pos = size - v[i].pos - v[i].len;
             if (v[i].pos > 0)
                 v[i].pos--;
-
             // cout << v[i].id << " " << v[i].pos << endl;
         }
     }
@@ -149,25 +149,22 @@ template <class info_t = rule_info> class sorter {
         // }
         // Builds suffix array
         m_SA = sdsl::int_vector<>(text_size, sdsl::bits::hi(text_size) + 1);
-        // sdsl::algorithm::calculate_sa((unsigned char *)foo.c_str(),
-        // text_size,
-        //                               m_SA);
+        m_ISA = sdsl::int_vector<>(text_size, sdsl::bits::hi(text_size) + 1);
+
         sdsl::algorithm::calculate_sa((const unsigned char *)rev_text,
                                       text_size, m_SA);
         // Builds the inverse suffix array
-        m_ISA = sdsl::inv_perm_support<>(&m_SA);
+        for (uint_t i = 0; i < m_SA.size(); i++) {
+            m_ISA[m_SA[i]] = i;
+        }
+        // We don't need the SA anymore
+        sdsl::util::clear(m_SA);
         // Builds the LCP information
-        // sdsl::construct_im(m_lcp, foo.c_str(), sizeof(char));
         sdsl::construct_im(m_lcp, (const char *)rev_text, sizeof(char));
+
         // Builds the RMQ Support.
         m_rmq = sdsl::rmq_succinct_sada<>(&m_lcp);
-        // std::cout << "LCP SIZE = " << m_lcp.size() << std::endl;
-        // The SA  and the reverse text are not needed anymore
-        // for (uint_t i = 0; i < text_size; i++) {
-        //     cout << i << " " << m_SA[i] << " " << m_ISA[i] << " " << m_lcp[i]
-        //          << endl;
-        // }
-        // cout << m_lcp[m_lcp.size() - 1] << endl;
+
         delete[] rev_text;
     }
 
@@ -195,7 +192,7 @@ template <class info_t = rule_info> class sorter {
         }
     }
     sdsl::int_vector<> m_SA;
-    sdsl::inv_perm_support<> m_ISA;
+    sdsl::int_vector<> m_ISA;
     sdsl::lcp_bitcompressed<> m_lcp; // TODO: change type for faster sorting
     sdsl::rmq_succinct_sada<> m_rmq;
 };
@@ -210,11 +207,18 @@ template <> void sorter<suffix_info>::build_data_structures(char *text) {
 
     uint_t text_size = strlen(text);
     m_SA = sdsl::int_vector<>(text_size, sdsl::bits::hi(text_size) + 1);
-    sdsl::algorithm::calculate_sa((unsigned char *)text, text_size, m_SA);
+    m_ISA = sdsl::int_vector<>(text_size, sdsl::bits::hi(text_size) + 1);
+
+    sdsl::algorithm::calculate_sa((const unsigned char *)text, text_size, m_SA);
     // Builds the inverse suffix array
-    m_ISA = sdsl::inv_perm_support<>(&m_SA);
+    for (uint_t i = 0; i < m_SA.size(); i++) {
+        m_ISA[m_SA[i]] = i;
+    }
+    // We don't need the SA anymore
+    sdsl::util::clear(m_SA);
     // Builds the LCP information
     sdsl::construct_im(m_lcp, (const char *)text, sizeof(char));
+
     // Builds the RMQ Support.
     m_rmq = sdsl::rmq_succinct_sada<>(&m_lcp);
 }
@@ -545,7 +549,14 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
                                 focc, l, m_bv_dfuds, t, m_pi, inv_pi, wt, m_str,
                                 rules_expansion_len, suffixes_expansion_len,
                                 prev_rule, m_gref.m_xs, bv_idx);
+
+    cout << "Performing the DFS" << endl;
+    auto t1 = std::chrono::steady_clock::now();
     dfs_h.dfs();
+    auto t2 = std::chrono::steady_clock::now();
+    cout << "DFS done "
+         << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
+         << " seconds" << endl;
     sdsl::construct_im(m_wt, wt);
     m_l = l;
     m_focc = focc;
@@ -570,7 +581,13 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
     }
 
     sorter<rule_info> s;
+    cout << "Sorting the rules " << endl;
+    t1 = std::chrono::steady_clock::now();
     s.sort(rules, m_text);
+    t2 = std::chrono::steady_clock::now();
+    cout << "Finished sorting the rules: "
+         << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
+         << " seconds " << endl;
     //    cout << endl;
     //    for (uint_t i = 0; i < rules.size(); i++) {
     //        cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
@@ -590,9 +607,14 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
     }
     // cout << "Finished" << endl;
     sorter<suffix_info> s2;
-    // cout << " Sorting suffixes " << endl;
 
+    cout << "Sorting the Suffixes" << endl;
+    t1 = std::chrono::steady_clock::now();
     s2.sort(suffixes, m_text);
+    t2 = std::chrono::steady_clock::now();
+    cout << "Finished sorting the suffixes: "
+         << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
+         << " seconds" << endl;
 
     // cout << " Printing the suffixes after sorting" << endl;
 
