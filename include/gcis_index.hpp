@@ -66,7 +66,7 @@ class gcis_index {
     virtual void display(const len_type &, const len_type &,
                          std::string &) const;
 
-    virtual void print() {
+    virtual void print() const{
 
         std::cout << "Printing mapping" << std::endl;
         std::cout << "bvfocc:";
@@ -372,7 +372,7 @@ void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::display(
         strs = sblock.size();
 
         do {
-            node = dfuds_tree.parent(node);
+            node = parent;
             parent = dfuds_tree.parent(node);
             ch = dfuds_tree.children(parent);
             j = dfuds_tree.childrank(node);
@@ -380,7 +380,7 @@ void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::display(
         } while (j == ch);
         node = dfuds_tree.nsibling(node);
         ++j;
-        /// cambiar aqui por extraer hasta el final;;
+        /// cambiar aqui por extraer hasta el final;
     }
     while (strs - off < m) {
 
@@ -399,6 +399,10 @@ void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::display(
             strs = sblock.size();
         }
     }
+//    if(dfuds_tree.is_leaf(node)){
+//        expand_prefix(node, sblock, m, off);
+//    }
+
     /** remove innecesary characters */
     str.resize(m);
     std::copy(sblock.begin() + off, sblock.begin() + off + m, str.begin());
@@ -427,14 +431,14 @@ bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::expand_prefix(
         /** check if its first child is a character node */
         size_tree fchild = dfuds_tree.fchild(node);
         size_tree l = dfuds_tree.children(node);
-        // if its a leaf and a character node then al the children are character
+        // if its a leaf and a character node then all children are character
         // and we extract the block
         size_tree r = 0;
         if (dfuds_tree.is_leaf(fchild) && is_ch_node(fchild, r)) {
             // append the corresponding block of characters
-            size_tree pos = bvt_rank1.rank(r);
-            append_block(pos - 1, l, s);
-            return s.size() - off < m; // continue expanding
+//            size_tree pos = bvt_rank1.rank(r);
+            append_block(r - 1, l, s);
+            return long(s.size() - off) < m; // continue expanding
         }
         // if it is no a character node -> expand in dfs
         uint i = 1;
@@ -445,8 +449,10 @@ bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::expand_prefix(
         }
         return true;
     }
+
     // leaf case !!!!! WE DO NOT TREAT CHARACTER LEAVES
     // as we never arrive to character leaves the leaf must to be a non-terminal
+    assert(!is_ch_node(node));
     // leaf we need to jump to its first occ
     size_tree pre = dfuds_tree.pre_order(node);
     rule_type X = map_node(pre);
@@ -548,47 +554,30 @@ int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv,
                                           len_type &j) const {
 
     if (X < 256) {
-        if ((unsigned char)str[j] < X)
+        unsigned char m =  (unsigned char)X;
+        if ((unsigned char)str[j] < X){
+            if((unsigned char)str[j] >= m)
+                std::cout<<"UNSIGNED CHAR PROBLEM\n";
             return -1;
-        if ((unsigned char)str[j] > X)
+        }
+
+        if ((unsigned char)str[j] > X){
+            if((unsigned char)str[j] <= m)
+                std::cout<<"UNSIGNED CHAR PROBLEM\n";
             return 1;
+        }
+
+
+        if((unsigned char)str[j] != m)
+            std::cout<<"UNSIGNED CHAR PROBLEM\n";
+
         --j;
         return 0;
     }
     // compute the preorder node and node pos
     size_tree pre = map_rule(X);
     size_tree node = dfuds_tree.pre_order_select(pre);
-    // case leaf
-    //        if(  dfuds_tree.is_leaf(node)  )  //if it is a leaf then is a
-    //        symbol
-    //        {
-    //#ifdef TOYEXAMPLE
-    //            char Y = X;
-    //            switch(Y){
-    //                case 0: Y = 65;
-    //                    break;
-    //                case 1: Y = 67;
-    //                    break;
-    //                case 10: Y = 71;
-    //                    break;
-    //                case 13: Y = 84;
-    //                    break;
-    //            }
-    //
-    //
-    //            if(str[j] < Y) return -1;
-    //            if(str[j] > Y) return 1;
-    //            --j;
-    //            return 0;
-    //#endif
-    //
-    //            if(str[j] < X) return -1;
-    //            if(str[j] > X) return 1;
-    //            --j;
-    //            return 0;
-    //
-    //        }
-    // lambda function for recursively cmp
+
     std::function<int(const size_tree &, const size_tree &)> dfs_cmp_suffix;
 
     dfs_cmp_suffix = [this, &dfs_cmp_suffix, &str,
@@ -665,10 +654,14 @@ bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::is_ch_node(
 template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
           typename t_gridbv, typename t_gridwt>
 bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::is_ch_node(
-    const gcis_index::size_tree &node, size_tree &idx) const {
+    const gcis_index::size_tree &node, size_tree &indx_str) const {
+
     assert(dfuds_tree.is_leaf(node));
+
     size_tree pre = dfuds_tree.pre_order(node);
-    idx = pre - bvfocc_rank1(pre);
+
+    auto idx = pre - bvfocc_rank1(pre);
+    indx_str = bvt_rank1(idx);
     return bvt[idx - 1];
 }
 
@@ -693,12 +686,19 @@ template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
 int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::cmp_block(
     gcis_index::len_type pos, uint l, const std::string &str, len_type &i,
     const bool &dir) const {
+
     if (dir) {
+
+//    std::string sss; sss.resize(l);
+//    std::copy(vt.begin()+pos-l , vt.begin()+pos,sss.begin());
+//    std::cout<<"comparing  rule"<<std::endl;
+//    std::cout<<"cmp_block("<<sss<<","<< "str["<<i<<"] "<<str<<")"<<std::endl;
+
         assert(l <= pos + 1);
         while (l && i >= 0) {
-            if (str[i] < vt[pos])
+            if ((unsigned char)str[i] < (unsigned char)vt[pos])
                 return -1;
-            if (str[i] > vt[pos])
+            if ((unsigned char)str[i] > (unsigned char)vt[pos])
                 return 1;
             --pos;
             --i;
@@ -709,13 +709,19 @@ int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::cmp_block(
 
         return 0;
     }
+
     assert(pos + l <= vt.size());
+
+//    std::string sss; sss.resize(l);
+//    std::copy(vt.begin()+pos , vt.begin()+pos+l,sss.begin());
+//    std::cout<<"comparing  suffix"<<std::endl;
+//    std::cout<<"cmp_block("<<sss<<","<< "str["<<i<<"] "<<str<<")"<<std::endl;
 
     uint ssz = str.size();
     while (l && i < ssz) {
-        if (str[i] < vt[pos])
+        if ((unsigned char)str[i] < (unsigned char)vt[pos])
             return -1;
-        if (str[i] > vt[pos])
+        if ((unsigned char)str[i] > (unsigned char)vt[pos])
             return 1;
         ++pos;
         ++i;
@@ -746,48 +752,24 @@ int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv,
                                           const std::string &str,
                                           len_type &j) const {
 
-    if (X < 256) {
-        if ((unsigned char)str[j] < X)
-            return -1;
-        if ((unsigned char)str[j] > X)
-            return 1;
-        j++;
-        return 0;
-    }
+
+        if (X < 256) {
+            unsigned char m =  (unsigned char)X;
+            if ((unsigned char)str[j] < X){
+                return -1;
+            }
+
+            if ((unsigned char)str[j] > X){
+                return 1;
+            }
+
+            j++;
+            return 0;
+        }
 
     // compute the preorder node and node pos
     size_tree pre = map_rule(X);
     size_tree node = dfuds_tree.pre_order_select(pre);
-    // case leaf
-    //        if(  dfuds_tree.is_leaf(node)  )  //if it is a leaf then is a
-    //        symbol
-    //        {
-    //#ifdef TOYEXAMPLE
-    //            char Y = X;
-    //            switch(Y){
-    //                case 0: Y = 65;
-    //                    break;
-    //                case 1: Y = 67;
-    //                    break;
-    //                case 10: Y = 71;
-    //                    break;
-    //                case 13: Y = 84;
-    //                    break;
-    //            }
-    //
-    //
-    //            if(str[j] < Y) return -1;
-    //            if(str[j] > Y) return 1;
-    //            j++;
-    //            return 0;
-    //#endif
-    //
-    //            if(str[j] < X) return -1;
-    //            if(str[j] > X) return 1;
-    //            j++;
-    //            return 0;
-    //
-    //        }
     // lambda function for recursively cmp
     std::function<int(const size_tree &, const size_tree &)> dfs_cmp_prefix;
 
@@ -1074,10 +1056,12 @@ template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
 void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::append_block(
     const gcis_index::size_tree &pos, const gcis_index::size_tree &l,
     std::string &str) const {
+
     std::string s;
-    s.resize(l);
-    std::copy(vt.begin() + pos, vt.begin() + pos + l, s.begin());
-    str += s;
+    uint b = str.size();
+    str.resize(str.size()+l);
+    std::copy(vt.begin() + pos, vt.begin() + pos + l, str.begin()+b);
+
 }
 
 template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,

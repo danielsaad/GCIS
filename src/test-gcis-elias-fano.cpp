@@ -6,19 +6,20 @@
 #include "sdsl/wavelet_trees.hpp"
 #include <fstream>
 
-const int PATTERN_LEN = 10;
+const int PATTERN_LEN = 100;
 
 using namespace sdsl;
 
 bool test_display(const gcis_index_private::gcis_index_bs<> &G,
                   std::string &T) {
-    // srand(time(nullptr));
+     srand(time(nullptr));
+     G.print();
     size_t N = T.size();
 
-    for (int i = 0; i < 1000000; ++i) {
-        uint p = 9;  // rand()%N;
-        uint m = 16; /// rand()%(N - p);
-
+    for (int i = 0; i < 10000; ++i) {
+        uint p =rand()%N;
+        uint m =std::min<uint>(PATTERN_LEN,N-p);
+        std::cout<<p<<" "<<m<<std::endl;
         std::string str, s;
         s.resize(m);
         std::copy(T.begin() + p, T.begin() + p + m, s.begin());
@@ -26,7 +27,7 @@ bool test_display(const gcis_index_private::gcis_index_bs<> &G,
         G.display(p, m, str);
         if (str != s) {
             std::cout << "s:" << s << "\n display:" << str << std::endl;
-            //         G.display(p,m,str);
+//            G.display(p,m,str);
             return false;
         }
     }
@@ -47,15 +48,15 @@ bool test_locate(const gcis_index_private::gcis_index_bs<> &G, std::string &T,
 
     srand(time(nullptr));
     size_t N = T.size();
-    for (uint i = 0; i < 1000; ++i) {
+    for (uint i = 0; i < 100000; ++i) {
 
         // uint l = rand() % N;
         // uint r = std::min<int>(N - 1, l + PATTERN_LEN);
 
         uint_t r = std::max<int>(rand() % N, PATTERN_LEN - 1);
         uint_t l = r - PATTERN_LEN + 1;
-        // uint l = 494988;
-        // uint r = 494997;
+//         uint l = 510782;
+//         uint r = 510791;
 
         cout << "[l,r] = "
              << "[" << l << "," << r << "]" << endl;
@@ -161,16 +162,16 @@ int main(int argc, char *argv[]) {
         gcisIndexBs.load(index_file);
         load_string_from_file(str, argv[2]);
         std::string ss = str;
-        //        if(!test_display(gcisIndexBs,ss)){
-        //            std::cout<<"TEST DISPLAY DOES NOT PASS\n";
-        //            return 0;
-        //        }
-        //        std::cout<<"TEST DISPLAY PASSED\n";
-
-        if (!test_locate(gcisIndexBs, ss, argv[2])) {
-            std::cout << "TEST LOCATE DOES NOT PASS\n";
+        if(!test_display(gcisIndexBs,ss)){
+            std::cout<<"TEST DISPLAY DOES NOT PASS\n";
             return 0;
         }
-        std::cout << "TEST LOCATE PASSED\n";
+        std::cout<<"TEST DISPLAY PASSED\n";
+//
+//        if (!test_locate(gcisIndexBs, ss, argv[2])) {
+//            std::cout << "TEST LOCATE DOES NOT PASS\n";
+//            return 0;
+//        }
+//        std::cout << "TEST LOCATE PASSED\n";
     }
 }

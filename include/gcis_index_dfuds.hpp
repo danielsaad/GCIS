@@ -29,7 +29,7 @@ namespace gcis_index_private{
 
     public:
 
-        typedef unsigned long ul;
+        typedef unsigned long long ul;
 
         gcis_index_dfuds(){};
 
@@ -44,7 +44,7 @@ namespace gcis_index_private{
 
         virtual ~gcis_index_dfuds(){};
 
-        void print(){
+        void print() const{
             uint count = 0, pre = 0;
             for (uint i = 0; i < bit_vector.size() ; ++i) {
                 if(bit_vector[i] == 0){

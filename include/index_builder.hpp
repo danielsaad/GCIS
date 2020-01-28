@@ -550,6 +550,17 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
     m_l = l;
     m_focc = focc;
     m_t = t;
+
+
+    std::fstream tl_f("T_L",std::ios::out);
+    size_t cl = 0;
+    for (int k = 0; k < std::strlen(m_text) ; ++k) {
+        if(m_l[k] == 1)
+            ++cl;
+        tl_f << "[" << k << "]: <"<<m_l[k]<<"> ("<<cl<<")"<< m_text[k] <<"\n";
+
+    }
+
     /***
      * Construct rules info array
      */
@@ -571,11 +582,25 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
 
     sorter<rule_info> s;
     s.sort(rules, m_text);
+
+
+    std::fstream rules_f("rules",std::ios::out);
+
     //    cout << endl;
-    //    for (uint_t i = 0; i < rules.size(); i++) {
-    //        cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
+        size_t N = std::strlen(m_text);
+        for (uint_t i = 0; i < rules.size(); i++) {
+            rules_f << "[" << i + 256 << "] ";
+            int c = 0;
+            for (int j = N-rules[i].pos -1 ; c < rules[i].len && c < 6 ; --j) {
+                    rules_f << m_text[j];
+                    ++c;
+            }
+
+            rules_f << "\n";
+
+            //        cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
     //             << endl;
-    //    }
+        }
     //    cout << endl;
 
     //    cout << "Printing the suffixes " << endl;
@@ -594,11 +619,49 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
 
     s2.sort(suffixes, m_text);
 
-    // cout << " Printing the suffixes after sorting" << endl;
+     cout << " Printing the suffixes after sorting" << endl;
 
-    // for (uint_t i = 0; i < suffixes.size(); i++) {
-    //     suffixes[i].print();
-    // }
+     std::vector<std::vector<unsigned int>> V(suffixes.size());
+
+     std::fstream suff_f("suffixes",std::ios::out);
+
+     for (uint_t i = 0; i < suffixes.size(); i++) {
+         suffixes[i].print();
+         suff_f <<"["<<i<<"]:";
+         for (int j = 0; j < suffixes[i].len ; ++j) {
+             if(j < 5) suff_f << m_text[suffixes[i].pos + j];
+             V[i].push_back((unsigned int)m_text[suffixes[i].pos + j]);
+         }
+         suff_f <<"\n";
+     }
+
+//    for (int k = 0; k < V.size()-1 ; ++k)
+//    {
+//        int m = std::min<int>(V[k].size(),V[k+1].size());
+//
+//        bool prefix = true;
+//        for (int i = 0; i < m; ++i) {
+//            std::cout<<"V[k][i]:"<<V[k][i]<<" ? V[k+1][i]:"<<V[k+1][i]<<std::endl;
+//            if(V[k][i] > V[k+1][i]){
+//
+//                std::cout<<"SORTING ERROR CASE\n";
+//                sleep(3);
+//                break;
+//            }
+//            if(V[k][i] < V[k+1][i]){
+//                prefix = false;
+//                sleep(3);
+//                break;
+//            }
+//        }
+//
+//        if(prefix && V[k].size() > V[k+1].size()){
+//            std::cout<<"SORTING ERROR PREFIX CASE \n";
+//            break;
+//        }
+//
+//    }
+
 
     // cout << "Printing the rules before relabeling " << endl;
     // for (uint_t i = 0; i < rules.size(); i++) {
