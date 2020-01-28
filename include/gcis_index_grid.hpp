@@ -65,6 +65,18 @@ namespace gcis_index_private{
 
             uint32_t n_cols() const{ return sb.size();}
 
+            void print_size_in_bytes() const{
+
+                std::cout << "xb:" << sdsl::size_in_bytes(xb) <<  std::endl;
+                std::cout << "xb_rank_1:" << sdsl::size_in_bytes(xb_rank1) <<  std::endl;
+                std::cout << "xb_select_1:" << sdsl::size_in_bytes(xb_sel1) <<  std::endl;
+                std::cout << "xb_select_0:" << sdsl::size_in_bytes(xb_sel0) <<  std::endl;
+                std::cout << "wt_sb:" << sdsl::size_in_bytes(sb) <<  std::endl;
+                std::cout << "int_vector_sl:" << sdsl::size_in_bytes(sl) <<  std::endl;
+
+
+            }
+
     private:
             /** maps from virtual row to the position in XB bitvector */
             dtype  map(const dtype &) const;
@@ -321,7 +333,7 @@ namespace gcis_index_private{
             sb_file.close();
 
             std::string id_sb = sdsl::util::basename("sb_file") + "_";
-            sdsl::cache_config file_conf_sb(false, "./", id_sb);
+            sdsl::cache_config file_conf_sb(true, "./", id_sb);
             sdsl::construct(sb, "sb_file", file_conf_sb, 0);
 
         }

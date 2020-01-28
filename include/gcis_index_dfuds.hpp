@@ -243,6 +243,17 @@ namespace gcis_index_private{
 
         }
 
+        void print_size_in_bytes()const{
+
+            std::cout << "bit_vector:" << sdsl::size_in_bytes(bit_vector) <<  std::endl;
+            std::cout << "bp_support:" << sdsl::size_in_bytes(bps) <<  std::endl;
+            std::cout << "rank_00:" << sdsl::size_in_bytes(rank_00) <<  std::endl;
+            std::cout << "select_00:" << sdsl::size_in_bytes(select_00) <<  std::endl;
+            std::cout << "select_0:" << sdsl::size_in_bytes(select_0) <<  std::endl;
+
+
+        }
+
     protected:
 
         bv bit_vector;
@@ -257,6 +268,7 @@ namespace gcis_index_private{
         {
             if(bit_vector[i]==0)
                 return i;
+
             return select_0(i - bps.rank(i)+1);
         }
 
