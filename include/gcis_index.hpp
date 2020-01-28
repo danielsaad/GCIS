@@ -103,7 +103,7 @@ class gcis_index {
 
         std::cout << "-----------"  <<  std::endl;
         std::cout << "Tree:" << std::endl;
-        _grid.print_size_in_bytes();
+        dfuds_tree.print_size_in_bytes();
     }
     virtual void print() const{
 
