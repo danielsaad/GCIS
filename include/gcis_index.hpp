@@ -66,6 +66,45 @@ class gcis_index {
     virtual void display(const len_type &, const len_type &,
                          std::string &) const;
 
+    virtual void print_size_in_bytes() const{
+
+        std::cout << "Printing size in bytes" << std::endl;
+
+
+        std::cout << "Mapping Structures:" << std::endl;
+        std::cout << "bvfocc:" << sdsl::size_in_bytes(bvfocc) <<  std::endl;
+        std::cout << "bvfocc_rank1:" << sdsl::size_in_bytes(bvfocc_rank1) <<  std::endl;
+        std::cout << "bvfocc_sel0:" << sdsl::size_in_bytes(bvfocc_sel0) <<  std::endl;
+        std::cout << "bvfocc_sel1:" << sdsl::size_in_bytes(bvfocc_sel1) <<  std::endl;
+
+        std::cout << "-----------"  <<  std::endl;
+
+        std::cout << "pi:" << sdsl::size_in_bytes(pi) <<  std::endl;
+        std::cout << "inv_pi_support:" << sdsl::size_in_bytes(inv_pi) <<  std::endl;
+
+
+        std::cout << "-----------"  <<  std::endl;
+
+        std::cout << "bvt:" << sdsl::size_in_bytes(bvt) <<  std::endl;
+        std::cout << "bvt_rank1:" << sdsl::size_in_bytes(bvt_rank1) <<  std::endl;
+        std::cout << "bvt_sel0:" << sdsl::size_in_bytes(bvt_sel0) <<  std::endl;
+
+        std::cout << "-----------"  <<  std::endl;
+
+        std::cout << "wt:" << sdsl::size_in_bytes(wtnt) <<  std::endl;
+
+
+        std::cout << "-----------"  <<  std::endl;
+        std::cout << "str:" << vt.size() <<  std::endl;
+
+        std::cout << "-----------"  <<  std::endl;
+        std::cout << "Grid:" << std::endl;
+        _grid.print_size_in_bytes();
+
+        std::cout << "-----------"  <<  std::endl;
+        std::cout << "Tree:" << std::endl;
+        _grid.print_size_in_bytes();
+    }
     virtual void print() const{
 
         std::cout << "Printing mapping" << std::endl;
