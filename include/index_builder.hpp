@@ -1,6 +1,8 @@
 #include "divsufsort.h"
 #include "gcis_eliasfano_index.hpp"
+#include "lcp.hpp"
 #include "sdsl/bit_vectors.hpp"
+#include "sdsl/csa_bitcompressed.hpp"
 #include "sdsl/inv_perm_support.hpp"
 #include "sdsl/lcp.hpp"
 #include "sdsl/rmq_support.hpp"
@@ -51,16 +53,16 @@ template <class info_t = rule_info> class sorter {
         std::sort(v.begin(), v.end(),
                   [this](const info_t &lhs, const info_t &rhs) {
                       if (m_ISA[lhs.pos] == m_ISA[rhs.pos]) {
-                          return lhs.len <= rhs.len;
+                          return lhs.len < rhs.len;
                       }
                       uint_t rmq;
                       if (m_ISA[lhs.pos] < m_ISA[rhs.pos]) {
-                          rmq = m_rmq(m_ISA[lhs.pos] + 2, m_ISA[rhs.pos] + 1);
+                          rmq = m_rmq(m_ISA[lhs.pos] + 1, m_ISA[rhs.pos]);
                       } else {
-                          rmq = m_rmq(m_ISA[rhs.pos] + 2, m_ISA[lhs.pos] + 1);
+                          rmq = m_rmq(m_ISA[rhs.pos] + 1, m_ISA[lhs.pos]);
                       }
                       if (lhs.len <= m_lcp[rmq] && rhs.len <= m_lcp[rmq]) {
-                          return lhs.len <= rhs.len;
+                          return lhs.len < rhs.len;
                       } else if (lhs.len <= m_lcp[rmq]) {
                           return true;
                       } else if (rhs.len <= m_lcp[rmq]) {
@@ -95,43 +97,40 @@ template <class info_t = rule_info> class sorter {
      */
     virtual void build_data_structures(char *text) {
 
-
-        /***
-         * Computes the text reverse
-         */
+        // Computes the text reverse
         uint_t text_size = strlen(text);
-        char *rev_text = new char[text_size + 1];
+        unsigned char *rev_text = new unsigned char[text_size + 1];
         for (uint_t i = 0; i < text_size; i++) {
             rev_text[i] = text[text_size - i - 1];
         }
         rev_text[text_size] = 0;
 
-        // Builds suffix array
-        m_SA = sdsl::int_vector<>(text_size, sdsl::bits::hi(text_size) + 1);
-        m_ISA = sdsl::int_vector<>(text_size, sdsl::bits::hi(text_size) + 1);
+        sdsl::cache_config config(false, ".", "cache_reverse");
+        sdsl::store_to_file((const char *)rev_text, sdsl::conf::KEY_TEXT);
+        sdsl::register_cache_file(sdsl::conf::KEY_TEXT, config);
 
-        cout << "Building the suffix array for the text reverse." << endl;
-        sdsl::algorithm::calculate_sa((const unsigned char *)rev_text,
-                                      text_size, m_SA);
-        cout << "Finish building the suffix array for the text reverse" << endl;
-
-        // Builds the inverse suffix array
-        for (uint_t i = 0; i < m_SA.size(); i++) {
-            m_ISA[m_SA[i]] = i;
+        sdsl::construct(m_lcp, sdsl::conf::KEY_TEXT, config, 1);
+        for (uint_t i = 0; i < m_lcp.size(); i++) {
+            // cout << "LCP[i] = " << m_lcp[i] << endl;
         }
 
-        // We don't need the SA anymore
-        sdsl::util::clear(m_SA);
+        if (sdsl::cache_file_exists(sdsl::conf::KEY_SA, config)) {
+            sdsl::load_from_cache(m_SA, sdsl::conf::KEY_SA, config);
+            m_ISA = m_SA;
 
-        // Builds the LCP information
-        cout << "Building the LCP information" << endl;
-        sdsl::construct_im(m_lcp, (const char *)rev_text, sizeof(char));
-        cout << "Finish building the LCP information" << endl;
+            for (uint_t i = 0; i < m_SA.size(); i++) {
+                // cout << "SA[i] = " << m_SA[i] << endl;
+                m_ISA[m_SA[i]] = i;
+            }
+            sdsl::util::clear(m_SA);
+        }
 
         // Builds the RMQ Support.
         m_rmq = sdsl::rmq_succinct_sada<>(&m_lcp);
 
-        delete[] rev_text;
+        sdsl::remove(sdsl::cache_file_name(sdsl::conf::KEY_SA, config));
+        sdsl::remove(sdsl::cache_file_name(sdsl::conf::KEY_TEXT, config));
+        sdsl::remove(sdsl::cache_file_name(sdsl::conf::KEY_LCP, config));
     }
 
     /**
@@ -159,7 +158,7 @@ template <class info_t = rule_info> class sorter {
     }
     sdsl::int_vector<> m_SA;
     sdsl::int_vector<> m_ISA;
-    sdsl::lcp_bitcompressed<> m_lcp; // TODO: change type for faster sorting
+    sdsl::lcp_bitcompressed<> m_lcp;
     sdsl::rmq_succinct_sada<> m_rmq;
 };
 
@@ -171,26 +170,33 @@ void sorter<suffix_info>::pre_process(std::vector<suffix_info> &v, char *text) {
 }
 template <> void sorter<suffix_info>::build_data_structures(char *text) {
 
+    // Computes the text reverse
     uint_t text_size = strlen(text);
-    m_SA = sdsl::int_vector<>(text_size, sdsl::bits::hi(text_size) + 1);
-    m_ISA = sdsl::int_vector<>(text_size, sdsl::bits::hi(text_size) + 1);
+    sdsl::cache_config config(false, ".", "cache");
+    sdsl::store_to_file((const char *)text, sdsl::conf::KEY_TEXT);
+    sdsl::register_cache_file(sdsl::conf::KEY_TEXT, config);
 
-    cout << "Building the suffix array for the text" << endl;
-    sdsl::algorithm::calculate_sa((const unsigned char *)text, text_size, m_SA);
-    cout << "End building the suffix array for the text" << endl;
-    // Builds the inverse suffix array
-    for (uint_t i = 0; i < m_SA.size(); i++) {
-        m_ISA[m_SA[i]] = i;
+    sdsl::construct(m_lcp, sdsl::conf::KEY_TEXT, config, 1);
+    for (uint_t i = 0; i < m_lcp.size(); i++) {
+        // cout << "LCP[i] = " << m_lcp[i] << endl;
     }
-    // We don't need the SA anymore
-    sdsl::util::clear(m_SA);
-    // Builds the LCP information
-    cout << "Building the LCP information" << endl;
-    sdsl::construct_im(m_lcp, (const char *)text, sizeof(char));
-    cout << "Finishing the LCP information" << endl;
+
+    if (sdsl::cache_file_exists(sdsl::conf::KEY_SA, config)) {
+        sdsl::load_from_cache(m_SA, sdsl::conf::KEY_SA, config);
+        m_ISA = m_SA;
+        for (uint_t i = 0; i < m_SA.size(); i++) {
+            // cout << "SA[i] = " << m_SA[i] << endl;
+            m_ISA[m_SA[i]] = i;
+        }
+        sdsl::util::clear(m_SA);
+    }
 
     // Builds the RMQ Support.
     m_rmq = sdsl::rmq_succinct_sada<>(&m_lcp);
+
+    sdsl::remove(sdsl::cache_file_name(sdsl::conf::KEY_SA, config));
+    sdsl::remove(sdsl::cache_file_name(sdsl::conf::KEY_TEXT, config));
+    sdsl::remove(sdsl::cache_file_name(sdsl::conf::KEY_LCP, config));
 }
 
 class elias_fano_dfs_helper {
@@ -442,7 +448,9 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
     int_t stack_idx = 0;
     cout << "Number of levels = " << m_gref.m_info.m_level_n << endl;
     // Important: We have to remove the rules which expands to 0
-    m_pi.resize(total_rules - m_gref.m_info.m_level_n + 1);
+    m_pi = sdsl::int_vector<>(
+        total_rules - m_gref.m_info.m_level_n + 1, 0,
+        sdsl::bits::hi(total_rules - m_gref.m_info.m_level_n + 1) + 1);
     /***
      * Inverse permutation: indicates whether the rules already appeared or
      * not. In affirmative case, points to an index in the original
@@ -558,12 +566,12 @@ template <> void index_basics<elias_fano_grammar>::dfs() {
     cout << "Finished sorting the rules: "
          << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
          << " seconds " << endl;
-    //    cout << endl;
-    //    for (uint_t i = 0; i < rules.size(); i++) {
-    //        cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
-    //             << endl;
-    //    }
-    //    cout << endl;
+    // cout << endl;
+    // for (uint_t i = 0; i < rules.size(); i++) {
+    //     cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
+    //          << endl;
+    // }
+    // cout << endl;
 
     //    cout << "Printing the suffixes " << endl;
     std::vector<suffix_info> suffixes;

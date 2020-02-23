@@ -66,49 +66,52 @@ class gcis_index {
     virtual void display(const len_type &, const len_type &,
                          std::string &) const;
 
-    virtual void print_size_in_bytes() const{
+    virtual void print_size_in_bytes() const {
 
         std::cout << "Printing size in bytes" << std::endl;
 
-
         std::cout << "Mapping Structures:" << std::endl;
-        std::cout << "bvfocc:" << sdsl::size_in_bytes(bvfocc) <<  std::endl;
-        std::cout << "bvfocc_rank1:" << sdsl::size_in_bytes(bvfocc_rank1) <<  std::endl;
-        std::cout << "bvfocc_sel0:" << sdsl::size_in_bytes(bvfocc_sel0) <<  std::endl;
-        std::cout << "bvfocc_sel1:" << sdsl::size_in_bytes(bvfocc_sel1) <<  std::endl;
+        std::cout << "bvfocc:" << sdsl::size_in_bytes(bvfocc) << std::endl;
+        std::cout << "bvfocc_rank1:" << sdsl::size_in_bytes(bvfocc_rank1)
+                  << std::endl;
+        std::cout << "bvfocc_sel0:" << sdsl::size_in_bytes(bvfocc_sel0)
+                  << std::endl;
+        std::cout << "bvfocc_sel1:" << sdsl::size_in_bytes(bvfocc_sel1)
+                  << std::endl;
 
-        std::cout << "-----------"  <<  std::endl;
+        std::cout << "-----------" << std::endl;
 
-        std::cout << "pi:" << sdsl::size_in_bytes(pi) <<  std::endl;
+        std::cout << "pi:" << sdsl::size_in_bytes(pi) << std::endl;
         auto t_pi = pi;
         sdsl::util::bit_compress(t_pi);
-        std::cout << "pi(bit_compress):" << sdsl::size_in_bytes(t_pi) <<  std::endl;
-        std::cout << "inv_pi_support:" << sdsl::size_in_bytes(inv_pi) <<  std::endl;
+        std::cout << "pi(bit_compress):" << sdsl::size_in_bytes(t_pi)
+                  << std::endl;
+        std::cout << "inv_pi_support:" << sdsl::size_in_bytes(inv_pi)
+                  << std::endl;
 
+        std::cout << "-----------" << std::endl;
 
-        std::cout << "-----------"  <<  std::endl;
+        std::cout << "bvt:" << sdsl::size_in_bytes(bvt) << std::endl;
+        std::cout << "bvt_rank1:" << sdsl::size_in_bytes(bvt_rank1)
+                  << std::endl;
+        std::cout << "bvt_sel0:" << sdsl::size_in_bytes(bvt_sel0) << std::endl;
 
-        std::cout << "bvt:" << sdsl::size_in_bytes(bvt) <<  std::endl;
-        std::cout << "bvt_rank1:" << sdsl::size_in_bytes(bvt_rank1) <<  std::endl;
-        std::cout << "bvt_sel0:" << sdsl::size_in_bytes(bvt_sel0) <<  std::endl;
+        std::cout << "-----------" << std::endl;
 
-        std::cout << "-----------"  <<  std::endl;
+        std::cout << "wt:" << sdsl::size_in_bytes(wtnt) << std::endl;
 
-        std::cout << "wt:" << sdsl::size_in_bytes(wtnt) <<  std::endl;
+        std::cout << "-----------" << std::endl;
+        std::cout << "str:" << vt.size() << std::endl;
 
-
-        std::cout << "-----------"  <<  std::endl;
-        std::cout << "str:" << vt.size() <<  std::endl;
-
-        std::cout << "-----------"  <<  std::endl;
+        std::cout << "-----------" << std::endl;
         std::cout << "Grid:" << std::endl;
         _grid.print_size_in_bytes();
 
-        std::cout << "-----------"  <<  std::endl;
+        std::cout << "-----------" << std::endl;
         std::cout << "Tree:" << std::endl;
         dfuds_tree.print_size_in_bytes();
     }
-    virtual void print() const{
+    virtual void print() const {
 
         std::cout << "Printing mapping" << std::endl;
         std::cout << "bvfocc:";
@@ -441,9 +444,9 @@ void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::display(
             strs = sblock.size();
         }
     }
-//    if(dfuds_tree.is_leaf(node)){
-//        expand_prefix(node, sblock, m, off);
-//    }
+    //    if(dfuds_tree.is_leaf(node)){
+    //        expand_prefix(node, sblock, m, off);
+    //    }
 
     /** remove innecesary characters */
     str.resize(m);
@@ -478,7 +481,7 @@ bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::expand_prefix(
         size_tree r = 0;
         if (dfuds_tree.is_leaf(fchild) && is_ch_node(fchild, r)) {
             // append the corresponding block of characters
-//            size_tree pos = bvt_rank1.rank(r);
+            //            size_tree pos = bvt_rank1.rank(r);
             append_block(r - 1, l, s);
             return long(s.size() - off) < m; // continue expanding
         }
@@ -596,22 +599,21 @@ int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv,
                                           len_type &j) const {
 
     if (X < 256) {
-        unsigned char m =  (unsigned char)X;
-        if ((unsigned char)str[j] < X){
-            if((unsigned char)str[j] >= m)
-                std::cout<<"UNSIGNED CHAR PROBLEM\n";
+        unsigned char m = (unsigned char)X;
+        if ((unsigned char)str[j] < X) {
+            if ((unsigned char)str[j] >= m)
+                std::cout << "UNSIGNED CHAR PROBLEM\n";
             return -1;
         }
 
-        if ((unsigned char)str[j] > X){
-            if((unsigned char)str[j] <= m)
-                std::cout<<"UNSIGNED CHAR PROBLEM\n";
+        if ((unsigned char)str[j] > X) {
+            if ((unsigned char)str[j] <= m)
+                std::cout << "UNSIGNED CHAR PROBLEM\n";
             return 1;
         }
 
-
-        if((unsigned char)str[j] != m)
-            std::cout<<"UNSIGNED CHAR PROBLEM\n";
+        if ((unsigned char)str[j] != m)
+            std::cout << "UNSIGNED CHAR PROBLEM\n";
 
         --j;
         return 0;
@@ -731,10 +733,11 @@ int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::cmp_block(
 
     if (dir) {
 
-//    std::string sss; sss.resize(l);
-//    std::copy(vt.begin()+pos-l , vt.begin()+pos,sss.begin());
-//    std::cout<<"comparing  rule"<<std::endl;
-//    std::cout<<"cmp_block("<<sss<<","<< "str["<<i<<"] "<<str<<")"<<std::endl;
+        //    std::string sss; sss.resize(l);
+        //    std::copy(vt.begin()+pos-l , vt.begin()+pos,sss.begin());
+        //    std::cout<<"comparing  rule"<<std::endl;
+        //    std::cout<<"cmp_block("<<sss<<","<< "str["<<i<<"]
+        //    "<<str<<")"<<std::endl;
 
         assert(l <= pos + 1);
         while (l && i >= 0) {
@@ -754,10 +757,11 @@ int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::cmp_block(
 
     assert(pos + l <= vt.size());
 
-//    std::string sss; sss.resize(l);
-//    std::copy(vt.begin()+pos , vt.begin()+pos+l,sss.begin());
-//    std::cout<<"comparing  suffix"<<std::endl;
-//    std::cout<<"cmp_block("<<sss<<","<< "str["<<i<<"] "<<str<<")"<<std::endl;
+    //    std::string sss; sss.resize(l);
+    //    std::copy(vt.begin()+pos , vt.begin()+pos+l,sss.begin());
+    //    std::cout<<"comparing  suffix"<<std::endl;
+    //    std::cout<<"cmp_block("<<sss<<","<< "str["<<i<<"]
+    //    "<<str<<")"<<std::endl;
 
     uint ssz = str.size();
     while (l && i < ssz) {
@@ -794,20 +798,19 @@ int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv,
                                           const std::string &str,
                                           len_type &j) const {
 
-
-        if (X < 256) {
-            unsigned char m =  (unsigned char)X;
-            if ((unsigned char)str[j] < X){
-                return -1;
-            }
-
-            if ((unsigned char)str[j] > X){
-                return 1;
-            }
-
-            j++;
-            return 0;
+    if (X < 256) {
+        unsigned char m = (unsigned char)X;
+        if ((unsigned char)str[j] < X) {
+            return -1;
         }
+
+        if ((unsigned char)str[j] > X) {
+            return 1;
+        }
+
+        j++;
+        return 0;
+    }
 
     // compute the preorder node and node pos
     size_tree pre = map_rule(X);
@@ -1042,7 +1045,7 @@ template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
 void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::set_bvfocc(
     const t_mapfbv &b) {
 
-    bvfocc = b;
+    bvfocc = std::move(b);
     bvfocc_sel1 = typename t_mapfbv::select_1_type(&bvfocc);
     bvfocc_sel0 = typename t_mapfbv::select_0_type(&bvfocc);
     bvfocc_rank1 = typename t_mapfbv::rank_1_type(&bvfocc);
@@ -1052,7 +1055,7 @@ template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
           typename t_gridbv, typename t_gridwt>
 void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::set_bvt(
     const t_maptbv &b) {
-    bvt = b;
+    bvt = std::move(b);
     bvt_rank1 = typename t_maptbv::rank_1_type(&bvt);
     bvt_sel0 = typename t_maptbv::select_0_type(&bvt);
 }
@@ -1068,7 +1071,7 @@ template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
           typename t_gridbv, typename t_gridwt>
 void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::set_pi(
     const sdsl::int_vector<> &_pi) {
-    pi = _pi;
+    pi = std::move(_pi);
     inv_pi = sdsl::inv_perm_support<>(&pi);
     n_rules = pi.size();
 }
@@ -1090,7 +1093,7 @@ template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
           typename t_gridbv, typename t_gridwt>
 void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::set_nt(
     const t_mapwt &nt) {
-    wtnt = nt;
+    wtnt = std::move(nt);
 }
 
 template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
@@ -1101,16 +1104,15 @@ void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::append_block(
 
     std::string s;
     uint b = str.size();
-    str.resize(str.size()+l);
-    std::copy(vt.begin() + pos, vt.begin() + pos + l, str.begin()+b);
-
+    str.resize(str.size() + l);
+    std::copy(vt.begin() + pos, vt.begin() + pos + l, str.begin() + b);
 }
 
 template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
           typename t_gridbv, typename t_gridwt>
 void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::set_l(
     const sdsl::sd_vector<> &_l) {
-    bvl = _l;
+    bvl = std::move(_l);
     bvl_rank1 = sdsl::sd_vector<>::rank_1_type(&bvl);
     bvl_select1 = sdsl::sd_vector<>::select_1_type(&bvl);
 }

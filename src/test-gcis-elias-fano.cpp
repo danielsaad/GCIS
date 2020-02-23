@@ -6,32 +6,54 @@
 #include "sdsl/wavelet_trees.hpp"
 #include <fstream>
 
-const int PATTERN_LEN = 100;
+#define TEST
+
+const int PATTERN_LEN = 10;
 
 using namespace sdsl;
+using std::pair;
+using std::vector;
+using std::chrono::steady_clock;
 
 bool test_display(const gcis_index_private::gcis_index_bs<> &G,
-                  std::string &T) {
-    srand(time(nullptr));
-    G.print();
-    size_t N = T.size();
+                  const unsigned char *T, std::ifstream &queries_file) {
+    int number_of_queries;
+    size_t substring_sz;
 
-    for (int i = 0; i < 10000; ++i) {
-        uint p = rand() % N;
-        uint m = std::min<uint>(PATTERN_LEN, N - p);
-        std::cout << p << " " << m << std::endl;
-        std::string str, s;
-        s.resize(m);
-        std::copy(T.begin() + p, T.begin() + p + m, s.begin());
-        str.reserve(m);
-        G.display(p, m, str);
+    queries_file >> number_of_queries >> substring_sz;
+    cout << "Number of substrings: " << number_of_queries << endl;
+    cout << "Substring length: " << substring_sz << endl;
+    vector<pair<uint64_t, uint64_t>> queries(number_of_queries);
+    for (int i = 0; i < number_of_queries; i++) {
+        queries_file >> queries[i].first >> queries[i].second;
+    }
+    uint64_t total_time_ns = 0;
+    for (size_t i = 0; i < queries.size(); i++) {
+        std::string str;
+        str.resize(substring_sz);
+        auto t1 = std::chrono::steady_clock::now();
+        G.display(queries[i].first, substring_sz, str);
+        auto t2 = std::chrono::steady_clock::now();
+        total_time_ns +=
+            std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1)
+                .count();
+
+#ifdef TEST
+        std::string s;
+        s.resize(substring_sz);
+        std::copy(T + queries[i].first, T + queries[i].first + substring_sz, s.begin());
         if (str != s) {
             std::cout << "s:" << s << "\n display:" << str << std::endl;
-            //            G.display(p,m,str);
             return false;
         }
+#endif
     }
 
+    cout << "Extract took: " << total_time_ns / 1e6 << " ms." << endl;
+    cout << "Extract took: " << total_time_ns / (1e3 * number_of_queries)
+         << " us per substring" << endl;
+    cout << "Extract took: " << total_time_ns / (1e3 * number_of_queries * substring_sz)
+         << " us per symbol" << endl;
     return true;
 }
 
@@ -41,51 +63,58 @@ csa_wt<wt_huff<rrr_vector<>>, 32, 32> build_fm_index(const char *file) {
     return fmidx;
 }
 
-bool test_locate(const gcis_index_private::gcis_index_bs<> &G, std::string &T,
-                 const char *text_file) {
+bool test_locate(const gcis_index_private::gcis_index_bs<> &G,
+                 std::ifstream &queries_file, const char *text_file) {
 
+#ifdef TEST
     auto fmidx = build_fm_index(text_file);
+#endif
 
-    srand(time(nullptr));
-    size_t N = T.size();
-    for (uint i = 0; i < 100000; ++i) {
+    vector<string> queries;
+    int number_of_queries;
+    int pattern_len;
+    queries_file.read((char *)&number_of_queries, sizeof(number_of_queries));
+    queries_file.read((char *)&pattern_len, sizeof(pattern_len));
+    cout << "Number of patterns: " << number_of_queries << endl;
+    cout << "Pattern length: " << pattern_len << endl;
+    while (queries_file) {
+        string pattern;
+        pattern.resize(pattern_len);
+        queries_file.read((char *)pattern.data(), sizeof(char) * pattern_len);
+        queries.emplace_back(pattern);
+    }
 
-        // uint l = rand() % N;
-        // uint r = std::min<int>(N - 1, l + PATTERN_LEN);
-
-        uint_t r = std::max<int>(rand() % N, PATTERN_LEN - 1);
-        uint_t l = r - PATTERN_LEN + 1;
-        //         uint l = 510782;
-        //         uint r = 510791;
-
-        cout << "[l,r] = "
-             << "[" << l << "," << r << "]" << endl;
-        std::string s;
-        s.resize(r - l + 1);
-        std::copy(T.begin() + l, T.begin() + r + 1, s.begin());
-        cout << "Pattern = " << s << endl;
-        std::vector<gcis_index_private::gcis_index<>::len_type> occ;
-        cout << "GCIS locating" << endl;
-        G.locate(s, occ);
+    uint64_t total_time_ns = 0;
+    uint64_t number_of_occ = 0;
+    for (auto &pattern : queries) {
+        vector<gcis_index_private::gcis_index<>::len_type> occ;
+        auto t1 = std::chrono::steady_clock::now();
+        G.locate(pattern, occ);
+        auto t2 = std::chrono::steady_clock::now();
+        total_time_ns +=
+            std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1)
+                .count();
         std::sort(occ.begin(), occ.end());
-        std::cout << "GCIS finished" << endl;
-        cout << "FM-Index locating" << endl;
-        auto test_occ_ctnr = sdsl::locate(fmidx, s.begin(), s.end());
-        std::cout << "FM-Index finished" << endl;
+        number_of_occ += occ.size();
+#ifdef TEST
+        auto test_occ_ctnr =
+            sdsl::locate(fmidx, pattern.begin(), pattern.end());
         std::sort(test_occ_ctnr.begin(), test_occ_ctnr.end());
         vector<gcis_index_private::gcis_index<>::len_type> test_occ;
         for (uint64_t i = 0; i < test_occ_ctnr.size(); i++) {
             test_occ.push_back(test_occ_ctnr[i]);
         }
-
-        cout << "Number of occurences: " << occ.size() << endl;
-        cout << "Number of occurences (FM): " << test_occ.size() << endl;
-
         if (test_occ != occ) {
             return false;
         }
+#endif
     }
-
+    cout << "Total of occ: " << number_of_occ << endl;
+    cout << "Locate took: " << total_time_ns / 1e6 << " ms.\n";
+    cout << "Locate took: " << total_time_ns / (1e3 * number_of_queries)
+         << " us per pattern." << endl;
+    cout << "Locate took: " << total_time_ns / (1e3 * number_of_occ)
+         << " us/occ." << endl;
     return true;
 }
 
@@ -95,7 +124,11 @@ void print_usage(char *argv[]) {
     cout << "\t" << argv[0]
          << " -i <input_text> <output_index> (Builds the index)" << endl;
     cout << "\t" << argv[0]
-         << " -p <input_text> <input_index> (Perform random pattern "
+         << " -x <input_text> <input_index> <queries file> (Perform  "
+            "extraction of substrings)"
+         << endl;
+    cout << "\t" << argv[0]
+         << " -p <input_text> <input_index> <queries file> (Perform  pattern "
             "matching)"
          << endl;
     cout << "\t" << argv[0] << " -info <input_index> (Prints index information)"
@@ -115,6 +148,10 @@ void load_string_from_file(char *&str, const char *filename) {
 
 int main(int argc, char *argv[]) {
     char *str;
+    if (argc < 2) {
+        print_usage(argv);
+        return 0;
+    }
     if (strcmp(argv[1], "-c") == 0) {
         std::ofstream output(argv[3], std::ios::binary);
         load_string_from_file(str, argv[2]);
@@ -169,29 +206,43 @@ int main(int argc, char *argv[]) {
         std::ofstream output(argv[3], std::ios::binary);
         gcisIndexBs.serialize(output);
         output.close();
-    } else if (strcmp(argv[1], "-p") == 0) {
+    } else if (strcmp(argv[1], "-x") == 0) {
+        // argv[2] = text
+        // argv[3] = index
+        // argv[4] = queries file
+        cout << "Extract mode" << endl;
         ifstream index_file(argv[3], std::ifstream::in);
+        ifstream queries_file(argv[4], std::ifstream::in);
         gcis_index_private::gcis_index_bs<> gcisIndexBs;
         gcisIndexBs.load(index_file);
         load_string_from_file(str, argv[2]);
-        std::string ss = str;
-        if (!test_display(gcisIndexBs, ss)) {
+        if (!test_display(gcisIndexBs, (const unsigned char *)str,
+                          queries_file)) {
             std::cout << "TEST DISPLAY DOES NOT PASS\n";
             return 0;
         }
         std::cout << "TEST DISPLAY PASSED\n";
-        //
-        //        if (!test_locate(gcisIndexBs, ss, argv[2])) {
-        //            std::cout << "TEST LOCATE DOES NOT PASS\n";
-        //            return 0;
-        //        }
-        //        std::cout << "TEST LOCATE PASSED\n";
+    } else if (strcmp(argv[1], "-p") == 0) {
+        // argv[2] = tex
+        // argv[3] = index
+        // argv[4] = queries file
+        ifstream index_file(argv[3], std::ifstream::in);
+        ifstream queries_file(argv[4], std::ifstream::in);
+        gcis_index_private::gcis_index_bs<> gcisIndexBs;
+        gcisIndexBs.load(index_file);
+        cout << "Locate mode" << endl;
+        if (!test_locate(gcisIndexBs, queries_file, argv[2])) {
+            std::cout << "TEST LOCATE DOES NOT PASS\n";
+            return 0;
+        }
+        std::cout << "TEST LOCATE PASSED\n";
     } else if (strcmp(argv[1], "-info") == 0) {
         // Displays index info
+        cout << "Printing index info" << endl;
         ifstream index_file(argv[2], std::ifstream::in);
         gcis_index_private::gcis_index_bs<> index;
         index.load(index_file);
-        index_file.print_size_in_bytes();
+        index.print_size_in_bytes();
     } else {
         print_usage(argv);
     }

@@ -95,11 +95,20 @@ def gcis_extract(inf, query_file):
     p = Popen(command_gcis,stdout=PIPE)
     return p.communicate()
 
+def gcis_self_index_extract(inf,index_file,query_file):
+    command_gcis = ['../bin/gcis-ef','-x',inf,index_file,query_file]
+    p = Popen(command_gcis,stdout=PIPE)
+    return p.communicate()
+
+def gcis_self_index_locate(inf,index_file,query_file):
+    command_gcis = ['../bin/gcis-ef','-p',inf,index_file,query_file]
+    p = Popen(command_gcis,stdout=PIPE)
+    return p.communicate()
 
 def gcis_build_index(inf,ouf):
     command = ['../bin/gcis-ef','-i',inf,ouf]
-    p = Popen(command,stdout=PIPE,stderr=PIPE);
-    return p.communicate();
+    p = Popen(command,stdout=PIPE,stderr=PIPE)
+    return p.communicate()
 
 if __name__ == "__main__":
     pass
