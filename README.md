@@ -1,5 +1,9 @@
 # A Grammar Compression Algorithm by the Induced Suffix Sorting Framework
 
+This software is an implementation of the GCIS algorithm described in 
+[*A Grammar Compression Algorithm Based on Induced Suffix Sorting*](https://doi.org/10.1109/DCC.2018.00012) by
+D. S. N. Nunes, F. A. Louza, S. Gog, M. Ayala-Rincón and G. Navarro: Data Compression Conference, DCC 2018, 42-51.
+
 ## Introduction
 
 The GCIS algorithm is capable of computing a context-free grammar by using the suffix-sorting framework by Nong *et al*. Moreover, by using GCIS is possible to extract substrings from the compressed text without decompressing it and to compute the Suffix and LCP arrays as a by-product of the decompression. 
