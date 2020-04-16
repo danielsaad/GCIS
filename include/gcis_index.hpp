@@ -66,6 +66,18 @@ class gcis_index {
     virtual void display(const len_type &, const len_type &,
                          std::string &) const;
 
+    virtual void displayII(const len_type &, const len_type &,
+                         std::string &) const;
+
+
+    virtual bool extract_prefix_with_gap
+    (
+            const size_tree& node,
+            std::string& str,
+            long& m_off,
+            const uint &gap
+    ) const;
+
     virtual void print_size_in_bytes() const {
 
         std::cout << "Printing size in bytes" << std::endl;
@@ -111,6 +123,85 @@ class gcis_index {
         std::cout << "Tree:" << std::endl;
         dfuds_tree.print_size_in_bytes();
     }
+
+    virtual void print_size_in_bytes(std::fstream& f) const {
+
+        sdsl::int_vector<> T(vt.size(),0);
+        std::copy(vt.begin(),vt.end(),T.begin());
+        sdsl::util::bit_compress(T);
+
+        f << "Printing size in bytes, BYTES,MB\n" ;
+
+        f << "bv-f-occ,"        <<std::to_string(  sdsl::size_in_bytes(bvfocc)          ) << ","<<std::to_string(  double(sdsl::size_in_bytes(bvfocc)        )/1000000.0  ) << std::endl;
+        f << "bv-f-occ-rank-1," <<std::to_string(  sdsl::size_in_bytes(bvfocc_rank1)    ) << ","<<std::to_string(  double(sdsl::size_in_bytes(bvfocc_rank1)  )/1000000.0  ) << std::endl;
+        f << "bv-f-occ-sel-0,"  <<std::to_string(  sdsl::size_in_bytes(bvfocc_sel0)     ) << ","<<std::to_string(  double(sdsl::size_in_bytes(bvfocc_sel0)   )/1000000.0  ) << std::endl;
+        f << "bv-f-occ-sel-1,"  <<std::to_string(  sdsl::size_in_bytes(bvfocc_sel1)     ) << ","<<std::to_string(  double(sdsl::size_in_bytes(bvfocc_sel1)   )/1000000.0  ) << std::endl;
+        f << "wt-s-occ,"        <<std::to_string(  sdsl::size_in_bytes(wtnt)            ) << ","<<std::to_string(  double(sdsl::size_in_bytes(wtnt)          )/1000000.0  ) << std::endl;
+        f << "vt-str,"          <<std::to_string(  vt.size()                            ) << ","<<std::to_string(  double(vt.size()                          )/1000000.0  ) << std::endl;
+        f << "vt-int,"          <<std::to_string(  sdsl::size_in_bytes(T)               ) << ","<<std::to_string(  double(sdsl::size_in_bytes(T)             )/1000000.0  ) << std::endl;
+        f << "bvt,"             <<std::to_string(  sdsl::size_in_bytes(bvt)             ) << ","<<std::to_string(  double(sdsl::size_in_bytes(bvt)           )/1000000.0  ) << std::endl;
+        f << "bvt-rank-1,"      <<std::to_string(  sdsl::size_in_bytes(bvt_rank1)       ) << ","<<std::to_string(  double(sdsl::size_in_bytes(bvt_rank1)     )/1000000.0  ) << std::endl;
+        f << "bvt-sel-0,"       <<std::to_string(  sdsl::size_in_bytes(bvt_sel0)        ) << ","<<std::to_string(  double(sdsl::size_in_bytes(bvt_sel0)      )/1000000.0  ) << std::endl;
+        f << "bvt-sel-0,"       <<std::to_string(  sdsl::size_in_bytes(pi)              ) << ","<<std::to_string(  double(sdsl::size_in_bytes(pi)            )/1000000.0  ) << std::endl;
+        f << "bvt-sel-0,"       <<std::to_string(  sdsl::size_in_bytes(inv_pi)          ) << ","<<std::to_string(  double(sdsl::size_in_bytes(inv_pi)        )/1000000.0  ) << std::endl;
+        f << "grid,"            <<std::to_string(  _grid.size_in_bytes()                ) << ","<<std::to_string(  double(_grid.size_in_bytes()              )/1000000.0  ) << std::endl;
+        f << "grid-sb,"         <<std::to_string(  sdsl::size_in_bytes(_grid.sb)        ) << ","<<std::to_string(  double(sdsl::size_in_bytes(_grid.sb)      )/1000000.0  ) << std::endl;
+        f << "grid-sl,"         <<std::to_string(  sdsl::size_in_bytes(_grid.sl)        ) << ","<<std::to_string(  double(sdsl::size_in_bytes(_grid.sl)      )/1000000.0  ) << std::endl;
+        f << "grid-xb,"         <<std::to_string(  sdsl::size_in_bytes(_grid.xb)        ) << ","<<std::to_string(  double(sdsl::size_in_bytes(_grid.xb)      )/1000000.0  ) << std::endl;
+        f << "grid-xb_rank1,"   <<std::to_string(  sdsl::size_in_bytes(_grid.xb_rank1)  ) << ","<<std::to_string(  double(sdsl::size_in_bytes(_grid.xb_rank1))/1000000.0  ) << std::endl;
+        f << "grid-xb_sel1,"    <<std::to_string(  sdsl::size_in_bytes(_grid.xb_sel1)   ) << ","<<std::to_string(  double(sdsl::size_in_bytes(_grid.xb_sel1) )/1000000.0  ) << std::endl;
+        f << "grid-xb_sel0,"    <<std::to_string(  sdsl::size_in_bytes(_grid.xb_sel0)   ) << ","<<std::to_string(  double(sdsl::size_in_bytes(_grid.xb_sel0) )/1000000.0  ) << std::endl;
+        f << "tree,"            <<std::to_string(  dfuds_tree.size_in_bytes()           ) << ","<<std::to_string(  double(dfuds_tree.size_in_bytes()         )/1000000.0  ) << std::endl;
+
+
+
+        std::cout << "Mapping Structures:" << std::endl;
+        std::cout << "bvfocc:" << sdsl::size_in_bytes(bvfocc) << std::endl;
+        std::cout << "bvfocc_rank1:" << sdsl::size_in_bytes(bvfocc_rank1)
+                  << std::endl;
+        std::cout << "bvfocc_sel0:" << sdsl::size_in_bytes(bvfocc_sel0)
+                  << std::endl;
+        std::cout << "bvfocc_sel1:" << sdsl::size_in_bytes(bvfocc_sel1)
+                  << std::endl;
+
+        std::cout << "-----------" << std::endl;
+
+        std::cout << "pi:" << sdsl::size_in_bytes(pi) << std::endl;
+        auto t_pi = pi;
+        sdsl::util::bit_compress(t_pi);
+        std::cout << "pi(bit_compress):" << sdsl::size_in_bytes(t_pi)
+                  << std::endl;
+        std::cout << "inv_pi_support:" << sdsl::size_in_bytes(inv_pi)
+                  << std::endl;
+
+
+
+
+        std::cout << "-----------" << std::endl;
+
+        std::cout << "bvt:" << sdsl::size_in_bytes(bvt) << std::endl;
+        std::cout << "bvt_rank1:" << sdsl::size_in_bytes(bvt_rank1)
+                  << std::endl;
+        std::cout << "bvt_sel0:" << sdsl::size_in_bytes(bvt_sel0) << std::endl;
+
+        std::cout << "-----------" << std::endl;
+
+        std::cout << "wt:" << sdsl::size_in_bytes(wtnt) << std::endl;
+
+        std::cout << "-----------" << std::endl;
+        std::cout << "str:" << vt.size() << std::endl;
+        std::cout << "str(int-vector):" << sdsl::size_in_bytes(T) << std::endl;
+
+        std::cout << "-----------" << std::endl;
+        std::cout << "Grid:" << std::endl;
+        _grid.print_size_in_bytes();
+
+        std::cout << "-----------" << std::endl;
+        std::cout << "Tree:" << std::endl;
+        dfuds_tree.print_size_in_bytes();
+        std::cout <<std::endl;
+    }
+
     virtual void print() const {
 
         std::cout << "Printing mapping" << std::endl;
@@ -166,7 +257,18 @@ class gcis_index {
     uint32_t n_rules;
     uint32_t n_suffixes;
 
+
+
   public:
+
+    void get_parent_ch_rank(const size_tree& node,size_tree& padre,size_tree & ch_r)const{
+
+        size_tree bp_p = dfuds_tree.find_open(node-1);
+
+        ch_r = (size_tree)(dfuds_tree.succ0(bp_p) - bp_p);
+
+        padre = dfuds_tree.pred0(bp_p)+1;
+    }
     /**Compare a rule suffix with an string left partition*/
     virtual int cmp_suffix_rule(const rule_type &, const std::string &,
                                 len_type &j) const;
@@ -186,6 +288,8 @@ class gcis_index {
 
     virtual bool expand_prefix(const size_tree &node, std::string &s,
                                const len_type &m, const size_tree &off) const;
+    virtual bool expand_prefixII(const size_tree &node, std::string &s,
+                               const len_type &m,  long &off) const;
     /**Implement an strategy to find the range of valid points of the grid*/
     //            virtual void find_range(const std::string & s,
     //            std::vector<len_type>& ) const  = 0;
@@ -209,6 +313,11 @@ class gcis_index {
     /** take a terminal node and append the block of it and its siblings to the
      * string*/
     void append_block(const size_tree &, const size_tree &,
+                      std::string &) const;
+    /** take a terminal node and append the block(i ... j) to the
+     * string str[off..off+j-i]*/
+
+    void append_block(const size_t& off,const size_tree &, const size_tree &,
                       std::string &) const;
     /** take a character node and compare the block of it and its siblings to
      * the string*/
@@ -385,6 +494,20 @@ gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::map_node(
  * @param m len of the substring to extract
  * @param str result
  */
+
+template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
+        typename t_gridbv, typename t_gridwt>
+void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::displayII(
+        const gcis_index::len_type &ii, const gcis_index::len_type &m,
+        std::string &str) const {
+
+        str.resize(m);
+        long m_off = 0;
+        extract_prefix_with_gap(dfuds_tree.root(),str,m_off,ii);
+
+
+}
+
 template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
           typename t_gridbv, typename t_gridwt>
 void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::display(
@@ -401,7 +524,6 @@ void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::display(
     /**found the associated leaf node */
     size_tree node = dfuds_tree.leaf_select(leaf_boundary + 256);
     // in case that is a single character
-
     std::string sblock;
     sblock.reserve(m);
     long strs = sblock.size();
@@ -413,9 +535,13 @@ void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::display(
 
     if (is_ch_node(node, pos)) {
 
-        append_block(pos - 1, ch - j + 1, sblock);
+        append_block(bvt_rank1(pos) - 1, ch - j + 1, sblock);
         strs = sblock.size();
 
+
+        /**
+         * go up in the tree while the current node will the last child
+         * */
         do {
             node = parent;
             parent = dfuds_tree.parent(node);
@@ -423,10 +549,13 @@ void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::display(
             j = dfuds_tree.childrank(node);
 
         } while (j == ch);
+
         node = dfuds_tree.nsibling(node);
         ++j;
-        /// cambiar aqui por extraer hasta el final;
+
+
     }
+
     while (strs - off < m) {
 
         while (j <= ch && expand_prefix(node, sblock, m, off)) {
@@ -466,12 +595,170 @@ gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::offset_node(
     return bvl_select1.select(lrank - 256);
 }
 
+
+
+template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
+        typename t_gridbv, typename t_gridwt>
+bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::extract_prefix_with_gap(
+        const size_tree& node,
+        std::string& str,
+        long &  m_off,
+        const uint & gap) const
+{
+
+
+
+    if (!dfuds_tree.is_leaf(node)) {
+
+        size_tree leaf_r = 0;
+
+        if(node == 3)
+            leaf_r = 257;
+        else
+            leaf_r = dfuds_tree.leaf_rank(node) + 1;
+
+        auto leafnode = dfuds_tree.leaf_select( leaf_r );
+        auto node_off = bvl_select1(leaf_r-256);
+        auto pos = node_off+gap;
+        auto c_leaf = bvl_rank1( pos + 1 );
+        size_tree nnode = dfuds_tree.leaf_select( c_leaf + 256);
+
+        size_tree r = 0;
+        size_tree parent = 0;
+
+        if(is_ch_node(nnode, r)) {
+            // si es un nodo caracter
+
+            size_tree j = 0;
+            get_parent_ch_rank(nnode,parent,j);
+
+            size_tree l = dfuds_tree.children(parent);
+
+            auto rest = str.size() - m_off;
+            auto rest_node = l - j + 1;
+            auto min = rest_node < rest ? rest_node :rest;
+
+            append_block(m_off,bvt_rank1(r)-1, min, str);
+            m_off += min;
+
+            if (m_off >= str.size()) return false;
+
+            nnode = parent;
+
+        }else{
+            // si es un nodo segunda occ
+            //calculamos
+            auto ngap = (node_off+gap) - bvl_select1(c_leaf);
+
+            if(ngap == 0){
+                if(!expand_prefixII(nnode,str,str.size(),m_off))
+                    return false;
+            }else{
+                if(!extract_prefix_with_gap(nnode,str,m_off,ngap))
+                    return false;
+            }
+
+        }
+
+        // seguir extrayendo recursivamente al nodo inicial
+        /**
+        * go up in the tree while the current node will the last child
+        * */
+
+        /**
+         * para saber si es ancestro
+         *
+         * */
+
+
+
+        size_tree fwdExcessNode = dfuds_tree.fwd_excess(node-1,-1);
+        bool expandir = true;
+        nnode = dfuds_tree.nsibling(nnode);
+        /**
+         * aun estamos en el subarbol de node
+         * */
+
+        while( m_off < str.size() && node < nnode && nnode <= fwdExcessNode && expandir){
+            expandir = expand_prefixII(nnode,str,str.size(),m_off);
+            nnode = dfuds_tree.nsibling(nnode);
+        }
+
+        if(m_off >= str.size()) return false;
+
+        return true;
+
+    }
+
+    // leaf case !!!!! WE DO NOT TREAT CHARACTER LEAVES
+    // as we never arrive to character leaves the leaf must to be a non-terminal
+    assert(!is_ch_node(node));
+    // leaf we need to jump to its first occ
+    size_tree pre = dfuds_tree.pre_order(node);
+    rule_type X = map_node(pre);
+    size_tree preorder_focc = map_rule(X);
+
+    return extract_prefix_with_gap(dfuds_tree.pre_order_select(preorder_focc), str, m_off,gap);
+
+}
+
+
+template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
+        typename t_gridbv, typename t_gridwt>
+bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::expand_prefixII(
+
+        const gcis_index::size_tree &node,
+        std::string &s,//is string to store
+        const gcis_index::len_type & m, //is the number of character to extract
+        long & off// current position in str to copy,
+        ) const {
+        /** if the node is not a leaf */
+        if (!dfuds_tree.is_leaf(node)) {
+            /** check if its first child is a character node */
+            size_tree fchild = dfuds_tree.fchild(node);
+            size_tree l = dfuds_tree.children(node);
+            // if its a leaf and a character node then all children are character
+            // and we extract the block
+            size_tree r = 0;
+
+            if (dfuds_tree.is_leaf(fchild) && is_ch_node(fchild, r)) {
+                // append the corresponding block of characters
+                //            size_tree pos = bvt_rank1.rank(r);
+                auto min = l < (m-off)?l:(m-off);
+                append_block(off,bvt_rank1(r)- 1, min, s);
+                off += min;
+                return (off < m ); // continue expanding
+            }
+            // if it is no a character node -> expand in dfs
+            uint i = 1;
+            while (i <= l) {
+                if (!expand_prefixII(fchild, s, m, off))
+                    return false;
+                fchild = dfuds_tree.nsibling(fchild);
+                ++i;
+            }
+            return true;
+        }
+
+        // leaf case !!!!! WE DO NOT TREAT CHARACTER LEAVES
+        // as we never arrive to character leaves the leaf must to be a non-terminal
+        assert(!is_ch_node(node));
+        // leaf we need to jump to its first occ
+        size_tree pre = dfuds_tree.pre_order(node);
+        rule_type X = map_node(pre);
+        size_tree preorder_focc = map_rule(X);
+
+        return expand_prefixII(dfuds_tree.pre_order_select(preorder_focc), s, m, off);
+}
+
 template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
           typename t_gridbv, typename t_gridwt>
 bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::expand_prefix(
     const gcis_index::size_tree &node, std::string &s,
     const gcis_index::len_type &m, const size_tree &off) const {
     /** if the node is not a leaf */
+
+
     if (!dfuds_tree.is_leaf(node)) {
         /** check if its first child is a character node */
         size_tree fchild = dfuds_tree.fchild(node);
@@ -482,7 +769,7 @@ bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::expand_prefix(
         if (dfuds_tree.is_leaf(fchild) && is_ch_node(fchild, r)) {
             // append the corresponding block of characters
             //            size_tree pos = bvt_rank1.rank(r);
-            append_block(r - 1, l, s);
+            append_block(bvt_rank1(r)- 1, l, s);
             return long(s.size() - off) < m; // continue expanding
         }
         // if it is no a character node -> expand in dfs
@@ -660,7 +947,7 @@ int gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv,
         if (r != 0)
             return r; // return if missmatch
 
-        uint i = ch - 1;
+        size_tree i = ch - 1;
         // compare the rest of children
         while (j >= 0 && i > 0) {
             lchild = dfuds_tree.ichild(node, i);
@@ -698,14 +985,14 @@ bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::is_ch_node(
 template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
           typename t_gridbv, typename t_gridwt>
 bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::is_ch_node(
-    const gcis_index::size_tree &node, size_tree &indx_str) const {
+    const gcis_index::size_tree &node, size_tree &idx) const {
 
     assert(dfuds_tree.is_leaf(node));
 
     size_tree pre = dfuds_tree.pre_order(node);
 
-    auto idx = pre - bvfocc_rank1(pre);
-    indx_str = bvt_rank1(idx);
+    idx = pre - bvfocc_rank1(pre);
+//    indx_str = bvt_rank1(idx);
     return bvt[idx - 1];
 }
 
@@ -1102,11 +1389,18 @@ void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::append_block(
     const gcis_index::size_tree &pos, const gcis_index::size_tree &l,
     std::string &str) const {
 
-    std::string s;
     uint b = str.size();
     str.resize(str.size() + l);
     std::copy(vt.begin() + pos, vt.begin() + pos + l, str.begin() + b);
 }
+
+template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
+        typename t_gridbv, typename t_gridwt>
+void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::append_block(
+        const size_t & off, const gcis_index::size_tree &pos, const gcis_index::size_tree &l,
+        std::string &str) const {
+        std::copy(vt.begin() + pos, vt.begin() + pos + l, str.begin() + off);
+    }
 
 template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
           typename t_gridbv, typename t_gridwt>

@@ -162,6 +162,7 @@ namespace gcis_index_private {
             if (!bsearch_lowerBound(r_1, r_2, [this, &s, &i](const uint32_t &mid) {
                 len_type j = i-1;
                 int r = this->cmp_suffix_rule(mid , s, j);
+//                int r = 1;
                 if (r == 0 && j < 0) return 0; //string drain
                 if (r == 0) return 1;// string not drain
                 return r;//string differents
