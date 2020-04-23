@@ -72,7 +72,7 @@ class gcis_index {
     virtual void display_L(const std::size_t &i, const std::size_t &len, std::string &str) const{
         str.resize(len);
         size_t p = 0;
-        expand_interval(dfuds_tree.root(), make_pair(i, i+len-1), str, p);
+        expand_interval(dfuds_tree.root(), std::make_pair(i, i+len-1), str, p);
     }
 
     virtual bool extract_prefix_with_gap
