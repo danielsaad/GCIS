@@ -94,7 +94,7 @@ namespace gcis_index_private{
             /**
              *  Attributes
              * */
-
+    public:
             wavelet_tree sb;
 
             int_sequence sl;
@@ -217,7 +217,7 @@ namespace gcis_index_private{
 
 //        auto res = _wt_sb.range_search_2d2(p1, p2, X.second, Y.second);
         /** WT 2d orthogonal range search */
-        auto res = sb.range_search_2d((dtype)p1, (dtype)p2, X.second, Y.second);
+        auto res = sb.range_search_2d2((dtype)p1, (dtype)p2, X.second, Y.second);
         /** Store just the labels of the points */
         for (auto point : res.second)
             labels.emplace_back(sl[sb.select(1,point.second)]);

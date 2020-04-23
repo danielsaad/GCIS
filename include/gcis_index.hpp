@@ -357,21 +357,21 @@ class gcis_index {
                 auto ch = dfuds_tree.succ0(parent) - parent;
                 size_tree cp = ch-ch_r+1;
                 cp = cp > (s.size()- pos)?(s.size()- pos):cp;
-
-                if(cp < 0){
-                    std::cout<<"(ch-ch_r+1) < 0\n";
-                    sleep(10);
-                }
-                if(off_str + cp> vt.size() || s.size() <= pos + cp){
-                    std::cout<<"OUT OF RANGE\n";
-                    std::cout<<"pos:"<<pos<<std::endl;
-                    std::cout<<"(ch-ch_r+1):"<<(ch-ch_r+1)<<std::endl;
-                    std::cout<<"ch:"<<ch<<std::endl;
-                    std::cout<<"ch_r:"<<ch_r<<std::endl;
-                    std::cout<<"len:"<<len<<std::endl;
-
-                    sleep(10);
-                }
+//
+//                if(cp < 0){
+//                    std::cout<<"(ch-ch_r+1) < 0\n";
+//                    sleep(10);
+//                }
+//                if(off_str + cp> vt.size() || s.size() < pos + cp){
+//                    std::cout<<"OUT OF RANGE\n";
+//                    std::cout<<"pos:"<<pos<<std::endl;
+//                    std::cout<<"(ch-ch_r+1):"<<(ch-ch_r+1)<<std::endl;
+//                    std::cout<<"ch:"<<ch<<std::endl;
+//                    std::cout<<"ch_r:"<<ch_r<<std::endl;
+//                    std::cout<<"len:"<<len<<std::endl;
+//
+////                    sleep(10);
+//                }
                 std::copy(vt.begin()+off_str,vt.begin()+(off_str+ cp),s.begin()+pos);
                 pos += cp;
                 llb += cp-1;
