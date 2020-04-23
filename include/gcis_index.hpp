@@ -69,6 +69,11 @@ class gcis_index {
     virtual void displayII(const len_type &, const len_type &,
                          std::string &) const;
 
+    virtual void display_L(const std::size_t &i, const std::size_t &len, std::string &str) const{
+        str.resize(len);
+        size_t p = 0;
+        expand_interval(dfuds_tree.root(), make_pair(i, i+len-1), str, p);
+    }
 
     virtual bool extract_prefix_with_gap
     (
@@ -221,6 +226,9 @@ class gcis_index {
         for (uint i = 0; i < wtnt.size(); i++)
             std::cout << wtnt[i] << " ";
         std::cout << "\ns:" << vt << std::endl;
+        std::cout << "\nL:" ;
+        for (uint i = 0; i < bvl.size(); i++)
+            std::cout << bvl[i] << " ";
         std::cout << "\ndfuds:";
         dfuds_tree.print();
     }
@@ -261,6 +269,7 @@ class gcis_index {
 
   public:
 
+
     void get_parent_ch_rank(const size_tree& node,size_tree& padre,size_tree & ch_r)const{
 
         size_tree bp_p = dfuds_tree.find_open(node-1);
@@ -290,6 +299,15 @@ class gcis_index {
                                const len_type &m, const size_tree &off) const;
     virtual bool expand_prefixII(const size_tree &node, std::string &s,
                                const len_type &m,  long &off) const;
+
+
+    virtual bool expand_suffix_gimp(const size_tree &node, std::string &s,
+                                    const size_t &m, size_t &off) const;
+
+    virtual bool expand_prefix_gimp(const size_tree &node, std::string &s,
+                                    const size_t &m, size_t &off) const;
+    virtual bool expand_all_rule(const size_tree &node, std::string &s, size_t &off) const;
+
     /**Implement an strategy to find the range of valid points of the grid*/
     //            virtual void find_range(const std::string & s,
     //            std::vector<len_type>& ) const  = 0;
@@ -319,12 +337,158 @@ class gcis_index {
 
     void append_block(const size_t& off,const size_tree &, const size_tree &,
                       std::string &) const;
+
+    void append_suffix_block(const size_t& off,const size_tree &, const size_tree &,
+                      std::string &) const;
     /** take a character node and compare the block of it and its siblings to
      * the string*/
     int cmp_block(len_type pos, uint l, const std::string &str, len_type &i,
                   const bool &dir) const;
-};
 
+    bool eval_leaf( size_t&llb, size_t&pos,std::string &s,const size_tree& node ,const long &len)const{
+        size_tree r = 0;
+        if(is_ch_node(node,r)){
+            size_t off_str = bvt_rank1(r)-1;
+
+            if(len < 0){
+
+                size_tree parent = 0,ch_r = 0;
+                get_parent_ch_rank(node,parent,ch_r);
+                auto ch = dfuds_tree.succ0(parent) - parent;
+                size_tree cp = ch-ch_r+1;
+                cp = cp > (s.size()- pos)?(s.size()- pos):cp;
+
+                if(cp < 0){
+                    std::cout<<"(ch-ch_r+1) < 0\n";
+                    sleep(10);
+                }
+                if(off_str + cp> vt.size() || s.size() <= pos + cp){
+                    std::cout<<"OUT OF RANGE\n";
+                    std::cout<<"pos:"<<pos<<std::endl;
+                    std::cout<<"(ch-ch_r+1):"<<(ch-ch_r+1)<<std::endl;
+                    std::cout<<"ch:"<<ch<<std::endl;
+                    std::cout<<"ch_r:"<<ch_r<<std::endl;
+                    std::cout<<"len:"<<len<<std::endl;
+
+                    sleep(10);
+                }
+                std::copy(vt.begin()+off_str,vt.begin()+(off_str+ cp),s.begin()+pos);
+                pos += cp;
+                llb += cp-1;
+                return true;
+            }
+            std::copy(vt.begin()+ off_str,vt.begin()+off_str+len,s.begin()+pos);
+            pos += len;
+            llb += len-1;
+            return true;
+
+        }
+        return false;
+
+    }
+
+    void expand_interval(const size_t &node, const std::pair<size_t, size_t> &range, std::string &s, std::size_t &pos)const
+    {
+        /*precondition range always belongs to [node.leftmost-leaf, node.rigthmost-leaf]*/
+
+        /*base case*/
+
+        /*recursion case*/
+
+
+
+        auto llb = bvl_rank1(range.first+1); //left leaf begin
+        auto pllb = bvl_select1(llb); // position of left leaf begin
+
+        auto lle = bvl_rank1(range.second+1); //left leaf begin
+        auto plle = bvl_select1(lle); // position of left leaf begin
+
+//        auto f_eval_leaf = [this,&llb,&pos,&s](const size_tree& node ,const long &len){
+//
+//            size_tree r = 0;
+//            if(is_ch_node(node,r)){
+//                size_tree parent = 0,ch_r = 0;
+//                get_parent_ch_rank(node,parent,ch_r);
+//                size_tree ch = dfuds_tree.succ0(parent)-parent;
+//                size_t off_str = bvt_rank1(r)-1;
+//                if(len < 0){
+//
+//                    std::copy(vt.begin()+off_str,vt.begin()+(off_str+(ch-ch_r+1)),s.begin()+pos);
+//                    pos += ch-ch_r+1;
+//                    llb += ch-ch_r;
+//                    return true;
+//                }
+//                std::copy(vt.begin()+ off_str,vt.begin()+off_str+len,s.begin()+pos);
+//                pos += len;
+//                llb += len-1;
+//                return true;
+//
+//            }
+//            return false;
+//        };
+
+        if(llb == lle){
+            size_tree leaf_node = dfuds_tree.leaf_select(llb+256);
+
+            if(!eval_leaf(llb, pos,s,leaf_node,s.size()-pos)){
+
+                /***jump to first occ***/
+                size_tree pre = dfuds_tree.pre_order(leaf_node);
+                rule_type X = map_node(pre);
+                size_tree preorder_focc = map_rule(X);
+                size_tree _node = dfuds_tree.pre_order_select(preorder_focc);
+                size_tree node_lr = dfuds_tree.leaf_rank(_node);
+                size_t p_node_lr = bvl_select1(node_lr-256);
+                auto _off1 = range.first-pllb;
+                auto _off2 = range.second-pllb;
+                auto l =  p_node_lr+_off1;
+                auto r =  p_node_lr+_off2;
+                return expand_interval(_node,std::make_pair(l,r),s,pos);
+
+            }
+        }
+
+
+
+
+        /* left range*/
+        {
+            /* Need to jump to llb definition */
+            size_tree left_leaf_node = dfuds_tree.leaf_select(llb+256);
+            if(!eval_leaf(llb, pos,s,left_leaf_node,-1)){
+
+                expand_suffix_gimp(left_leaf_node,s,bvl_select1(llb + 1)-range.first,pos);
+
+            }
+
+            if(pos  == s.size()) return;
+
+        }
+
+        /* middle range*/
+        while(pos < s.size() && ++llb < lle){
+            /*expand all the phrases in the middle*/
+            size_tree middle_leaf_node = dfuds_tree.leaf_select(llb+256);
+            if(!eval_leaf(llb, pos,s,middle_leaf_node,-1)){
+                expand_all_rule(middle_leaf_node,s,pos);
+                if(pos  >= s.size()) return;
+            }
+        }
+
+        if(pos  == s.size()) return;
+        /* right range*/
+        if(pos < s.size())
+        {
+            /* Need to jump to llb definition */
+            /* compute label X of lle */
+            size_tree right_leaf_node = dfuds_tree.leaf_select(lle+256);
+            if(!eval_leaf(llb, pos,s,right_leaf_node,s.size()-pos)){
+                expand_prefix_gimp(right_leaf_node,s,s.size()-pos,pos);
+            }
+        }
+
+    }
+};
 template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
           typename t_gridbv, typename t_gridwt>
 gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::gcis_index(
@@ -332,8 +496,9 @@ gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::gcis_index(
 
 template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
           typename t_gridbv, typename t_gridwt>
-gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::~gcis_index() =
-    default;
+gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::~gcis_index() {
+
+}
 
 template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
           typename t_gridbv, typename t_gridwt>
@@ -590,8 +755,8 @@ gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::offset_node(
 
     if (node == 3)
         return 0;
-
-    long long lrank = dfuds_tree.leaf_rank(node - 1) + 1;
+//todo arreglar problemas con las hojas
+    long long lrank = dfuds_tree.leaf_rank(node);
     return bvl_select1.select(lrank - 256);
 }
 
@@ -615,9 +780,9 @@ bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::extract_prefix
         if(node == 3)
             leaf_r = 257;
         else
-            leaf_r = dfuds_tree.leaf_rank(node) + 1;
+            leaf_r = dfuds_tree.leaf_rank(node);
 
-        auto leafnode = dfuds_tree.leaf_select( leaf_r );
+//        auto leafnode = dfuds_tree.leaf_select( leaf_r );
         auto node_off = bvl_select1(leaf_r-256);
         auto pos = node_off+gap;
         auto c_leaf = bvl_rank1( pos + 1 );
@@ -625,6 +790,8 @@ bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::extract_prefix
 
         size_tree r = 0;
         size_tree parent = 0;
+//        size_tree pppp = dfuds_tree.parent(nnode);
+//        size_tree chhh = dfuds_tree.childrank(nnode);
 
         if(is_ch_node(nnode, r)) {
             // si es un nodo caracter
@@ -635,10 +802,10 @@ bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::extract_prefix
             size_tree l = dfuds_tree.children(parent);
 
             auto rest = str.size() - m_off;
-            auto rest_node = l - j + 1;
+            auto rest_node = l - j+1;
             auto min = rest_node < rest ? rest_node :rest;
-
-            append_block(m_off,bvt_rank1(r)-1, min, str);
+            size_t str_off = bvt_rank1(r)-1;
+            append_block(m_off,str_off, min, str);
             m_off += min;
 
             if (m_off >= str.size()) return false;
@@ -648,7 +815,8 @@ bool gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::extract_prefix
         }else{
             // si es un nodo segunda occ
             //calculamos
-            auto ngap = (node_off+gap) - bvl_select1(c_leaf);
+            size_t  bvls = bvl_select1(c_leaf);
+            auto ngap = (node_off+gap) - bvls;
 
             if(ngap == 0){
                 if(!expand_prefixII(nnode,str,str.size(),m_off))
@@ -1417,6 +1585,264 @@ void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::set_sigma(
     const uint &s) {
     sigma = s;
 }
+
+    template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
+    bool
+    gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::expand_suffix_gimp(const gcis_index::size_tree &node,
+                                                                                    std::string &s,
+                                                                                    const size_t &m,
+                                                                                    size_t &pos) const {
+
+        size_t off = 0;
+        std::deque<std::pair<size_tree ,std::pair<size_tree ,size_tree >>> Q;
+
+        size_tree _node = node;
+        if(dfuds_tree.is_leaf(_node)){
+            size_tree pre = dfuds_tree.pre_order(node);
+            rule_type X = map_node(pre);
+            size_tree preorder_focc = map_rule(X);
+            _node = dfuds_tree.pre_order_select(preorder_focc);
+        }
+
+
+        auto first_leaf = dfuds_tree.leaf_rank(_node);
+        auto current_leaf= first_leaf+dfuds_tree.leaf_num(_node)-1;
+
+
+        while(current_leaf >= first_leaf )
+        {
+            // current leaf is a Terminal rule?
+
+            auto _c_node = dfuds_tree.leaf_select(current_leaf);
+            size_tree r = 0;
+            if(is_ch_node(_c_node,r))
+            {
+                auto parent = dfuds_tree.parent(_c_node);
+                auto ch = dfuds_tree.children(parent);
+
+                size_t off_str = bvt_rank1(r)-1;
+
+                if( ch + off  > m ){
+                    uint cp = m-off;
+                    // extraemos solo los m-off restantes. retornamos false
+
+                    std::copy(vt.begin()+(off_str-cp+1),vt.begin()+off_str+1,s.begin()+m-cp-off);
+                    pos +=cp;
+
+                    return false;
+
+                }else{
+                    //sino extraemos ch elements e incrementamos off en ch
+                    // y decrementamos current leaf en ch
+
+                    std::copy(vt.begin()+(off_str-ch+1),vt.begin()+off_str+1,s.begin()+m-ch-off);
+                    off+=ch;
+                    pos+=ch;
+                    current_leaf-=ch;
+                }
+
+                if(off == m) return false;
+
+                while(current_leaf < first_leaf && !Q.empty()){
+
+                    current_leaf = Q.front().second.first-1;
+
+                    first_leaf = Q.front().second.second;
+
+                    Q.pop_front();
+                }
+            }
+            else
+            {
+
+                //Save actua state;
+                Q.emplace_front(std::make_pair(_node,std::make_pair(current_leaf,first_leaf)));
+
+                // leaf we need to jump to its first occ
+                size_tree pre = dfuds_tree.pre_order(_c_node);
+                rule_type X = map_node(pre);
+                size_tree preorder_focc = map_rule(X);
+                size_tree _node = dfuds_tree.pre_order_select(preorder_focc);
+                first_leaf= dfuds_tree.leaf_rank(_node);
+                current_leaf = first_leaf+dfuds_tree.leaf_num(_node)-1;
+            }
+        }
+
+        return true;
+
+    }
+
+
+    template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
+    bool
+    gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::expand_prefix_gimp(const gcis_index::size_tree &node,
+                                                                                    std::string &s,
+                                                                                    const size_t  &m,
+                                                                                    size_t &pos) const {
+
+        size_t off = 0;
+        size_tree _node = node;
+        if(dfuds_tree.is_leaf(_node)){
+            size_tree pre = dfuds_tree.pre_order(node);
+            rule_type X = map_node(pre);
+            size_tree preorder_focc = map_rule(X);
+            _node = dfuds_tree.pre_order_select(preorder_focc);
+        }
+
+        std::deque<std::pair<size_tree ,std::pair<size_tree ,size_tree > > > Q;
+
+        auto current_leaf = dfuds_tree.leaf_rank(_node);
+        auto last_leaf= current_leaf +dfuds_tree.leaf_num(_node)-1;
+
+
+        while(current_leaf <= last_leaf )
+        {
+            // current leaf is a Terminal rule?
+
+            auto _c_node = dfuds_tree.leaf_select(current_leaf);
+            size_tree r = 0;
+            if(is_ch_node(_c_node,r))
+            {
+                auto parent = dfuds_tree.parent(_c_node);
+                auto ch = dfuds_tree.children(parent);
+                size_t off_str = bvt_rank1(r)-1;
+
+                if( ch + off  > m ){
+                    // extraemos solo los m-off restantes. retornamos false
+
+//                    append_block(off,r-1,m-off,s);
+                    std::copy(vt.begin()+off_str,vt.begin()+off_str+m-off,s.begin()+pos);
+                    pos+=m-off;
+                    return false;
+
+                }else{
+                    //sino extraemos ch elements e incrementamos off en ch
+                    // y decrementamos current leaf en ch
+//                    append_block(off,r-1,ch,s);
+
+                    std::copy(vt.begin()+off_str,vt.begin()+off_str+ch,s.begin()+pos);
+                    off+=ch;
+                    pos+=ch;
+                    current_leaf += ch;
+                }
+                if(off == m) return false;
+                while(current_leaf > last_leaf && !Q.empty()){
+
+                    current_leaf = Q.front().second.first+1;
+
+                    last_leaf  = Q.front().second.second;
+
+                    Q.pop_front();
+                }
+            }
+            else
+            {
+
+                //Save actua state;
+                Q.emplace_front(std::make_pair(_node,std::make_pair(current_leaf,last_leaf)));
+
+                // leaf we need to jump to its first occ
+                size_tree pre = dfuds_tree.pre_order(_c_node);
+                rule_type X = map_node(pre);
+                size_tree preorder_focc = map_rule(X);
+                size_tree _node = dfuds_tree.pre_order_select(preorder_focc);
+
+                current_leaf = dfuds_tree.leaf_rank(_node);
+                last_leaf= current_leaf +dfuds_tree.leaf_num(_node)-1;
+
+            }
+        }
+
+        return true;
+
+    }
+
+    template<typename t_mapfbv, typename t_maptbv, typename t_mapwt, typename t_gridbv, typename t_gridwt>
+    bool
+    gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::expand_all_rule(const gcis_index::size_tree &node,
+                                                                                    std::string &s,
+                                                                                    size_t &pos) const {
+
+
+        size_t off =0;
+
+        std::deque<std::pair<size_tree ,std::pair<size_tree ,size_tree >>> Q;
+
+
+        size_tree _node = node;
+        if(dfuds_tree.is_leaf(_node)){
+            size_tree pre = dfuds_tree.pre_order(node);
+            rule_type X = map_node(pre);
+            size_tree preorder_focc = map_rule(X);
+            _node = dfuds_tree.pre_order_select(preorder_focc);
+        }
+
+
+        auto current_leaf = dfuds_tree.leaf_rank(_node);
+        auto last_leaf= current_leaf +dfuds_tree.leaf_num(_node)-1;
+
+
+
+
+        while(current_leaf <= last_leaf )
+        {
+            // current leaf is a Terminal rule?
+
+            auto _c_node = dfuds_tree.leaf_select(current_leaf);
+            size_tree r = 0;
+            if(is_ch_node(_c_node,r))
+            {
+                auto parent = dfuds_tree.parent(_c_node);
+                auto ch = dfuds_tree.children(parent);
+                size_t off_str = bvt_rank1(r)-1;
+
+                std::copy(vt.begin()+off_str,vt.begin()+off_str+ch,s.begin()+pos);
+//                append_block(off,r-1,ch,s);
+                off+=ch;
+                pos+=ch;
+                current_leaf+=ch;
+
+                if(pos == s.size()) return false;
+
+
+                while(current_leaf > last_leaf && !Q.empty()){
+
+                    current_leaf = Q.front().second.first+1;
+
+                    last_leaf  = Q.front().second.second;
+
+                    Q.pop_front();
+                }
+            }
+            else
+            {
+
+                //Save actua state;
+                Q.emplace_front(std::make_pair(_node,std::make_pair(current_leaf,last_leaf)));
+
+                // leaf we need to jump to its first occ
+                size_tree pre = dfuds_tree.pre_order(_c_node);
+                rule_type X = map_node(pre);
+                size_tree preorder_focc = map_rule(X);
+                _node = dfuds_tree.pre_order_select(preorder_focc);
+
+                current_leaf = dfuds_tree.leaf_rank(_node);
+                last_leaf= current_leaf +dfuds_tree.leaf_num(_node)-1;
+
+            }
+        }
+
+        return true;
+
+    }
+
+    template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
+            typename t_gridbv, typename t_gridwt>
+    void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::append_suffix_block(
+            const size_t & off, const gcis_index::size_tree &pos, const gcis_index::size_tree &l,
+            std::string &str) const {
+        std::copy(vt.begin() + pos - l, vt.begin() + pos, str.begin() + off);
+    }
 
 } // namespace gcis_index_private
 

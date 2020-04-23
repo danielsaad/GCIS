@@ -46,9 +46,9 @@ namespace gcis_index_private{
 
         void print() const{
             uint count = 0, pre = 0;
-            for (uint i = 0; i < bit_vector.size() ; ++i) {
+            for (uint i = 3; i < bit_vector.size() ; ++i) {
                 if(bit_vector[i] == 0){
-                    std::cout<<bit_vector[i]<<"["<<count<<"]"<<"<"<<i<<","<<pre++<<">"<<std::endl;
+                    std::cout<<bit_vector[i]<<"["<<count<<"]"<<"<"<<i-count<<","<<++pre<<"> lr:"<<leaf_rank(i-count)<<std::endl;
                     count = 0;
                 }else{
                     count++;
@@ -124,14 +124,12 @@ namespace gcis_index_private{
 
         ul nsibling( const ul & v) const {  return bps.fwd_excess(v-1,-1)+1; }
 
-        ul children (const ul & v) const
+        ul  children (const ul & v) const
         {
             if(!bit_vector[v])
                 return  0;
 
-            size_t zeros = v - bps.rank(v)+1 ;
-
-            return select_0(zeros+1) - v;
+            return succ0(v) - v;
         }
 
         ul childrank (const ul & v) const
@@ -142,12 +140,18 @@ namespace gcis_index_private{
 
             return succ0(bp_parent) - bp_parent;
         }
+        ul find_open(const ul & v) const{
+            return (ul)bps.find_open(v);
+        }
 
         ul is_leaf (const ul & v) const { return !bit_vector[v]; }
 
+
+        ul fwd_excess(const ul & u,int i)const{ return bps.fwd_excess(u,i);}
+
         bool is_ancestor (const ul & u, const ul & v) const
         {
-            return (u < v) && (v < bps.fwd_excess(u-1,-1));
+            return (u <= v) && (v <= bps.fwd_excess(u-1,-1));
         }
 
         ul lca( ul & u,  ul & v) const {
@@ -184,18 +188,18 @@ namespace gcis_index_private{
          * leaf operations
          *
          * */
-
+        //devuelve idx de hola mas a la izq
         ul leaf_rank (const ul & v) const {
-            return rank_00(v+1);
+            return rank_00(v)+1;
         }
 
         ul leaf_select (const ul & i) const { return select_00(i);}
 
         ul leaf_num (const ul & v) const { return leaf_rank( bps.fwd_excess(v-1,-1) +1)-leaf_rank(v);}
 
-        ul last_leaf (const ul & v) const { return leaf_rank(v) + leaf_num(v) - 1;}
+//        ul last_leaf (const ul & v) const { return leaf_rank( bps.fwd_excess(v-1,-1) +1) - 1;}
 
-        ul next_leaf(const ul & i) const { return select_00(i+1);}
+//        ul next_leaf(const ul & i) const { return select_00(i+1);}
 
 
 
@@ -264,6 +268,7 @@ namespace gcis_index_private{
         rank_00_sup rank_00;
         select_00_sup select_00;
 
+    public:
         ul pred0(const ul & i) const
         {
             if(bit_vector[i]==0)
