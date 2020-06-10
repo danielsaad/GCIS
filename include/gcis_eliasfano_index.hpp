@@ -104,7 +104,7 @@ class elias_fano_grammar {
         rules_delim_select.set_vector(&rules_delim);
     }
 
-    char *decode() {
+    pair<char *,int> decode() {
         m_info.print();
         char *str = new char[m_info.m_text_size[1]];
         // Decompress all the rules
@@ -174,7 +174,7 @@ class elias_fano_grammar {
             }
         }
 
-        return str;
+        return make_pair(str,idx);
     }
 
     std::string extract_rule(int_t rule_id) const {};
@@ -433,6 +433,7 @@ class elias_fano_grammar_builder {
         int_t rules_suffix_total_size = 0;
         for (int_t i = 0; i < number_of_rules; i++) {
             int_t pos = m_SA[i];
+            // cout << "Problematic: " << get_lms_substring_len(pos) << " " << lcp[i] << " " << get_lms_substring_len(pos) - lcp[i] << endl;
             rules_suffix_total_size += get_lms_substring_len(pos) - lcp[i];
         }
         /**
@@ -440,6 +441,7 @@ class elias_fano_grammar_builder {
          * considering the LCP between rules which cannot be copied.
          */
         uint_t rules_cat_idx = rules_concat.size();
+        // cout << (int_t) rules_cat_idx << " " << rules_suffix_total_size << endl;
         rules_concat.resize(rules_cat_idx + rules_suffix_total_size);
         uint_t rules_delim_idx = rules_delim_unary.size();
         rules_delim_unary.resize(rules_delim_unary.size() + number_of_rules +
@@ -528,10 +530,9 @@ class elias_fano_grammar_builder {
     int_t get_lms_substring_len(int_t pos, int_t lcp_len = 0) {
 
         size_t len = 1;
-        if (pos != m_text_size - 1)
-            while (!isLMS(m_type, pos + len)) {
-                len++;
-            }
+        while (pos+len < m_text_size && !isLMS(m_type, pos + len)) {
+            len++;
+        }
         return len - lcp_len;
     }
 

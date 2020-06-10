@@ -1,21 +1,21 @@
 #include "sais.h"
+#include "util.hpp"
+#include <chrono>
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <chrono> 
 
 using namespace std;
 using namespace std::chrono;
 using timer = std::chrono::high_resolution_clock;
 
-void load_string_from_file(char *&str, char *filename) {
+void load_string_from_file(char *&str, char *filename, int_t &n) {
     std::ifstream f(filename, std::ios::binary);
     f.seekg(0, std::ios::end);
-    uint64_t size = f.tellg();
+    n = f.tellg();
     f.seekg(0, std::ios::beg);
-    str = new char[size + 1];
-    f.read(str, size);
-    str[size] = 0;
+    str = new char[n];
+    f.read(str, n);
     f.close();
 };
 
@@ -26,10 +26,10 @@ int main(int argc, char *argv[]) {
                   << std::endl;
         exit(EXIT_FAILURE);
     }
-    char *str;
-    load_string_from_file(str, argv[1]);
+    char *str = nullptr;
+    int_t n = 0;
+    load_string_from_file(str, argv[1], n);
 
-    size_t n = strlen(str) + 1;
     sa_int32_t *SA = new sa_int32_t[n];
     sa_int32_t k = 256;
 
@@ -45,11 +45,10 @@ int main(int argc, char *argv[]) {
          << " seconds" << endl;
 
     string ouf = argv[2];
-    std::ofstream output(ouf+".sa", std::ios::binary);
+    std::ofstream output(ouf + ".sa", std::ios::binary);
 
-    n--;    
-    output.write((const char*) &n,sizeof(n));
-    output.write((const char*)&SA[1],sizeof(sa_int32_t)*n);
+    output.write((const char *)&n, sizeof(n));
+    output.write((const char *)SA, sizeof(sa_int32_t) * n);
     output.close();
 
     return 0;

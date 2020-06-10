@@ -28,10 +28,10 @@ const int EMPTY = 0xffffffff;
 
 unsigned char mask[] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 
-#define tget(i) ((t[(i) / 8] & mask[(i) % 8]) ? 1 : 0)
+#define tget(i) ((t[(i) >> 3] & mask[(i)&0x7]) ? 1 : 0)
 #define tset(i, b)                                                             \
-    t[(i) / 8] =                                                               \
-        (b) ? (mask[(i) % 8] | t[(i) / 8]) : ((~mask[(i) % 8]) & t[(i) / 8])
+    t[(i) >> 3] =                                                              \
+        (b) ? (mask[(i)&0x7] | t[(i) >> 3]) : ((~mask[(i)&0x7]) & t[(i) >> 3])
 
 #define isLMS(i) (i > 0 && tget(i) && !tget(i - 1))
 
@@ -64,11 +64,11 @@ void stack_push(t_pair *STACK, int_t *top, uint_t idx, int_t lcp) {
 
 class gcis_interface {
   public:
-    virtual void encode(char *s) = 0;
-    virtual char *decode() = 0;
+    virtual void encode(char *s, int_t n) = 0;
+    virtual pair<char *, int_t> decode() = 0;
     virtual void extract_batch(vector<pair<int, int>> &v_query) = 0;
-    virtual unsigned char *decode_saca(uint_t **SA) = 0;
-    virtual unsigned char *decode_saca_lcp(uint_t **SA, int_t **LCP) = 0;
+    virtual pair<char *, int_t> decode_saca(uint_t **SA) = 0;
+    virtual pair<char*,int_t> decode_saca_lcp(uint_t **SA, int_t **LCP) = 0;
     virtual uint64_t size_in_bytes() = 0;
     virtual void serialize(std::ostream &o) = 0;
     virtual void load(std::istream &i) = 0;
@@ -83,10 +83,10 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
     void extract_batch(vector<pair<int, int>> &v_query) {
         throw(gcis::util::NotImplementedException("extract_batch"));
     }
-    unsigned char *decode_saca(uint_t **SA) {
+    pair<char *, int_t>  decode_saca(uint_t **SA) {
         throw(gcis::util::NotImplementedException("decode_saca"));
     }
-    unsigned char *decode_saca_lcp(uint_t **SA, int_t **LCP) {
+    pair<char *, int_t> decode_saca_lcp(uint_t **SA, int_t **LCP) {
         throw(gcis::util::NotImplementedException("decode_saca_lcp"));
     }
     virtual uint64_t size_in_bytes() {
@@ -98,8 +98,7 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
         return total_bytes;
     }
 
-    void encode(char *s) {
-        int_t n = strlen(s) + 1;
+    void encode(char *s, int_t n) {
         uint_t *SA = new uint_t[n];
         int_t K = 256;
         int cs = sizeof(char);
@@ -110,7 +109,7 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
         delete[] SA;
     }
 
-    virtual char *decode() = 0;
+    virtual pair<char *, int_t> decode() = 0;
 
     virtual void serialize(std::ostream &o) {
         reduced_string.serialize(o);
@@ -429,27 +428,33 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
         gcis::util::print_report("String Size = ", n, "\n");
         gcis::util::print_report("Number of Rules = ", name + 1, "\n");
         gcis::util::print_report("Average Rule Length = ",
-                     (double)total_rule_len / (name + 1), "\n");
-        gcis::util::print_report("Number of Discarded Rules = ", discarded_rules_n, "\n");
-        gcis::util::print_report("Average Discarded Rules Length = ",
-                     (double)discarded_rules_len / discarded_rules_n, "\n");
-        gcis::util::print_report("Average LCP = ", (double)total_lcp / (name + 1), "\n");
+                                 (double)total_rule_len / (name + 1), "\n");
+        gcis::util::print_report(
+            "Number of Discarded Rules = ", discarded_rules_n, "\n");
+        gcis::util::print_report(
+            "Average Discarded Rules Length = ",
+            (double)discarded_rules_len / discarded_rules_n, "\n");
+        gcis::util::print_report(
+            "Average LCP = ", (double)total_lcp / (name + 1), "\n");
         gcis::util::print_report("Average Rule Suffix Length = ",
-                     (double)total_rule_suffix_length / (name + 1), "\n");
+                                 (double)total_rule_suffix_length / (name + 1),
+                                 "\n");
         gcis::util::print_report(
             "Dictionary Level Size (bytes) =", g[level].size_in_bytes(), "\n");
-        //        gcis::util::print_report("LCP Size (bits) = ",g[level].lcp.size(),"\n");
-        gcis::util::print_report("Rule Suffix Length (total) = ", g[level].rule.size(),
-                     "\n");
+        //        gcis::util::print_report("LCP Size (bits) =
+        //        ",g[level].lcp.size(),"\n");
+        gcis::util::print_report(
+            "Rule Suffix Length (total) = ", g[level].rule.size(), "\n");
         gcis::util::print_report("Rule Suffix Width (bits per symbol) = ",
-                     (int_t)g[level].rule.width(), "\n");
+                                 (int_t)g[level].rule.width(), "\n");
         gcis::util::print_report("Tail Length = ", g[level].tail.size(), "\n");
         gcis::util::print_report("Tail Width (bits per symbol) = ",
-                     (int_t)g[level].tail.width(), "\n");
-        gcis::util::print_report("Run Length Potential (total) = ", run_length_potential,
-                     "\n");
+                                 (int_t)g[level].tail.width(), "\n");
+        gcis::util::print_report(
+            "Run Length Potential (total) = ", run_length_potential, "\n");
         gcis::util::print_report("Avg Run Length per Rule Suffix = ",
-                     (double)run_length_potential / (name + 1), "\n");
+                                 (double)run_length_potential / (name + 1),
+                                 "\n");
 #endif
 
         bool premature_stop =
@@ -459,7 +464,8 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
         } else { // generate the suffix array of s1 directly
             if (premature_stop) {
 #ifdef REPORT
-                gcis::util::print_report("Premature Stop employed at level ", level, "\n");
+                gcis::util::print_report("Premature Stop employed at level ",
+                                         level, "\n");
 #endif
                 reduced_string.resize(n);
                 for (j = 0; j < n; j++) {
@@ -480,8 +486,9 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
 #ifdef REPORT
             gcis::util::print_report(
                 "Reduced String Length = ", (int_t)reduced_string.size(), "\n");
-            gcis::util::print_report("Reduced String Width (bits per symbol) = ",
-                         (int_t)reduced_string.width(), "\n");
+            gcis::util::print_report(
+                "Reduced String Width (bits per symbol) = ",
+                (int_t)reduced_string.width(), "\n");
 #endif
         }
         // delete bitvector t
@@ -538,6 +545,8 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
         int_t i, j;
         // find heads of buckets
         get_buckets(s, bkt, n, K, cs, false);
+
+        SA[bkt[chr(n - 1)]++] = n - 1;
         //  if(level==0) bkt[0]++;
         for (i = 0; i < n; i++) {
             if (SA[i] != EMPTY) {
@@ -749,6 +758,7 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
         int_t i, j;
         // find heads of buckets
         get_buckets(cnt, bkt, K, false);
+        SA[bkt[chr(n - 1)]++] = n - 1;
         //  if(level==0) bkt[0]++;
         for (i = 0; i < n; i++) {
             if (SA[i] != EMPTY) {

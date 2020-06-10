@@ -48,7 +48,7 @@ public:
     }
 
 
-    char* decode() override {
+    pair<char*,int_t> decode() override {
         sdsl::int_vector<> r_string = reduced_string;
         char* str;
         if(g.size()) {
@@ -85,7 +85,7 @@ public:
                 str[i] = reduced_string[i];
             }
         }
-        return str;
+        return make_pair(str,g[0].string_size);
     }
 
 

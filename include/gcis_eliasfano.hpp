@@ -9,14 +9,10 @@
 #include "gcis_eliasfano_codec.hpp"
 #include <iostream>
 
-
 using namespace std::chrono;
 using timer = std::chrono::high_resolution_clock;
 
 #define TIME 0
-
-
-
 
 template <>
 class gcis_dictionary<gcis_eliasfano_codec>
@@ -38,14 +34,13 @@ class gcis_dictionary<gcis_eliasfano_codec>
         i.read((char *)partial_sum.data(), sizeof(uint32_t) * n);
     }
 
-
     /**
      * @brief Extracts several valid substrings of the form T[l,r]
      * from the text.
      *
      * @param query A vector containing [l,r] pairs.
      */
-       void extract_batch(vector<pair<int, int>> &query) {
+    void extract_batch(vector<pair<int, int>> &query) {
         int l, r;
         std::tie(l, r) = query[0];
         uint64_t query_length = 50000;
@@ -63,7 +58,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
             auto t0 = std::chrono::high_resolution_clock::now();
             extract(p.first, p.second, extracted_text, tmp_text);
             auto t1 = std::chrono::high_resolution_clock::now();
-            total_time += t1-t0;
+            total_time += t1 - t0;
             for (uint64_t i = p.first; i <= p.second; i++) {
                 cout << (unsigned char)extracted_text[i - p.first];
             }
@@ -89,16 +84,19 @@ class gcis_dictionary<gcis_eliasfano_codec>
         return extracted_text;
     }
 
-    char *decode() override {
-        sdsl::int_vector<> r_string = reduced_string;
+    pair<char *, int_t> decode() override {
+        vector<uint_t> r_string(reduced_string.size());
+        for (uint_t i = 0; i < reduced_string.size(); i++) {
+            r_string[i] = reduced_string[i];
+        }
         char *str;
         if (g.size()) {
             for (int64_t i = g.size() - 1; i >= 0; i--) {
-                sdsl::int_vector<> next_r_string;
-                gcis_eliasfano_codec_level gd = std::move(g[i].decompress());
-                next_r_string.width(sdsl::bits::hi(g[i].alphabet_size - 1) + 1);
+                vector<uint_t> next_r_string;
+                gcis_eliasfano_pointers_codec_level gd =
+                    std::move(g[i].decompress());
                 next_r_string.resize(g[i].string_size);
-                uint64_t l = 0;
+                uint_t l = 0;
                 if (i == 0) {
                     // Convert the reduced string in the original text
                     str = new char[g[i].string_size];
@@ -125,13 +123,17 @@ class gcis_dictionary<gcis_eliasfano_codec>
                 str[i] = reduced_string[i];
             }
         }
-        return str;
+        return make_pair(str, g[0].string_size);
     }
 
-    unsigned char* decode_saca(uint_t **sa) {
+    pair<char *, int_t> decode_saca(uint_t **sa) override {
 
-        sdsl::int_vector<> r_string = reduced_string;
-        unsigned char* str;
+        std::vector<uint_t> r_string;
+        r_string.resize(reduced_string.size());
+        for (int i = 0; i < reduced_string.size(); i++) {
+            r_string[i] = reduced_string[i];
+        }
+        unsigned char *str;
         uint_t n = g[0].string_size;
         uint_t *SA = new uint_t[n];
 
@@ -176,13 +178,11 @@ class gcis_dictionary<gcis_eliasfano_codec>
                 auto expand = timer::now();
 #endif
 
-                sdsl::int_vector<> next_r_string;
-                gcis_eliasfano_codec_level gd =
+                vector<uint_t> next_r_string;
+                gcis_eliasfano_pointers_codec_level gd =
                     std::move(g[level].decompress());
-                next_r_string.width(sdsl::bits::hi(g[level].alphabet_size - 1) +
-                                    1);
                 next_r_string.resize(g[level].string_size);
-                uint64_t l = 0;
+                uint_t l = 0;
 
                 int_t K = g[level].alphabet_size; // alphabet
 
@@ -197,8 +197,8 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     // Convert the reduced string in the original text
                     str = new unsigned char[g[level].string_size];
                     for (uint64_t j = 0; j < g[level].tail.size(); j++) {
-                        str[l++] = g[level].tail[j];
-                        cnt[g[level].tail[j]]++; // count frequencies
+                        str[l] = g[level].tail[j];
+                        cnt[str[l++]]++; // count frequencies
                     }
                     for (uint64_t j = 0; j < r_string.size(); j++) {
                         gd.expand_rule_bkt(r_string[j], str, l, cnt);
@@ -207,15 +207,17 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     // Classify the type of each character
                     uint_t cur_t, succ_t;
                     uint_t j = n1 - 1;
-                    s1[j--] = n - 1;
-                    succ_t = 0; // s[n-2] must be L-type
-                    for (uint_t i = n - 2; i > 0; i--) {
+                    // s1[j--] = n - 1;
+                    succ_t = 0; // s[n-1] must be L-type
+                    for (uint_t i = n - 1; i > 0; i--) {
                         cur_t = (str[i - 1] < str[i] ||
                                  (str[i - 1] == str[i] && succ_t == 1))
                                     ? 1
                                     : 0;
-                        if (cur_t == 0 && succ_t == 1)
+                        if (cur_t == 0 && succ_t == 1) {
+                            // cout << "s1[" << j << "] = " << i << endl;
                             s1[j--] = i;
+                        }
                         succ_t = cur_t;
                     }
                 } else {
@@ -223,11 +225,11 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     init_buckets(bkt, K);
 
                     // Convert the reduced string in the previous reduced string
-                    for (uint64_t j = 0; j < g[level].tail.size(); j++) {
+                    for (uint_t j = 0; j < g[level].tail.size(); j++) {
                         next_r_string[l++] = g[level].tail[j];
                         cnt[g[level].tail[j]]++; // count frequencies
                     }
-                    for (uint64_t j = 0; j < r_string.size(); j++) {
+                    for (uint_t j = 0; j < r_string.size(); j++) {
                         gd.expand_rule_bkt(r_string[j], next_r_string, l, cnt);
                     }
                     r_string = std::move(next_r_string);
@@ -241,9 +243,9 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     // Classify the type of each character
                     uint_t cur_t, succ_t;
                     uint_t j = n1 - 1;
-                    s1[j--] = n - 1;
-                    succ_t = 0; // s[n-2] must be L-type
-                    for (uint_t i = n - 2; i > 0; i--) {
+                    // s1[j--] = n - 1;
+                    succ_t = 0; // s[n-1] must be L-type
+                    for (uint_t i = n - 1; i > 0; i--) {
                         cur_t =
                             (r_string[i - 1] < r_string[i] ||
                              (r_string[i - 1] == r_string[i] && succ_t == 1))
@@ -310,12 +312,11 @@ class gcis_dictionary<gcis_eliasfano_codec>
                         SA[bkt[chr(j)]--] = j;
                     }
                 } else {
-                    for (int_t i = n1 - 1; i > 0; i--) {
+                    for (int_t i = n1 - 1; i >= 0; i--) {
                         j = SA[i];
                         SA[i] = EMPTY;
                         SA[bkt[str[j]]--] = j;
                     }
-                    SA[0] = n - 1;
                 }
 
 #if TIME
@@ -377,19 +378,23 @@ class gcis_dictionary<gcis_eliasfano_codec>
         }
 
         *sa = SA;
-        return str;
-    }//end decode_saca
+        return make_pair((char *)str, g[0].string_size);
+    } // end decode_saca
 
-    unsigned char *decode_saca_lcp(uint_t **sa, int_t **lcp) {
+    pair<char *,int_t> decode_saca_lcp(uint_t **sa, int_t **lcp) override {
 
-        sdsl::int_vector<> r_string = reduced_string;
+        vector<uint_t> r_string;
+        r_string.resize(reduced_string.size());
+        for (uint_t i = 0; i < reduced_string.size(); i++)
+            r_string[i] = reduced_string[i];
         unsigned char *str;
         uint_t n = g[0].string_size;
         uint_t *SA = new uint_t[n];
         int_t *LCP = new int_t[n];
 
         uint_t i;
-        for(i=0;i<n;i++) SA[i]=LCP[i]=0;
+        for (i = 0; i < n; i++)
+            SA[i] = LCP[i] = 0;
 
         int_t *s = (int_t *)SA + n / 2;
 
@@ -432,13 +437,11 @@ class gcis_dictionary<gcis_eliasfano_codec>
                 auto expand = timer::now();
 #endif
 
-                sdsl::int_vector<> next_r_string;
-                gcis_eliasfano_codec_level gd =
-                std::move(g[level].decompress());
-                next_r_string.width(sdsl::bits::hi(g[level].alphabet_size - 1) +
-                                    1);
+                vector<uint_t> next_r_string;
+                gcis_eliasfano_pointers_codec_level gd =
+                    std::move(g[level].decompress());
                 next_r_string.resize(g[level].string_size);
-                uint64_t l = 0;
+                uint_t l = 0;
 
                 int_t K = g[level].alphabet_size; // alphabet
 
@@ -452,21 +455,21 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     // delete[] s;
                     // Convert the reduced string in the original text
                     str = new unsigned char[g[level].string_size];
-                    for (uint64_t j = 0; j < g[level].tail.size(); j++) {
+                    for (uint_t j = 0; j < g[level].tail.size(); j++) {
                         str[l++] = g[level].tail[j];
                         cnt[g[level].tail[j]]++; // count frequencies
                     }
-                    for (uint64_t j = 0; j < r_string.size(); j++) {
+                    for (uint_t j = 0; j < r_string.size(); j++) {
                         gd.expand_rule_bkt(r_string[j], str, l, cnt);
                     }
                     n = g[level].string_size;
-                    str[n-1]=0;
+                    // str[n - 1] = 0;
                     // Classify the type of each character
                     uint_t cur_t, succ_t;
                     uint_t j = n1 - 1;
-                    s1[j--] = n - 1;
-                    succ_t = 0; // s[n-2] must be L-type
-                    for (uint_t i = n - 2; i > 0; i--) {
+                    // s1[j--] = n - 1;
+                    succ_t = 0; // s[n-1] must be L-type
+                    for (uint_t i = n - 1; i > 0; i--) {
                         cur_t = (str[i - 1] < str[i] ||
                                  (str[i - 1] == str[i] && succ_t == 1))
                                     ? 1
@@ -481,8 +484,8 @@ class gcis_dictionary<gcis_eliasfano_codec>
 
                     // Convert the reduced string in the previous reduced string
                     for (uint64_t j = 0; j < g[level].tail.size(); j++) {
-                        next_r_string[l++] = g[level].tail[j];
-                        cnt[g[level].tail[j]]++; // count frequencies
+                        next_r_string[l] = g[level].tail[j];
+                        cnt[next_r_string[l++]]++; // count frequencies
                     }
                     for (uint64_t j = 0; j < r_string.size(); j++) {
                         gd.expand_rule_bkt(r_string[j], next_r_string, l, cnt);
@@ -498,9 +501,9 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     // Classify the type of each character
                     uint_t cur_t, succ_t;
                     uint_t j = n1 - 1;
-                    s1[j--] = n - 1;
+                    // s1[j--] = n - 1;
                     succ_t = 0; // s[n-2] must be L-type
-                    for (uint_t i = n - 2; i > 0; i--) {
+                    for (uint_t i = n - 1; i > 0; i--) {
                         cur_t =
                             (r_string[i - 1] < r_string[i] ||
                              (r_string[i - 1] == r_string[i] && succ_t == 1))
@@ -552,11 +555,12 @@ class gcis_dictionary<gcis_eliasfano_codec>
                 cout << endl;
 #endif
 
-                if(level == 0){
-                  uint_t *RA=s1;
-                  int_t *PLCP=LCP+n-n1;//PHI is stored in PLCP array
-                  //compute the LCP of consecutive LMS-suffixes
-                  compute_lcp_phi_sparse_sais((int_t*)str, SA1, RA, LCP, PLCP, n1, sizeof(char));
+                if (level == 0) {
+                    uint_t *RA = s1;
+                    int_t *PLCP = LCP + n - n1; // PHI is stored in PLCP array
+                    // compute the LCP of consecutive LMS-suffixes
+                    compute_lcp_phi_sparse_sais((int_t *)str, SA1, RA, LCP,
+                                                PLCP, n1, sizeof(char));
                 }
 
                 int_t j = 0;
@@ -567,21 +571,25 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     SA[i] = EMPTY; // init SA[n1..n-1]
                 }
 
-                if(level == 0){
-                  for(i=n1;i<n;i++) LCP[i]=0;
+                if (level == 0) {
+                    for (i = n1; i < n; i++)
+                        LCP[i] = 0;
                 }
 
                 if (level) {
                     for (int_t i = n1 - 1; i >= 0; i--) {
-                        j = SA[i]; SA[i] = EMPTY;
+                        j = SA[i];
+                        SA[i] = EMPTY;
                         SA[bkt[chr(j)]--] = j;
                     }
                 } else {
                     int_t l;
                     for (int_t i = n1 - 1; i > 0; i--) {
-                        j = SA[i];SA[i] = U_MAX;
-                        l=LCP[i]; LCP[i]=0;
-                    
+                        j = SA[i];
+                        SA[i] = U_MAX;
+                        l = LCP[i];
+                        LCP[i] = 0;
+
                         SA[bkt[str[j]]] = j;
                         LCP[bkt[str[j]]--] = l;
                     }
@@ -598,21 +606,21 @@ class gcis_dictionary<gcis_eliasfano_codec>
                 if (level)
                     induceSAl(SA, s, cnt, bkt, n, K, cs, level);
                 else
-                    //induceSAl(SA, (int_t *)str, cnt, bkt, n, K,
+                    // induceSAl(SA, (int_t *)str, cnt, bkt, n, K,
                     //          sizeof(char), level);
                     induceSAl_LCP(SA, LCP, (int_t *)str, cnt, bkt, n, K,
-                              sizeof(unsigned char), level);
+                                  sizeof(unsigned char), level);
 
-                #if DEGUB
-                if(level==0){
-                  for(i=0; i<n; i++)
+#if DEGUB
+                if (level == 0) {
+                    for (i = 0; i < n; i++)
                         printf("%d\t", SA[i]);
-                  printf("\n\n");
-                  for(i=0; i<n; i++)
+                    printf("\n\n");
+                    for (i = 0; i < n; i++)
                         printf("%d\t", LCP[i]);
-                  printf("\n");
+                    printf("\n");
                 }
-                #endif
+#endif
 
 #if TIME
                 end = timer::now();
@@ -624,24 +632,24 @@ class gcis_dictionary<gcis_eliasfano_codec>
 
                 if (level)
                     induceSAs(SA, s, cnt, bkt, n, K, cs, level);
-                else{
-                    //induceSAs(SA, (int_t *)str, cnt, bkt, n, K,
+                else {
+                    // induceSAs(SA, (int_t *)str, cnt, bkt, n, K,
                     //          sizeof(char), level);
                     induceSAs_LCP(SA, LCP, (int_t *)str, cnt, bkt, n, K,
-                              sizeof(unsigned char), level);
-                    SA[0]=n-1;
+                                  sizeof(unsigned char), level);
+                    SA[0] = n - 1;
                 }
 
-                #if DEGUB
-                if(level==0){
-                  for(i=0; i<n; i++)
+#if DEGUB
+                if (level == 0) {
+                    for (i = 0; i < n; i++)
                         printf("%d\t", SA[i]);
-                  printf("\n\n");
-                  for(i=0; i<n; i++)
+                    printf("\n\n");
+                    for (i = 0; i < n; i++)
                         printf("%d\t", LCP[i]);
-                  printf("\n");
+                    printf("\n");
                 }
-                #endif
+#endif
 #if TIME
                 end = timer::now();
                 cout << "induce S: "
@@ -674,8 +682,8 @@ class gcis_dictionary<gcis_eliasfano_codec>
 
         *sa = SA;
         *lcp = LCP;
-        return str;
-    }//end decode_saca
+        return make_pair((char*) str,g[0].string_size);
+    } // end decode_saca
 
   private:
     std::vector<uint32_t> partial_sum;
@@ -705,7 +713,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
 
         // Classify the type of each character
         //  tset(n - 2, 0);
-        tset(n - 1, 1); // the sentinel must be in s1, important!!!
+        tset(n - 1, 0); // The last symbol is L-type
         for (i = n - 2; i >= 0; i--)
             tset(i, (chr(i) < chr(i + 1) ||
                      (chr(i) == chr(i + 1) && tget(i + 1) == 1))
@@ -730,7 +738,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
             }
         }
 
-        SA[0] = n - 1; // set the single sentinel LMS-substring
+        // SA[0] = n - 1; // set the single sentinel LMS-substring
 
         // Induce L-Type suffixes by using LMS-Type and L-Type suffixes
         induceSAl(t, SA, s, bkt, n, K, cs, level);
@@ -761,6 +769,8 @@ class gcis_dictionary<gcis_eliasfano_codec>
         // consecutive ones
         int_t name = -1;
         int_t prev = -1;
+        int_t cur_len = -1;
+        int_t prev_len = -1;
 
         std::vector<uint64_t> fdrlen;
 
@@ -769,25 +779,21 @@ class gcis_dictionary<gcis_eliasfano_codec>
         sdsl::bit_vector rule_delim;
         g.push_back(gcis_eliasfano_codec());
         // Iterate over all suffixes in the LMS sorted array
+
         for (i = 0; i < n1; i++) {
             int_t pos = SA[i];
+            cur_len = 1;
+            while (pos + cur_len < n && !isLMS(pos + cur_len))
+                cur_len++;
             bool diff = false;
             int_t d;
-            // d equals to the LCP between two consecutive LMS-substrings
-            for (d = 0; d < n; d++) {
-                // If is first suffix in LMS order (sentinel), or one of the
-                // suffixes reached the last position of T, or the
-                // characters of T differs or the type os suffixes differ.
-                if (prev == -1 ||
-                    (chr(pos + d) != chr(prev + d) &&
-                     (d == 0 || (!isLMS(pos + d) && !isLMS(prev + d)))) ||
-                    (isLMS(pos + d) ^ (isLMS(prev + d)))) {
+
+            if (prev == -1 || prev_len != cur_len)
+                diff = true;
+
+            for (d = 0; d < min(cur_len, prev_len); d++) {
+                if (chr(pos + d) != chr(prev + d)) {
                     diff = true;
-                    break;
-                }
-                // The comparison has reached the end of at least one
-                // LMS-substring
-                if (d > 0 && (isLMS(pos + d) || isLMS(prev + d))) {
                     break;
                 }
             }
@@ -795,20 +801,8 @@ class gcis_dictionary<gcis_eliasfano_codec>
             // The consecutive LMS-substrings differs
             if (diff) {
 
-                // TODO: can we replace len =1 for len	=d?
-                // Get the length of the current lms-substring
-                size_t len = 1;
-                if (pos != n - 1)
-                    while (!isLMS(pos + len))
-                        len++;
-
-                // Get the length of the previous LMS-Substring
-                size_t len2 = 1;
-                if (prev != n - 1)
-                    while (!isLMS(prev + len2))
-                        len2++;
-
-                // Resizes Rule array, LCP array and rule delimiter bitvector
+                // Resizes Rule array, LCP array and rule delimiter
+                // bitvector
                 uint64_t old_lcp_size, old_rule_delim_size;
 
                 old_lcp_size = lcp.size();
@@ -820,9 +814,9 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     d = 0;
                 }
 
-                g[level].rule.resize(g[level].rule.size() + len - d);
+                g[level].rule.resize(g[level].rule.size() + cur_len - d);
                 lcp.resize(lcp.size() + d + 1);
-                rule_delim.resize(rule_delim.size() + len - d + 1);
+                rule_delim.resize(rule_delim.size() + cur_len - d + 1);
 
                 for (uint64_t i = old_lcp_size; i < lcp.size(); i++) {
                     lcp[i] = 0;
@@ -833,9 +827,9 @@ class gcis_dictionary<gcis_eliasfano_codec>
                 }
 
 #ifdef REPORT
-                total_rule_len += len;
+                total_rule_len += cur_len;
                 total_lcp += d;
-                total_rule_suffix_length += len - d;
+                total_rule_suffix_length += cur_len - d;
 #endif
 
                 // Encode LCP value in unary
@@ -843,7 +837,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
                 // Encode rule length in unary
                 rule_delim[rule_delim.size() - 1] = 1;
                 // Copy the symbols into the delimited rule positions
-                for (j = 0; j < len - d && j + pos + d < n; j++) {
+                for (j = 0; j < cur_len - d && j + pos + d < n; j++) {
 #ifdef REPORT
                     if (j + pos + d - 1 < n &&
                         chr(j + pos + d) == chr(j + pos + d + 1)) {
@@ -856,7 +850,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
                 // Insert the fully decode rule length
                 if (level == 0) {
                     // The symbols are terminal L(x) = 1, for every x
-                    fdrlen.push_back(len);
+                    fdrlen.push_back(cur_len);
                 } else {
                     // The symbols are not necessarly terminal.
                     uint64_t sum =
@@ -869,6 +863,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
                 }
                 name++;
                 prev = pos;
+                prev_len = cur_len;
             }
 #ifdef REPORT
             else {
@@ -929,35 +924,45 @@ class gcis_dictionary<gcis_eliasfano_codec>
         gcis::util::print_report("Alphabet Size = ", K, "\n");
         gcis::util::print_report("String Size = ", n, "\n");
         gcis::util::print_report("Number of Rules = ", name + 1, "\n");
-        gcis::util::print_report("Total rules length  = ",total_rule_len,"\n");
+        gcis::util::print_report("Total rules length  = ", total_rule_len,
+                                 "\n");
         gcis::util::print_report("Average Rule Length = ",
-                     (double)total_rule_len / (name + 1), "\n");
-        gcis::util::print_report("Number of Discarded Rules = ", discarded_rules_n, "\n");
+                                 (double)total_rule_len / (name + 1), "\n");
+        gcis::util::print_report(
+            "Number of Discarded Rules = ", discarded_rules_n, "\n");
         gcis::util::print_report("Average Discarded Rules Length = ",
-                     discarded_rules_n > 0 ? (double)discarded_rules_len / discarded_rules_n : 0, "\n");
-        gcis::util::print_report("Average LCP = ", (double)total_lcp / (name + 1), "\n");
+                                 discarded_rules_n > 0
+                                     ? (double)discarded_rules_len /
+                                           discarded_rules_n
+                                     : 0,
+                                 "\n");
+        gcis::util::print_report(
+            "Average LCP = ", (double)total_lcp / (name + 1), "\n");
         gcis::util::print_report("Average Rule Suffix Length = ",
-                     (double)total_rule_suffix_length / (name + 1), "\n");
+                                 (double)total_rule_suffix_length / (name + 1),
+                                 "\n");
         gcis::util::print_report(
             "Dictionary Level Size (bytes) =", g[level].size_in_bytes(), "\n");
-        gcis::util::print_report("LCP Size (bits) = ", g[level].lcp.size(), "\n");
-        gcis::util::print_report("Rule Suffix Length (total) = ", g[level].rule.size(),
-                     "\n");
+        gcis::util::print_report("LCP Size (bits) = ", g[level].lcp.size(),
+                                 "\n");
+        gcis::util::print_report(
+            "Rule Suffix Length (total) = ", g[level].rule.size(), "\n");
         gcis::util::print_report("Rule Suffix Width (bits per symbol) = ",
-                     (int_t)g[level].rule.width(), "\n");
+                                 (int_t)g[level].rule.width(), "\n");
         gcis::util::print_report("Tail Length = ", g[level].tail.size(), "\n");
         gcis::util::print_report("Tail Width (bits per symbol) = ",
-                     (int_t)g[level].tail.width(), "\n");
-        gcis::util::print_report("Run Length Potential (total) = ", run_length_potential,
-                     "\n");
+                                 (int_t)g[level].tail.width(), "\n");
+        gcis::util::print_report(
+            "Run Length Potential (total) = ", run_length_potential, "\n");
         gcis::util::print_report("Avg Run Length per Rule Suffix = ",
-                     (double)run_length_potential / (name + 1), "\n");
+                                 (double)run_length_potential / (name + 1),
+                                 "\n");
 #endif
 
         // TODO: reenable premature_stop comparison
         bool premature_stop = false;
         //	  bool premature_stop =
-        //evaluate_premature_stop(n,K,n1,name+1,level);
+        // evaluate_premature_stop(n,K,n1,name+1,level);
         g[level].string_size = n;
         g[level].alphabet_size = K;
         if (name + 1 < n1 && !premature_stop) {
@@ -967,7 +972,8 @@ class gcis_dictionary<gcis_eliasfano_codec>
             if (premature_stop) {
                 // The encoding algorithm is stopped prematurely
 #ifdef REPORT
-                gcis::util::print_report("Premature Stop employed at level ", level, "\n");
+                gcis::util::print_report("Premature Stop employed at level ",
+                                         level, "\n");
 #endif
                 reduced_string.resize(n);
                 for (j = 0; j < n; j++) {
@@ -997,8 +1003,9 @@ class gcis_dictionary<gcis_eliasfano_codec>
 #ifdef REPORT
             gcis::util::print_report(
                 "Reduced String Length = ", (int_t)reduced_string.size(), "\n");
-            gcis::util::print_report("Reduced String Width (bits per symbol) = ",
-                         (int_t)reduced_string.width(), "\n");
+            gcis::util::print_report(
+                "Reduced String Width (bits per symbol) = ",
+                (int_t)reduced_string.width(), "\n");
 #endif
         }
         delete[] t;
@@ -1055,9 +1062,10 @@ class gcis_dictionary<gcis_eliasfano_codec>
      * @param codec The dictionary level we are employing
      * @param extracted_text The string to be extracted
      * @param sz The index we want to find
-     * @param text_r The tracked position of the original text representing the
-     * end of extracted_text
-     * @return The leftmost index such that text_l r sum(extracted_text,i) <= sz
+     * @param text_r The tracked position of the original text representing
+     * the end of extracted_text
+     * @return The leftmost index such that text_l r sum(extracted_text,i)
+     * <= sz
      */
     uint64_t sequential_upperbound(gcis_eliasfano_codec &codec,
                                    sdsl::int_vector<> &extracted_text,
@@ -1080,10 +1088,10 @@ class gcis_dictionary<gcis_eliasfano_codec>
      * @param codec The dictionary level we are employing
      * @param extracted_text The string to be extracted
      * @param sz The index we want to found
-     * @param text_l The tracked position of the original text representing the
-     * beggining of extracted_text
-     * @return The rightmost index such that text_l + sum(extracted_text,i) >
-     * sz
+     * @param text_l The tracked position of the original text representing
+     * the beggining of extracted_text
+     * @return The rightmost index such that text_l + sum(extracted_text,i)
+     * > sz
      */
     uint64_t sequential_lowerbound(gcis_eliasfano_codec &codec,
                                    sdsl::int_vector<> &extracted_text,
@@ -1100,8 +1108,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
         }
         return index;
     }
-        
-    
+
     void extract(int64_t l, int64_t r, sdsl::int_vector<> &extracted_text,
                  sdsl::int_vector<> &tmp_text) {
         //	  // Stores the interval being tracked in the text
@@ -1125,8 +1132,8 @@ class gcis_dictionary<gcis_eliasfano_codec>
         }
 
         /**
-         * Else, the extraction should proceed from the reduced string to the
-         * decompressed text
+         * Else, the extraction should proceed from the reduced string to
+         * the decompressed text
          */
 
         if (r < g.back().fully_decoded_tail_len) {

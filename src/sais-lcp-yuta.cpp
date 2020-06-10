@@ -1,21 +1,21 @@
 #include "sais-lcp.h"
+#include "util.hpp"
+#include <chrono>
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <chrono>
 
 using namespace std;
 using namespace std::chrono;
 using timer = std::chrono::high_resolution_clock;
 
-void load_string_from_file(char *&str, char *filename) {
+void load_string_from_file(char *&str, char *filename, int_t &n) {
     std::ifstream f(filename, std::ios::binary);
     f.seekg(0, std::ios::end);
-    uint64_t size = f.tellg();
+    n = f.tellg();
     f.seekg(0, std::ios::beg);
-    str = new char[size + 1];
-    f.read(str, size);
-    str[size] = 0;
+    str = new char[n];
+    f.read(str, n);
     f.close();
 };
 
@@ -26,16 +26,16 @@ int main(int argc, char *argv[]) {
                   << std::endl;
         exit(EXIT_FAILURE);
     }
-    char *str;
-    load_string_from_file(str, argv[1]);
+    char *str = nullptr;
+    int_t n = 0;
+    load_string_from_file(str, argv[1], n);
 
-    size_t n = strlen(str)+1;
-    int *SA = new int[n];
-    int* LCP = new int[n];
+    int *SA = new int_t[n];
+    int *LCP = new int_t[n];
 
     std::cout << "Building SA+LCP with SAIS-LCP-YUTA." << std::endl;
     auto start = timer::now();
-    sais_lcp((unsigned char*) str,SA,LCP,n);
+    sais_lcp((unsigned char *)str, SA, LCP, n);
     auto stop = timer::now();
 
     cout << "input:\t" << strlen(str) << " bytes" << endl;
@@ -44,18 +44,15 @@ int main(int argc, char *argv[]) {
          << (double)duration_cast<milliseconds>(stop - start).count() / 1000.0
          << " seconds" << endl;
 
-
     string ouf_basename(argv[2]);
-    std::ofstream output(ouf_basename+".sa", std::ios::binary);
+    std::ofstream output(ouf_basename + ".sa", std::ios::binary);
 
-    n--;
-    output.write((const char*) &n,sizeof(n));
-    output.write((const char*) &SA[1],sizeof(int)*n);
+    output.write((const char *)&n, sizeof(n));
+    output.write((const char *)SA, sizeof(n) * n);
 
-    std::ofstream output_lcp(ouf_basename+".lcp", std::ios::binary);
-    output_lcp.write((const char*) &n,sizeof(n));
-    output_lcp.write((const char*)&LCP[1],sizeof(int)*n);
-
+    std::ofstream output_lcp(ouf_basename + ".lcp", std::ios::binary);
+    output_lcp.write((const char *)&n, sizeof(n));
+    output_lcp.write((const char *)LCP, sizeof(int) * n);
 
     output.close();
     output_lcp.close();

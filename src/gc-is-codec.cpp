@@ -14,14 +14,13 @@
 using namespace std::chrono;
 using timer = std::chrono::high_resolution_clock;
 
-void load_string_from_file(char *&str, char *filename) {
+void load_string_from_file(char *&str, char *filename, int_t &n) {
     std::ifstream f(filename, std::ios::binary);
     f.seekg(0, std::ios::end);
-    uint64_t size = f.tellg();
+    n = f.tellg();
     f.seekg(0, std::ios::beg);
-    str = new char[size + 1];
-    f.read(str, size);
-    str[size] = 0;
+    str = new char[n];
+    f.read(str, n);
     f.close();
 };
 
@@ -33,35 +32,39 @@ int main(int argc, char *argv[]) {
 
     if (argc != 5) {
         std::cerr << "Usage: \n"
-                  << "./gc-is-codec -c <file_to_be_encoded> <output> <codec flag>\n"
-                  << "./gc-is-codec -d <file_to_be_decoded> <output> <codec flag>\n"
-                  << "./gc-is-codec -s <file_to_be_decoded> <output> <codec flag>\n"
-                  << "./gc-is-codec -l <file_to_be_decoded> <output> <codec flag>\n"
-                  << "./gc-is-codec -e <encoded_file> <query file> <codec flag>\n";
+                  << argv[0]
+                  << " -c <file_to_be_encoded> <output> <codec flag>\n"
+                  << argv[0]
+                  << " -d <file_to_be_decoded> <output> <codec flag>\n"
+                  << argv[0]
+                  << " -s <file_to_be_decoded> <output> <codec flag>\n"
+                  << argv[0]
+                  << " -l <file_to_be_decoded> <output> <codec flag>\n"
+                  << argv[0]
+                  << " -e <encoded_file> <query file> <codec flag>\n";
 
         exit(EXIT_FAILURE);
     }
 
     // Dictionary type
     string codec_flag(argv[4]);
-    gcis_interface* d;
-    if(codec_flag == "-s8b"){
-        d = new gcis_dictionary<gcis_s8b_codec>();
-    }
-    else if(codec_flag == "-ef"){
+    gcis_interface *d;
+    if (codec_flag == "-s8b") {
+        d = new gcis_s8b_pointers();
+    } else if (codec_flag == "-ef") {
         d = new gcis_dictionary<gcis_eliasfano_codec>();
-    }
-    else{
+    } else {
         cerr << "Invalid CODEC." << endl;
         cerr << "Use -s8b for Simple8b or -ef for Elias-Fano" << endl;
         return 0;
     }
 
     char *mode = argv[1];
-    
+
     if (strcmp(mode, "-c") == 0) {
+        int_t n;
         char *str;
-        load_string_from_file(str, argv[2]);
+        load_string_from_file(str, argv[2], n);
         std::ofstream output(argv[3], std::ios::binary);
 
 #ifdef MEM_MONITOR
@@ -69,7 +72,7 @@ int main(int argc, char *argv[]) {
 #endif
 
         auto start = timer::now();
-        d->encode(str);
+        d->encode(str, n);
         auto stop = timer::now();
 
 #ifdef MEM_MONITOR
@@ -99,7 +102,9 @@ int main(int argc, char *argv[]) {
 #endif
 
         auto start = timer::now();
-        char *str = d->decode();
+        char *str;
+        int_t n;
+        tie(str, n) = d->decode();
         auto stop = timer::now();
 
         cout << "input:\t" << d->size_in_bytes() << " bytes" << endl;
@@ -109,7 +114,7 @@ int main(int argc, char *argv[]) {
                     1000.0
              << setprecision(2) << fixed << " seconds" << endl;
 
-        output.write(str, strlen(str));
+        output.write(str, n);
         input.close();
         output.close();
     } else if (strcmp(mode, "-s") == 0) {
@@ -133,31 +138,30 @@ int main(int argc, char *argv[]) {
         uint_t *SA;
         std::cout << "Building SA under decoding." << std::endl;
         auto start = timer::now();
-        unsigned char *str = d->decode_saca(&SA);
+        char *str;
+        int_t n;
+        tie(str, n) = d->decode_saca(&SA);
         auto stop = timer::now();
-
-        size_t n = strlen((char *)str) + 1;
 
 #if CHECK
         if (!d->suffix_array_check(SA, (unsigned char *)str, (uint_t)n,
-                                  sizeof(char), 0))
+                                   sizeof(char), 0))
             std::cout << "isNotSorted!!\n";
         else
             std::cout << "isSorted!!\n";
 #endif
 
         cout << "input:\t" << d->size_in_bytes() << " bytes" << endl;
-        cout << "output:\t" << n - 1 << " bytes" << endl;
+        cout << "output:\t" << n << " bytes" << endl;
         cout << "SA:\t" << n * sizeof(uint_t) << " bytes" << endl;
         std::cout << "time: "
                   << (double)duration_cast<seconds>(stop - start).count()
                   << " seconds" << endl;
 
-        size_t real_n = n - 1;
-        output1.write((const char *)&real_n, sizeof(real_n));
-        output1.write((const char *)str, (real_n) * sizeof(char));
-        output2.write((const char *)&real_n, sizeof(real_n));
-        output2.write((const char *)&SA[1], sizeof(sa_int32_t) * real_n);
+        output1.write((const char *)&n, sizeof(n));
+        output1.write((const char *)str, (n) * sizeof(char));
+        output2.write((const char *)&n, sizeof(n));
+        output2.write((const char *)SA, sizeof(uint_t) * n);
         output1.close();
         output2.close();
         // input.close();
@@ -180,26 +184,26 @@ int main(int argc, char *argv[]) {
         int_t *LCP;
         std::cout << "Building SA+LCP under decoding." << std::endl;
         auto start = timer::now();
-        unsigned char *str = d->decode_saca_lcp(&SA, &LCP);
+        int_t n = 0;
+        char *str = nullptr;
+        tie(str, n) = d->decode_saca_lcp(&SA, &LCP);
         auto stop = timer::now();
-
-        size_t n = strlen((char *)str) + 1;
 
 #if CHECK
         if (!d->suffix_array_check(SA, (unsigned char *)str, (uint_t)n,
-                                  sizeof(char), 0))
+                                   sizeof(char), 0))
             std::cout << "isNotSorted!!\n";
         else
             std::cout << "isSorted!!\n";
         if (!d->lcp_array_check(SA, LCP, (unsigned char *)str, (uint_t)n,
-                               sizeof(char), 0))
+                                sizeof(char), 0))
             std::cout << "isNotLCP!!\n";
         else
             std::cout << "isLCP!!\n";
 #endif
 
         cout << "input:\t" << d->size_in_bytes() << " bytes" << endl;
-        cout << "output:\t" << n - 1 << " bytes" << endl;
+        cout << "output:\t" << n << " bytes" << endl;
         cout << "SA:\t" << n * sizeof(uint_t) << " bytes" << endl;
         cout << "LCP:\t" << n * sizeof(uint_t) << " bytes" << endl;
         std::cout << "time: "
@@ -214,12 +218,11 @@ int main(int argc, char *argv[]) {
         std::ofstream output2(outfile2, std::ios::binary);
         std::ofstream output3(outfile3, std::ios::binary);
 
-        n--;
         output1.write((const char *)str, (n) * sizeof(char));
         output2.write((const char *)&n, sizeof(n));
-        output2.write((const char *)&SA[1], sizeof(uint_t) * n);
+        output2.write((const char *)SA, sizeof(n) * n);
         output3.write((const char *)&n, sizeof(n));
-        output3.write((const char *)&LCP[1], sizeof(int_t) * n);
+        output3.write((const char *)LCP, sizeof(n) * n);
 
         output1.close();
         output2.close();
@@ -227,8 +230,7 @@ int main(int argc, char *argv[]) {
         input.close();
         delete[] SA;
         delete[] LCP;
-    } 
-    else if (strcmp(mode, "-e") == 0) {
+    } else if (strcmp(mode, "-e") == 0) {
         std::ifstream input(argv[2], std::ios::binary);
         std::ifstream query(argv[3]);
 

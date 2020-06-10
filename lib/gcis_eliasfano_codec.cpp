@@ -31,44 +31,100 @@ void gcis_eliasfano_codec::load(std::istream &i) {
     i.read((char *)&fully_decoded_tail_len, sizeof(fully_decoded_tail_len));
 }
 
-gcis_eliasfano_codec_level gcis_eliasfano_codec::decompress() {
-    gcis_eliasfano_codec_level gd;
-    uint64_t number_of_rules = 0;
-    for (uint64_t i = 0; i < rule_suffix_length.size(); i++) {
+// gcis_eliasfano_codec_level gcis_eliasfano_codec::decompress() {
+//     gcis_eliasfano_codec_level gd;
+//     uint64_t number_of_rules = 0;
+//     for (uint64_t i = 0; i < rule_suffix_length.size(); i++) {
+//         if (rule_suffix_length.access_bv(i)) {
+//             number_of_rules++;
+//         }
+//     }
+//     uint64_t total_lcp_length = 0;
+//     uint64_t total_rule_suffix_length = 0;
+//     // Compute the total LCP length
+//     for (uint64_t i = 0; i < number_of_rules; i++) {
+//         total_lcp_length += lcp[i];
+//     }
+//     // Compute the total rule suffix length and the number of rules
+//     for (uint64_t i = 0; i < number_of_rules; i++) {
+//         total_rule_suffix_length += rule_suffix_length[i];
+//     }
+
+//     // Resize data structures
+//     uint64_t total_length = total_lcp_length + total_rule_suffix_length;
+//     sdsl::bit_vector rule_delim(total_length + 1);
+//     gd.rule.resize(total_length);
+//     gd.rule.width(sdsl::bits::hi(alphabet_size - 1) + 1);
+//     sdsl::util::set_to_value(rule_delim, 0);
+
+//     uint64_t rule_start = 0;
+//     uint64_t prev_rule_start;
+//     uint64_t start = 0;
+
+//     for (uint64_t i = 0; i < number_of_rules; i++) {
+
+//         uint64_t lcp_length = lcp[i];
+//         uint64_t rule_length = rule_suffix_length[i];
+//         total_length = lcp_length + rule_length;
+
+//         // Copy the contents of the previous rule by LCP length chars
+//         uint64_t j = 0;
+//         while (j < lcp_length) {
+//             gd.rule[rule_start + j] = gd.rule[prev_rule_start + j];
+//             j++;
+//         }
+
+//         // Copy the remaining suffix rule
+//         while (j < total_length) {
+//             assert(start < rule.size());
+//             gd.rule[rule_start + j] = rule[start++];
+//             j++;
+//         }
+
+//         rule_delim[rule_start] = 1;
+//         prev_rule_start = rule_start;
+//         rule_start += total_length;
+//     }
+//     rule_delim[rule_delim.size() - 1] = 1;
+//     gd.rule_delim.encode(rule_delim);
+
+//     return gd;
+// }
+
+gcis_eliasfano_pointers_codec_level gcis_eliasfano_codec::decompress() {
+    gcis_eliasfano_pointers_codec_level gd;
+    uint_t number_of_rules = 0;
+    for (uint_t i = 0; i < rule_suffix_length.size(); i++) {
         if (rule_suffix_length.access_bv(i)) {
             number_of_rules++;
         }
     }
-    uint64_t total_lcp_length = 0;
-    uint64_t total_rule_suffix_length = 0;
+    uint_t total_lcp_length = 0;
+    uint_t total_rule_suffix_length = 0;
     // Compute the total LCP length
-    for (uint64_t i = 0; i < number_of_rules; i++) {
+    for (uint_t i = 0; i < number_of_rules; i++) {
         total_lcp_length += lcp[i];
     }
     // Compute the total rule suffix length and the number of rules
-    for (uint64_t i = 0; i < number_of_rules; i++) {
+    for (uint_t i = 0; i < number_of_rules; i++) {
         total_rule_suffix_length += rule_suffix_length[i];
     }
 
     // Resize data structures
-    uint64_t total_length = total_lcp_length + total_rule_suffix_length;
-    sdsl::bit_vector rule_delim(total_length + 1);
+    uint_t total_length = total_lcp_length + total_rule_suffix_length;
     gd.rule.resize(total_length);
-    gd.rule.width(sdsl::bits::hi(alphabet_size - 1) + 1);
-    sdsl::util::set_to_value(rule_delim, 0);
+    uint_t rule_start = 0;
+    uint_t prev_rule_start;
+    uint_t start = 0;
 
-    uint64_t rule_start = 0;
-    uint64_t prev_rule_start;
-    uint64_t start = 0;
+    for (uint_t i = 0; i < number_of_rules; i++) {
 
-    for (uint64_t i = 0; i < number_of_rules; i++) {
-
-        uint64_t lcp_length = lcp[i];
-        uint64_t rule_length = rule_suffix_length[i];
+        uint_t lcp_length = lcp[i];
+        uint_t rule_length = rule_suffix_length[i];
         total_length = lcp_length + rule_length;
 
         // Copy the contents of the previous rule by LCP length chars
-        uint64_t j = 0;
+        uint_t j = 0;
         while (j < lcp_length) {
             gd.rule[rule_start + j] = gd.rule[prev_rule_start + j];
             j++;
@@ -81,13 +137,11 @@ gcis_eliasfano_codec_level gcis_eliasfano_codec::decompress() {
             j++;
         }
 
-        rule_delim[rule_start] = 1;
+        gd.rule_pos.push_back(rule_start);
         prev_rule_start = rule_start;
         rule_start += total_length;
     }
-    rule_delim[rule_delim.size() - 1] = 1;
-    gd.rule_delim.encode(rule_delim);
-
+    gd.rule_pos.push_back(rule_start);
     return gd;
 }
 
@@ -112,19 +166,61 @@ void gcis_eliasfano_codec_level::expand_rule(uint64_t rule_num, char *s,
     }
 }
 
-void gcis_eliasfano_codec_level::expand_rule_bkt(uint64_t rule_num,
-                                                 sdsl::int_vector<> &r_string,
-                                                 uint64_t &l, int_t *bkt) {
-    uint64_t rule_start = rule_delim.pos(rule_num);
-    uint64_t rule_length = rule_delim.pos(rule_num + 1) - rule_start;
-    for (uint64_t i = 0; i < rule_length; i++) {
+void gcis_eliasfano_pointers_codec_level::expand_rule(uint_t rule_num,
+                                                      vector<uint_t> &r_string,
+                                                      uint_t &l) {
+    uint_t rule_start = rule_pos[rule_num];
+    uint_t rule_length = rule_pos[rule_num + 1] - rule_pos[rule_num];
+    for (uint_t i = 0; i < rule_length; i++) {
+        r_string[l++] = rule[rule_start + i];
+    }
+}
+
+void gcis_eliasfano_pointers_codec_level::expand_rule(uint_t rule_num, char *s,
+                                                      uint_t &l) {
+    uint_t rule_start = rule_pos[rule_num];
+    uint_t rule_length = rule_pos[rule_num + 1] - rule_pos[rule_num];
+    for (uint_t i = 0; i < rule_length; i++) {
+        s[l] = rule[rule_start + i];
+        l++;
+    }
+}
+
+void gcis_eliasfano_pointers_codec_level::expand_rule_bkt(
+    uint_t rule_num, vector<uint_t> &r_string, uint_t &l, int_t *bkt) {
+    uint_t rule_start = rule_pos[rule_num];
+    uint_t rule_length = rule_pos[rule_num + 1] - rule_pos[rule_num];
+    for (uint_t i = 0; i < rule_length; i++) {
         r_string[l++] = rule[rule_start + i];
         bkt[rule[rule_start + i]]++;
     }
 }
 
-void gcis_eliasfano_codec_level::expand_rule_bkt(uint64_t rule_num,
-                                                 unsigned char *s, uint64_t &l,
+void gcis_eliasfano_pointers_codec_level::expand_rule_bkt(uint_t rule_num,
+                                                          unsigned char *s,
+                                                          uint_t &l,
+                                                          int_t *bkt) {
+    uint_t rule_start = rule_pos[rule_num];
+    uint_t rule_length = rule_pos[rule_num + 1] - rule_pos[rule_num];
+    for (uint_t i = 0; i < rule_length; i++) {
+        s[l++] = rule[rule_start + i];
+        bkt[rule[rule_start + i]]++;
+    }
+}
+
+void gcis_eliasfano_codec_level::expand_rule_bkt(int_t rule_num,
+                                                 vector<int_t> &r_string,
+                                                 uint_t &l, int_t *bkt) {
+    uint_t rule_start = rule_delim.pos(rule_num);
+    uint_t rule_length = rule_delim.pos(rule_num + 1) - rule_start;
+    for (uint_t i = 0; i < rule_length; i++) {
+        r_string[l++] = rule[rule_start + i];
+        bkt[rule[rule_start + i]]++;
+    }
+}
+
+void gcis_eliasfano_codec_level::expand_rule_bkt(int_t rule_num,
+                                                 unsigned char *s, uint_t &l,
                                                  int_t *bkt) {
     uint64_t rule_start = rule_delim.pos(rule_num);
     uint64_t rule_length = rule_delim.pos(rule_num + 1) - rule_start;

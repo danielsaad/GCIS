@@ -111,7 +111,7 @@ gcis_s8b_pointers_codec_level gcis_s8b_codec::decompress() {
     gd.rule.width(sdsl::bits::hi(alphabet_size - 1) + 1);
     gd.rule.resize(total_length);
     uint64_t rule_start = 0;
-    uint64_t prev_rule_start;
+    uint64_t prev_rule_start=0;
     uint64_t start = 0;
     lcp.reset();
     rule_suffix_length.reset();
@@ -146,44 +146,66 @@ gcis_s8b_pointers_codec_level gcis_s8b_codec::decompress() {
 }
 
 
-void gcis_s8b_codec_level::expand_rule(uint64_t rule_num,
+void gcis_s8b_codec_level::expand_rule(uint_t rule_num,
                                        sdsl::int_vector<> &r_string,
-                                       uint64_t &l) {
-    uint64_t rule_start = rule_delim_sel(rule_num + 1);
-    uint64_t rule_length = rule_delim_sel(rule_num + 2) - rule_start;
+                                       uint_t &l) {
+    uint_t rule_start = rule_delim_sel(rule_num + 1);
+    uint_t rule_length = rule_delim_sel(rule_num + 2) - rule_start;
     for (uint64_t i = 0; i < rule_length; i++) {
         r_string[l] = rule[rule_start + i];
         l++;
     }
 }
 
-void gcis_s8b_codec_level::expand_rule(uint64_t rule_num, char *s,
-                                       uint64_t &l) {
-    uint64_t rule_start = rule_delim_sel(rule_num + 1);
-    uint64_t rule_length = rule_delim_sel(rule_num + 2) - rule_start;
+void gcis_s8b_codec_level::expand_rule(uint_t rule_num, char *s,
+                                       uint_t &l) {
+    uint_t rule_start = rule_delim_sel(rule_num + 1);
+    uint_t rule_length = rule_delim_sel(rule_num + 2) - rule_start;
     for (uint64_t i = 0; i < rule_length; i++) {
         s[l] = rule[rule_start + i];
         l++;
     }
 }
 
-void gcis_s8b_pointers_codec_level::expand_rule(uint64_t rule_num,
+void gcis_s8b_pointers_codec_level::expand_rule(uint_t rule_num,
                                                 sdsl::int_vector<> &r_string,
-                                                uint64_t &l) {
-    uint64_t rule_start = rule_pos[rule_num];
-    uint64_t rule_length = rule_pos[rule_num + 1] - rule_pos[rule_num];
-    for (uint64_t i = 0; i < rule_length; i++) {
+                                                uint_t &l) {
+    uint_t rule_start = rule_pos[rule_num];
+    uint_t rule_length = rule_pos[rule_num + 1] - rule_pos[rule_num];
+    for (uint_t i = 0; i < rule_length; i++) {
         r_string[l] = rule[rule_start + i];
         l++;
     }
 }
 
-void gcis_s8b_pointers_codec_level::expand_rule(uint64_t rule_num, char *s,
-                                                uint64_t &l) {
-    uint64_t rule_start = rule_pos[rule_num];
-    uint64_t rule_length = rule_pos[rule_num + 1] - rule_pos[rule_num];
-    for (uint64_t i = 0; i < rule_length; i++) {
+void gcis_s8b_pointers_codec_level::expand_rule(uint_t rule_num, char *s,
+                                                uint_t &l) {
+    uint_t rule_start = rule_pos[rule_num];
+    uint_t rule_length = rule_pos[rule_num + 1] - rule_pos[rule_num];
+    for (uint_t i = 0; i < rule_length; i++) {
         s[l] = rule[rule_start + i];
         l++;
+    }
+}
+
+void gcis_s8b_pointers_codec_level::expand_rule_bkt(
+    uint_t rule_num, sdsl::int_vector<> &r_string, uint_t &l, int_t *bkt) {
+    uint_t rule_start = rule_pos[rule_num];
+    uint_t rule_length = rule_pos[rule_num + 1] - rule_pos[rule_num];
+    for (uint_t i = 0; i < rule_length; i++) {
+        r_string[l++] = rule[rule_start + i];
+        bkt[rule[rule_start + i]]++;
+    }
+}
+
+void gcis_s8b_pointers_codec_level::expand_rule_bkt(uint_t rule_num,
+                                                          unsigned char *s,
+                                                          uint_t &l,
+                                                          int_t *bkt) {
+    uint_t rule_start = rule_pos[rule_num];
+    uint_t rule_length = rule_pos[rule_num + 1] - rule_pos[rule_num];
+    for (uint_t i = 0; i < rule_length; i++) {
+        s[l++] = rule[rule_start + i];
+        bkt[rule[rule_start + i]]++;
     }
 }

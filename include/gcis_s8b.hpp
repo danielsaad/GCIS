@@ -44,15 +44,15 @@ class gcis_dictionary<gcis_s8b_codec> : public gcis_abstract<gcis_s8b_codec> {
     //     return str;
     // }
 
-char *decode() override {
+    pair<char *, int_t> decode() override {
         sdsl::int_vector<> r_string = reduced_string;
-        char *str = 0;
+        char *str = nullptr;
         for (int64_t i = g.size() - 1; i >= 0; i--) {
             sdsl::int_vector<> next_r_string;
             gcis_s8b_pointers_codec_level gd = std::move(g[i].decompress());
             next_r_string.width(sdsl::bits::hi(g[i].alphabet_size - 1) + 1);
             next_r_string.resize(g[i].string_size);
-            uint64_t l = 0;
+            uint_t l = 0;
             if (i == 0) {
                 // Convert the reduced string in the original text
                 str = new char[g[i].string_size];
@@ -73,8 +73,9 @@ char *decode() override {
                 r_string = std::move(next_r_string);
             }
         }
-        return str;
+        return make_pair(str, g[0].string_size);
     }
+
   private:
     void gc_is(int_t *s, uint_t *SA, int_t n, int_t K, int cs, int level) {
         int_t i, j;
@@ -98,7 +99,7 @@ char *decode() override {
 
         // Classify the type of each character
         //  tset(n - 2, 0);
-        tset(n - 1, 1); // the sentinel must be in s1, important!!!
+        tset(n - 1, 0); // the last symbol is L-type
         for (i = n - 2; i >= 0; i--)
             tset(i, (chr(i) < chr(i + 1) ||
                      (chr(i) == chr(i + 1) && tget(i + 1) == 1))
@@ -123,7 +124,7 @@ char *decode() override {
             }
         }
 
-        SA[0] = n - 1; // set the single sentinel LMS-substring
+        // SA[0] = n - 1; // set the single sentinel LMS-substring
 
         // Induce L-Type suffixes by using LMS-Type and L-Type suffixes
         induceSAl(t, SA, s, bkt, n, K, cs, level);
@@ -155,28 +156,43 @@ char *decode() override {
         int_t name = -1;
         int_t prev = -1;
 
+        int_t prev_len = -1;
+        int_t cur_len = -1;
+
         int_t last_set_lcp_bit = -1;
         uint_t rule_index = 0;
         g.push_back(gcis_s8b_codec());
         // Iterate over all suffixes in the LMS sorted array
         for (i = 0; i < n1; i++) {
             int_t pos = SA[i];
+            cur_len = 1;
+            while (pos + cur_len < n && !isLMS(pos + cur_len))
+                cur_len++;
             bool diff = false;
             int_t d;
             // d equals to the LCP between two consecutive LMS-substrings
-            for (d = 0; d < n; d++) {
-                // If is first suffix in LMS order (sentinel), or one of the
-                // suffixes reached the last position of T, or the
-                // characters of T differs or the type os suffixes differ.
-                if (prev == -1 || pos + d == n - 1 || prev + d == n - 1 ||
-                    chr(pos + d) != chr(prev + d) ||
-                    (isLMS(pos + d) ^ (isLMS(prev + d)))) {
+            // for (d = 0; d < n; d++) {
+            //     // If is first suffix in LMS order (sentinel), or one of the
+            //     // suffixes reached the last position of T, or the
+            //     // characters of T differs or the type os suffixes differ.
+            //     if (prev == -1 || pos + d == n - 1 || prev + d == n - 1 ||
+            //         chr(pos + d) != chr(prev + d) ||
+            //         (isLMS(pos + d) ^ (isLMS(prev + d)))) {
+            //         diff = true;
+            //         break;
+            //     }
+            //     // The comparison has reached the end of at least one
+            //     // LMS-substring
+            //     if (d > 0 && (isLMS(pos + d) || isLMS(prev + d))) {
+            //         break;
+            //     }
+            // }
+            if (prev == -1 || prev_len != cur_len)
+                diff = true;
+
+            for (d = 0; d < min(cur_len, prev_len); d++) {
+                if (chr(pos + d) != chr(prev + d)) {
                     diff = true;
-                    break;
-                }
-                // The comparison has reached the end of at least one
-                // LMS-substring
-                if (d > 0 && (isLMS(pos + d) || isLMS(prev + d))) {
                     break;
                 }
             }
@@ -184,29 +200,17 @@ char *decode() override {
             // The consecutive LMS-substrings differs
             if (diff) {
 
-                // Get the length of the current lms-substring
-                size_t len = 1;
-                if (pos != n - 1)
-                    while (!isLMS(pos + len))
-                        len++;
-
-                // Get the length of the previous LMS-Substring
-                size_t len2 = 1;
-                if (prev != n - 1)
-                    while (!isLMS(prev + len2))
-                        len2++;
-
                 g[level].lcp.encode(d);
-                g[level].rule_suffix_length.encode(len - d);
-                g[level].rule.resize(g[level].rule.size() + len - d);
+                g[level].rule_suffix_length.encode(cur_len - d);
+                g[level].rule.resize(g[level].rule.size() + cur_len - d);
 
 #ifdef REPORT
-                total_rule_len += len;
+                total_rule_len += cur_len;
                 total_lcp += d;
-                total_rule_suffix_length += len - d;
+                total_rule_suffix_length += cur_len - d;
 #endif
 
-                for (j = 0; j < len - d && j + pos + d < n; j++) {
+                for (j = 0; j < cur_len - d && j + pos + d < n; j++) {
 #ifdef REPORT
                     if (j + pos + d + 1 < n &&
                         chr(j + pos + d) == chr(j + pos + d + 1)) {
@@ -218,6 +222,7 @@ char *decode() override {
                 }
                 name++;
                 prev = pos;
+                prev_len = cur_len;
             }
 #ifdef REPORT
             else {
@@ -263,27 +268,33 @@ char *decode() override {
         gcis::util::print_report("String Size = ", n, "\n");
         gcis::util::print_report("Number of Rules = ", name + 1, "\n");
         gcis::util::print_report("Average Rule Length = ",
-                     (double)total_rule_len / (name + 1), "\n");
-        gcis::util::print_report("Number of Discarded Rules = ", discarded_rules_n, "\n");
-        gcis::util::print_report("Average Discarded Rules Length = ",
-                     (double)discarded_rules_len / discarded_rules_n, "\n");
-        gcis::util::print_report("Average LCP = ", (double)total_lcp / (name + 1), "\n");
+                                 (double)total_rule_len / (name + 1), "\n");
+        gcis::util::print_report(
+            "Number of Discarded Rules = ", discarded_rules_n, "\n");
+        gcis::util::print_report(
+            "Average Discarded Rules Length = ",
+            (double)discarded_rules_len / discarded_rules_n, "\n");
+        gcis::util::print_report(
+            "Average LCP = ", (double)total_lcp / (name + 1), "\n");
         gcis::util::print_report("Average Rule Suffix Length = ",
-                     (double)total_rule_suffix_length / (name + 1), "\n");
+                                 (double)total_rule_suffix_length / (name + 1),
+                                 "\n");
         gcis::util::print_report(
             "Dictionary Level Size (bytes) =", g[level].size_in_bytes(), "\n");
-        gcis::util::print_report("LCP Size (bits) = ", g[level].lcp.size(), "\n");
-        gcis::util::print_report("Rule Suffix Length (total) = ", g[level].rule.size(),
-                     "\n");
+        gcis::util::print_report("LCP Size (bits) = ", g[level].lcp.size(),
+                                 "\n");
+        gcis::util::print_report(
+            "Rule Suffix Length (total) = ", g[level].rule.size(), "\n");
         gcis::util::print_report("Rule Suffix Width (bits per symbol) = ",
-                     (int_t)g[level].rule.width(), "\n");
+                                 (int_t)g[level].rule.width(), "\n");
         gcis::util::print_report("Tail Length = ", g[level].tail.size(), "\n");
         gcis::util::print_report("Tail Width (bits per symbol) = ",
-                     (int_t)g[level].tail.width(), "\n");
-        gcis::util::print_report("Run Length Potential (total) = ", run_length_potential,
-                     "\n");
+                                 (int_t)g[level].tail.width(), "\n");
+        gcis::util::print_report(
+            "Run Length Potential (total) = ", run_length_potential, "\n");
         gcis::util::print_report("Avg Run Length per Rule Suffix = ",
-                     (double)run_length_potential / (name + 1), "\n");
+                                 (double)run_length_potential / (name + 1),
+                                 "\n");
 #endif
 
         bool premature_stop =
@@ -295,7 +306,8 @@ char *decode() override {
         } else { // generate the suffix array of s1 directly
             if (premature_stop) {
 #ifdef REPORT
-                gcis::util::print_report("Premature Stop employed at level ", level, "\n");
+                gcis::util::print_report("Premature Stop employed at level ",
+                                         level, "\n");
 #endif
                 reduced_string.resize(n);
                 for (j = 0; j < n; j++) {
@@ -315,8 +327,9 @@ char *decode() override {
 #ifdef REPORT
             gcis::util::print_report(
                 "Reduced String Length = ", (int_t)reduced_string.size(), "\n");
-            gcis::util::print_report("Reduced String Width (bits per symbol) = ",
-                         (int_t)reduced_string.width(), "\n");
+            gcis::util::print_report(
+                "Reduced String Width (bits per symbol) = ",
+                (int_t)reduced_string.width(), "\n");
 #endif
         }
         delete[] t;
@@ -325,37 +338,288 @@ char *decode() override {
 
 class gcis_s8b_pointers : public gcis_dictionary<gcis_s8b_codec> {
   public:
-    char *decode() override {
+    pair<char *, int_t> decode() override {
         sdsl::int_vector<> r_string = reduced_string;
         char *str = 0;
         for (int64_t i = g.size() - 1; i >= 0; i--) {
-            sdsl::int_vector<> next_r_string;
             gcis_s8b_pointers_codec_level gd = std::move(g[i].decompress());
+            sdsl::int_vector<> next_r_string;
             next_r_string.width(sdsl::bits::hi(g[i].alphabet_size - 1) + 1);
             next_r_string.resize(g[i].string_size);
-            uint64_t l = 0;
+            uint_t l = 0;
             if (i == 0) {
                 // Convert the reduced string in the original text
                 str = new char[g[i].string_size];
                 for (auto t : g[i].tail) {
                     str[l++] = (char)t;
                 }
-                for (uint64_t j = 0; j < r_string.size(); j++) {
+                for (uint_t j = 0; j < r_string.size(); j++) {
                     gd.expand_rule(r_string[j], str, l);
                 }
             } else {
                 // Convert the reduced string in the previous reduced string
-                for (uint64_t j = 0; j < g[i].tail.size(); j++) {
+                for (uint_t j = 0; j < g[i].tail.size(); j++) {
                     next_r_string[l++] = g[i].tail[j];
                 }
-                for (uint64_t j = 0; j < r_string.size(); j++) {
+                for (uint_t j = 0; j < r_string.size(); j++) {
                     gd.expand_rule(r_string[j], next_r_string, l);
                 }
                 r_string = std::move(next_r_string);
             }
         }
-        return str;
+        return make_pair(str, g[0].string_size);
     }
+
+    pair<char *,int_t> decode_saca(uint_t **sa) override {
+
+        sdsl::int_vector<> r_string = reduced_string;
+        unsigned char *str;
+        uint_t n = g[0].string_size;
+        uint_t *SA = new uint_t[n];
+
+        int_t *s = (int_t *)SA + n / 2;
+
+        int cs = sizeof(int_t);
+        if (g.size()) {
+
+            for (int64_t level = g.size() - 1; level >= 0; level--) {
+#if TIME
+                auto start = timer::now();
+#endif
+
+                n = g[level].string_size;
+
+                uint_t n1 = r_string.size();
+                uint_t *SA1 = SA, *s1 = SA + n - n1;
+
+                // copy to s1[1]
+                if (level == g.size() - 1)
+                    for (uint_t i = 0; i < n1; i++)
+                        SA1[r_string[i]] = i;
+                else
+                    for (uint_t i = 0; i < n1; i++)
+                        s1[i] = SA[i];
+
+#if DEBUG
+                cout << endl
+                     << "level = " << level
+                     << "\t string_size = " << g[level].string_size << "\n"
+                     << "alphabet_size = " << g[level].alphabet_size << endl;
+                cout << "n = " << n << "\nn1 = " << n1 << endl;
+                cout << "\n####" << endl;
+                cout << "s1 = ";
+                for (uint_t i = 0; i < n1; i++) {
+                    cout << s1[i] << " ";
+                    cout << endl;
+                }
+#endif
+
+#if TIME
+                auto expand = timer::now();
+#endif
+
+                gcis_s8b_pointers_codec_level gd =
+                    std::move(g[level].decompress());
+                sdsl::int_vector<> next_r_string(
+                    g[level].string_size, 0,
+                    sdsl::bits::hi(g[level].alphabet_size - 1) + 1);
+                uint_t l = 0;
+
+                int_t K = g[level].alphabet_size; // alphabet
+
+                int_t *bkt = new int_t[K]; // bucket
+                int_t *cnt = new int_t[K]; // counters
+
+                init_buckets(cnt, K);
+
+                if (level == 0) {
+
+                    // delete[] s;
+                    // Convert the reduced string in the original text
+                    str = new unsigned char[g[level].string_size];
+                    for (uint64_t j = 0; j < g[level].tail.size(); j++) {
+                        str[l] = g[level].tail[j];
+                        cnt[str[l++]]++; // count frequencies
+                    }
+                    for (uint64_t j = 0; j < r_string.size(); j++) {
+                        gd.expand_rule_bkt(r_string[j], str, l, cnt);
+                    }
+                    n = g[level].string_size;
+                    // Classify the type of each character
+                    uint_t cur_t, succ_t;
+                    uint_t j = n1 - 1;
+                    s1[j--] = n - 1;
+                    succ_t = 0; // s[n-2] must be L-type
+                    for (uint_t i = n - 2; i > 0; i--) {
+                        cur_t = (str[i - 1] < str[i] ||
+                                 (str[i - 1] == str[i] && succ_t == 1))
+                                    ? 1
+                                    : 0;
+                        if (cur_t == 0 && succ_t == 1)
+                            s1[j--] = i;
+                        succ_t = cur_t;
+                    }
+                } else {
+
+                    init_buckets(bkt, K);
+
+                    // Convert the reduced string in the previous reduced string
+                    for (uint_t j = 0; j < g[level].tail.size(); j++) {
+                        next_r_string[l++] = g[level].tail[j];
+                        cnt[g[level].tail[j]]++; // count frequencies
+                    }
+                    for (uint_t j = 0; j < r_string.size(); j++) {
+                        gd.expand_rule_bkt(r_string[j], next_r_string, l, cnt);
+                    }
+                    r_string = std::move(next_r_string);
+
+                    // n=r_string.size();
+                    n = g[level].string_size;
+                    // copy to s[1]
+                    for (uint_t i = 0; i < n; i++)
+                        s[i] = r_string[i];
+
+                    // Classify the type of each character
+                    uint_t cur_t, succ_t;
+                    uint_t j = n1 - 1;
+                    s1[j--] = n - 1;
+                    succ_t = 0; // s[n-2] must be L-type
+                    for (uint_t i = n - 2; i > 0; i--) {
+                        cur_t =
+                            (r_string[i - 1] < r_string[i] ||
+                             (r_string[i - 1] == r_string[i] && succ_t == 1))
+                                ? 1
+                                : 0;
+                        if (cur_t == 0 && succ_t == 1)
+                            s1[j--] = i;
+                        succ_t = cur_t;
+                    }
+                }
+
+#if TIME
+                auto end = timer::now();
+                cout << "expand: "
+                     << (double)duration_cast<seconds>(end - expand).count()
+                     << " seconds" << endl;
+#endif
+
+#if DEGUB
+                cout << "n = " << n << "\nn1 = " << n1 << endl;
+                cout << "level = " << level
+                     << "\t string_size = " << g[level].string_size << "\n"
+                     << "alphabet_size = " << g[level].alphabet_size << endl;
+                cout << "SA1: ";
+                for (uint_t i = 0; i < n1; i++)
+                    cout << SA[i] << ", ";
+                cout << endl;
+#endif
+
+                // stage 3: induce the result for the original problem
+                get_buckets(cnt, bkt, K, true);
+
+#if TIME
+                auto begin = timer::now();
+#endif
+
+#if TIME
+                end = timer::now();
+                cout << "classify: "
+                     << (double)duration_cast<seconds>(end - begin).count()
+                     << " seconds" << endl;
+                begin = timer::now();
+#endif
+
+#if DEGUB
+                for (int_t i = 0; i < n; i++) {
+                    cout << tget(i) << " ";
+                }
+                cout << endl;
+#endif
+
+                int_t j = 0;
+                for (int_t i = 0; i < n1; i++) {
+                    SA1[i] = s1[SA1[i]]; // get index in s1
+                }
+                for (int_t i = n1; i < n; i++) {
+                    SA[i] = EMPTY; // init SA[n1..n-1]
+                }
+
+                if (level) {
+                    for (int_t i = n1 - 1; i >= 0; i--) {
+                        j = SA[i];
+                        SA[i] = EMPTY;
+                        SA[bkt[chr(j)]--] = j;
+                    }
+                } else {
+                    for (int_t i = n1 - 1; i > 0; i--) {
+                        j = SA[i];
+                        SA[i] = EMPTY;
+                        SA[bkt[str[j]]--] = j;
+                    }
+                    SA[0] = n - 1;
+                }
+
+#if TIME
+                end = timer::now();
+                cout << "position: "
+                     << (double)duration_cast<seconds>(end - begin).count()
+                     << " seconds" << endl;
+                begin = timer::now();
+#endif
+
+                if (level)
+                    induceSAl(SA, s, cnt, bkt, n, K, cs, level);
+                else
+                    induceSAl(SA, (int_t *)str, cnt, bkt, n, K,
+                              sizeof(unsigned char), level);
+
+#if TIME
+                end = timer::now();
+                cout << "induce L: "
+                     << (double)duration_cast<seconds>(end - begin).count()
+                     << " seconds" << endl;
+                begin = timer::now();
+#endif
+
+                if (level)
+                    induceSAs(SA, s, cnt, bkt, n, K, cs, level);
+                else
+                    induceSAs(SA, (int_t *)str, cnt, bkt, n, K,
+                              sizeof(unsigned char), level);
+
+#if TIME
+                end = timer::now();
+                cout << "induce S: "
+                     << (double)duration_cast<seconds>(end - begin).count()
+                     << " seconds" << endl;
+#endif
+
+#if DEGUB
+                cout << "SA: ";
+                for (uint_t i = 0; i < n; i++) {
+                    cout << SA[i] << ", ";
+                }
+                cout << endl;
+#endif
+                delete[] bkt;
+                delete[] cnt;
+
+#if TIME
+                auto stop = timer::now();
+                cout << "time: "
+                     << (double)duration_cast<seconds>(stop - start).count()
+                     << " seconds" << endl;
+#endif
+            }
+        } else {
+            str = new unsigned char[reduced_string.size()];
+            for (uint64_t i = 0; i < reduced_string.size(); i++)
+                str[i] = reduced_string[i];
+        }
+
+        *sa = SA;
+        return make_pair((char*) str,g[0].string_size);
+    } // end decode_sac
 };
 
 #endif // GC_IS_GCIS_S8B_HPP

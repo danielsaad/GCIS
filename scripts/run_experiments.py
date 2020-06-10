@@ -7,15 +7,18 @@ import gz
 import sevenz
 import gcis
 import repair
-
+import relz
 
 
 enable_benchmark = True
 
-enable_gz = False
+enable_gz = True
+enable_bzip = True
 enable_7z = True
 enable_gc_is = True
 enable_repair = True
+enable_relz = True
+enable_bigrepair = True
 enable_testing = True
 
 enable_statistics = True

@@ -69,11 +69,12 @@ def check_folders(input_folder, indices_folder, queries_folder, output_folder):
         basename = os.path.basename(inf)
         ouf = os.path.join(indices_folder, basename+'.gcisidx')
         if(not os.path.isfile(ouf)):
-            print('Missing index for ', basename, 'in', output_folder)
+            print('Missing index for ', basename, 'in', output_folder,'building it.')
+            gcis.gcis_build_index(inf, ouf)
 
 
 def parse_file(statistics_ouptut):
-    pattern = 0
+    pattern_len = 0
     occ_total = 0
     total_locate_time = 0
     mean_locate_time_per_pattern = 0
@@ -104,6 +105,9 @@ def run_extract_self_index(input_folder, indices_folder, queries_folder, output_
         print('processing', basename)
         ouf = os.path.join(output_folder, basename+'-self_index_locate.csv')
         idxf = os.path.join(indices_folder, basename+'.gcisidx')
+        if(not os.path.isfile(idxf)):
+            print(idxf,' was not produced. Error. Skipping.')
+            continue
         queries_files = [os.path.join(queries_folder, f) for f in os.listdir(
             queries_folder) if f.startswith(basename)]
         if(not queries_files):
@@ -115,6 +119,15 @@ def run_extract_self_index(input_folder, indices_folder, queries_folder, output_
             out, _ = gcis.gcis_self_index_locate(inf, idxf, qf)
             info.append(parse_file(out))
             print(info)
+            # check if profile ouput exists and renames it to the result folder
+            if(os.path.isfile('gperf.out')):
+                new_gperf_location = os.path.join(
+                    output_folder, basename+'-self_index_locate-'+info[-1][0]+'-gperf.out')
+                os.rename('gperf.out', new_gperf_location)
+                # convert to cachegrind format
+                with open(os.path.join(output_folder, basename+'-self_index_locate-'+info[-1][0]+'-gperf.callgrind'), 'w') as callgrind_file:
+                    subprocess.run(['pprof', '--callgrind', '../bin/gcis-ef',
+                                    new_gperf_location], stdout=callgrind_file)
 
         info = sorted(info, key=lambda x: int(x[0]))
         with open(ouf, 'w') as csv_file:
@@ -122,6 +135,11 @@ def run_extract_self_index(input_folder, indices_folder, queries_folder, output_
             writer.writerow(header)
             for i in info:
                 writer.writerow(i)
+        
+        # check if profile ouput exists and renames it to the result folder
+        if(os.path.isfile('gmon.out')):
+            os.rename('gmon.out',os.path.join(output_folder,basename+'-self_index_locate-gmon.out'))
+
 
 
 '''

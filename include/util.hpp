@@ -14,6 +14,8 @@
 
 using namespace std;
 
+// #define m64
+
 #ifdef m64
 typedef int64_t int_t;
 typedef uint64_t uint_t;

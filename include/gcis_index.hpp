@@ -1549,6 +1549,7 @@ template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,
 void gcis_index<t_mapfbv, t_maptbv, t_mapwt, t_gridbv, t_gridwt>::set_nt(
     const t_mapwt &nt) {
     wtnt = std::move(nt);
+    // sdsl::util::assign(wtnt, nt);
 }
 
 template <typename t_mapfbv, typename t_maptbv, typename t_mapwt,

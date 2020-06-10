@@ -6,7 +6,17 @@
 #include "sdsl/wavelet_trees.hpp"
 #include <fstream>
 
-#define TEST
+// #define TEST
+// #define PROFILER
+
+#ifdef PROFILER
+#include <gperftools/profiler.h>
+#endif
+
+#ifdef MEM_MONITOR
+#include "mem_monitor.hpp"
+#include "util.hpp"
+#endif
 
 const int PATTERN_LEN = 10;
 
@@ -14,6 +24,9 @@ using namespace sdsl;
 using std::pair;
 using std::vector;
 using std::chrono::steady_clock;
+using mapwtcfg_t =
+    sdsl::wt_gmr<sdsl::int_vector<>,
+                 sdsl::inv_multi_perm_support<8UL, sdsl::int_vector<>>>;
 
 bool test_display(const gcis_index_private::gcis_index_bs<> &G,
                   const unsigned char *T, std::ifstream &queries_file) {
@@ -32,7 +45,7 @@ bool test_display(const gcis_index_private::gcis_index_bs<> &G,
         std::string str;
         str.resize(substring_sz);
         auto t1 = std::chrono::steady_clock::now();
-        G.display(queries[i].first, substring_sz, str);
+        G.display_L(queries[i].first, substring_sz, str);
         auto t2 = std::chrono::steady_clock::now();
         total_time_ns +=
             std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1)
@@ -41,7 +54,8 @@ bool test_display(const gcis_index_private::gcis_index_bs<> &G,
 #ifdef TEST
         std::string s;
         s.resize(substring_sz);
-        std::copy(T + queries[i].first, T + queries[i].first + substring_sz, s.begin());
+        std::copy(T + queries[i].first, T + queries[i].first + substring_sz,
+                  s.begin());
         if (str != s) {
             std::cout << "s:" << s << "\n display:" << str << std::endl;
             return false;
@@ -52,7 +66,8 @@ bool test_display(const gcis_index_private::gcis_index_bs<> &G,
     cout << "Extract took: " << total_time_ns / 1e6 << " ms." << endl;
     cout << "Extract took: " << total_time_ns / (1e3 * number_of_queries)
          << " us per substring" << endl;
-    cout << "Extract took: " << total_time_ns / (1e3 * number_of_queries * substring_sz)
+    cout << "Extract took: "
+         << total_time_ns / (1e3 * number_of_queries * substring_sz)
          << " us per symbol" << endl;
     return true;
 }
@@ -135,28 +150,32 @@ void print_usage(char *argv[]) {
          << endl;
 }
 
-void load_string_from_file(char *&str, const char *filename) {
+void load_string_from_file(char *&str, const char *filename,uint_t& n) {
     std::ifstream f(filename, std::ios::binary);
     f.seekg(0, std::ios::end);
-    uint64_t size = f.tellg();
+    uint_t size = f.tellg();
     f.seekg(0, std::ios::beg);
-    str = new char[size + 1];
-    f.read(str, size);
-    str[size] = 0;
+    str = new char[size];
+    f.read((char*) str, size);
+    n = size;
     f.close();
 };
 
 int main(int argc, char *argv[]) {
+#ifdef PROFILER
+    ProfilerStart("gperf.out");
+#endif
     char *str;
+    uint_t n;
     if (argc < 2) {
         print_usage(argv);
         return 0;
     }
     if (strcmp(argv[1], "-c") == 0) {
         std::ofstream output(argv[3], std::ios::binary);
-        load_string_from_file(str, argv[2]);
+        load_string_from_file(str, argv[2],n);
         gcis::grammar_builder<gcis::elias_fano_grammar> builder;
-        auto g = builder.build(str);
+        auto g = builder.build(str,n);
         g.serialize(output);
         output.close();
         delete[] str;
@@ -165,20 +184,31 @@ int main(int argc, char *argv[]) {
         ifstream grammar_file(argv[2], std::ifstream::in);
         gcis::elias_fano_grammar g;
         g.load(grammar_file);
-        str = g.decode();
-        output.write(str, strlen(str));
+        tie(str,n) = g.decode();
+        output.write(str, n);
         output.close();
         delete[] str;
     } else if (strcmp(argv[1], "-i") == 0) {
         std::cout << "INDEX CASE\n";
         //        sleep(5);
-        load_string_from_file(str, argv[2]);
+        load_string_from_file(str, argv[2],n);
+
+#ifdef MEM_MONITOR
+        mm.event("GCIS Grammar Build");
+#endif
+
         gcis::grammar_builder<gcis::elias_fano_grammar> builder;
-        auto g = builder.build(str);
-        gcis::index_basics<gcis::elias_fano_grammar> index(g, str);
+        auto g = builder.build(str,n);
+
+#ifdef MEM_MONITOR
+        mm.event("GCIS Index Basics");
+#endif
+        gcis::index_basics<gcis::elias_fano_grammar, mapwtcfg_t> index(g, str);
         std::cout << "gcis::index_basics<gcis::elias_fano_grammar>\n";
         //        sleep(5);
-        gcis_index_private::gcis_index_bs<> gcisIndexBs;
+        gcis_index_private::gcis_index_bs<sdsl::sd_vector<>, sdsl::sd_vector<>,
+                                          mapwtcfg_t>
+            gcisIndexBs;
         std::cout << "default gcis_index_private::gcis_index_bs<>\n";
         //        sleep(5);
         gcisIndexBs.set_bvfocc(index.m_focc);
@@ -189,13 +219,20 @@ int main(int argc, char *argv[]) {
         gcisIndexBs.set_tree(index.m_bv_dfuds);
         gcisIndexBs.set_l(index.m_l);
         std::cout << "loading index structures\n";
-        // gcisIndexBs.print();
+        gcisIndexBs.print();
+#ifdef MEM_MONITOR
+        mm.event("GCIS Index Points");
+#endif
 
         std::vector<gcis_index_private::gcis_index_grid<>::lpoint> points(
             index.m_grid_points.size());
         for (uint i = 0; i < points.size(); ++i)
             points[i] = {{index.m_grid_points[i].prev_rule + 1, i + 1},
                          index.m_grid_points[i].id};
+#ifdef MEM_MONITOR
+        mm.event("GCIS Index Grid");
+#endif
+
         gcis_index_private::gcis_index_grid<> _grid(points, index.m_pi.size(),
                                                     index.m_grid_points.size());
         std::cout << "gcis_index_private::gcis_index_grid<> _grid" << std::endl;
@@ -204,6 +241,10 @@ int main(int argc, char *argv[]) {
         std::cout << "size in bytes:" << gcisIndexBs.size_in_bytes()
                   << std::endl;
         std::ofstream output(argv[3], std::ios::binary);
+#ifdef MEM_MONITOR
+        mm.event("GCIS Index Serialize");
+#endif
+
         gcisIndexBs.serialize(output);
         output.close();
     } else if (strcmp(argv[1], "-x") == 0) {
@@ -215,7 +256,7 @@ int main(int argc, char *argv[]) {
         ifstream queries_file(argv[4], std::ifstream::in);
         gcis_index_private::gcis_index_bs<> gcisIndexBs;
         gcisIndexBs.load(index_file);
-        load_string_from_file(str, argv[2]);
+        load_string_from_file(str, argv[2],n);
         if (!test_display(gcisIndexBs, (const unsigned char *)str,
                           queries_file)) {
             std::cout << "TEST DISPLAY DOES NOT PASS\n";
@@ -243,7 +284,10 @@ int main(int argc, char *argv[]) {
         gcis_index_private::gcis_index_bs<> index;
         index.load(index_file);
         index.print_size_in_bytes();
-    } else {
+    } else {       
         print_usage(argv);
     }
+#ifdef PROFILER
+    ProfilerStop();
+#endif
 }

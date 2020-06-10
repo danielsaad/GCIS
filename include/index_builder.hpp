@@ -7,6 +7,7 @@
 #include "sdsl/lcp.hpp"
 #include "sdsl/rmq_support.hpp"
 #include "sdsl/wavelet_trees.hpp"
+#include "util.hpp"
 
 namespace gcis {
 
@@ -354,7 +355,13 @@ class elias_fano_dfs_helper {
     }
 };
 
-template <class grammar_t, class sparse_bv_t = sdsl::sd_vector<>,
+// typename t_mapfbv = sdsl::sd_vector<>,
+//     typename t_maptbv = sdsl::sd_vector<>, typename t_mapwt = sdsl::wt_gmr<>,
+//     typename t_gridbv = sdsl::rrr_vector<>, typename t_gridwt =
+//     sdsl::wt_int<>>
+
+template <class grammar_t, class wt_t = sdsl::wt_gmr<>,
+          class sparse_bv_t = sdsl::sd_vector<>,
           class sparse_bv_t2 = sdsl::sd_vector<>>
 class index_basics {
   public:
@@ -362,12 +369,318 @@ class index_basics {
         dfs();
     }
 
-    void dfs() {}
+    void dfs() { // Decompress all the rules
+        uint_t total_rules;
+        total_rules = std::accumulate(m_gref.m_info.m_number_of_rules.begin(),
+                                      m_gref.m_info.m_number_of_rules.end(), 0);
+        // fix for first level, if we have rules Xc->c this is not necessary
+        sdsl::int_vector<> rules_derivation(m_gref.m_info.m_grammar_size, 0,
+                                            sdsl::bits::hi(total_rules) + 1);
+        sdsl::int_vector<> rules_pos(
+            total_rules + 1, 0,
+            sdsl::bits::hi(m_gref.m_info.m_grammar_size) + 1);
+        auto t =
+            sdsl::bit_vector(m_gref.m_info.m_grammar_size - total_rules + 1, 0);
+        // Decompress sequentially each rule
+
+        // Special case to avoid ifs
+        uint_t idx = 0;
+        rules_derivation[idx] = 0;
+        rules_pos[idx++] = 0;
+        uint_t rule_concat_idx = 1;
+
+        uint_t prev_lcp_pos = 0;
+        uint_t prev_rule_pos = 1;
+        uint_t prev_rule_len = 0;
+
+        /**
+         * Decompress the grammar and put everything into a single concatenated
+         * array. We use rules_pos to identify where the right-hand side of each
+         * rule begins.
+         */
+        for (uint_t i = 1; i < total_rules; i++) {
+            rules_pos[i] = idx;
+            auto cur_lcp_pos = m_gref.rules_lcp_select(i + 1);
+            uint_t lcp_len = cur_lcp_pos - prev_lcp_pos - 1;
+            prev_lcp_pos = cur_lcp_pos;
+
+            auto cur_rule_pos = m_gref.rules_delim_select(i + 1);
+            uint_t suffix_len = cur_rule_pos - prev_rule_pos - 1;
+            prev_rule_pos = cur_rule_pos;
+
+            auto cur_rule_len = lcp_len + suffix_len;
+            m_gref.copy_lcp(rules_derivation, lcp_len, prev_rule_len, idx);
+            m_gref.copy_suffix(rules_derivation, suffix_len, rule_concat_idx,
+                               idx);
+            prev_rule_len = cur_rule_len;
+        }
+        rules_pos[total_rules] = m_gref.m_info.m_grammar_size;
+
+        /**
+         * Computes the expansion for every rule in bfs order
+         */
+        std::vector<uint_t> rules_expansion_len(total_rules, 0);
+        // Special case: terminal rules have length 1
+        std::fill_n(rules_expansion_len.begin(), 256, 1);
+        for (uint_t i = 256; i < total_rules; i++) {
+            uint_t pos = rules_pos[i];
+            uint_t len = rules_pos[i + 1] - pos;
+            /***
+             * The expansion for a nonterminal is the sum of the expansions
+             * of its right-hand side
+             ***/
+            for (uint_t j = pos; j < pos + len; j++) {
+                rules_expansion_len[i] +=
+                    rules_expansion_len[rules_derivation[j]];
+            }
+        }
+
+        auto l = sdsl::bit_vector(m_gref.m_info.m_text_size[1], 0);
+        idx = 0;
+        uint_t root_arity = rules_pos[m_gref.m_xs + 1] - rules_pos[m_gref.m_xs];
+        uint_t bv_idx = 512 + 3 + root_arity - 1 + 1;
+        int_t stack_idx = 0;
+        cout << "Number of levels = " << m_gref.m_info.m_level_n << endl;
+        // Important: We have to remove the rules which expands to 0
+        m_pi = sdsl::int_vector<>(
+            total_rules - m_gref.m_info.m_level_n + 1, 0,
+            sdsl::bits::hi(total_rules - m_gref.m_info.m_level_n + 1) + 1);
+        /***
+         * Inverse permutation: indicates whether the rules already appeared or
+         * not. In affirmative case, points to an index in the original
+         * permutation
+         */
+        std::vector<int_t> inv_pi(total_rules, -1);
+        auto focc = sdsl::bit_vector(m_gref.m_info.m_grammar_size + 1, 0);
+
+        /***
+         * Int vector which will store the wavelet tree before it is constructed
+         */
+        sdsl::int_vector<> wt(m_gref.m_info.m_grammar_size - total_rules + 1 -
+                              (m_gref.m_info.m_first_level_expansion_len));
+
+        // Account for the root and the terminal leaves
+        // Accout for the rightmost path which expands to 0.
+        m_bv_dfuds =
+            sdsl::bit_vector(3 + 2 * (m_gref.m_info.m_grammar_size + 1) - 1 -
+                                 2 * (m_gref.m_info.m_level_n - 1) - 1 - 1,
+                             1);
+        m_bv_dfuds[2] = 0;
+        /**
+         * Initialize the dfuds tree with the information from the root and the
+         * terminal leaves.
+         */
+        for (uint_t i = 3 + root_arity - 1 + 256; i <= 512 + 3 + root_arity - 1;
+             i++) {
+            m_bv_dfuds[i] = 0;
+        }
+
+        /**
+         * Initializes the permutation and its inverse. The first occurrence
+         * bitvector is also initialized.
+         */
+        inv_pi[m_gref.m_xs] = 0;
+        m_pi[0] = m_gref.m_xs;
+        focc[0] = 1;
+        for (int i = 0; i < 256; i++) {
+            inv_pi[i] = i + 1;
+            m_pi[i + 1] = i;
+            focc[i + 1] = 1;
+            rules_expansion_len[i] = 1;
+        }
+
+        /***
+         * This will store the starting position in the texto of each
+         * rule expansion
+         */
+        sdsl::int_vector<> rules_expansion_pos(
+            total_rules, 0, sdsl::bits::hi(m_gref.m_info.m_text_size[1]) + 1);
+
+        /***
+         * This will store the starting position in the text of each rule suffix
+         * expansion
+         */
+        sdsl::int_vector<> suffixes_expansion_pos(
+            m_gref.m_info.m_grammar_size, 0,
+            sdsl::bits::hi(m_gref.m_info.m_text_size[1]) + 1);
+        /***
+         * This will store the len of each rule suffix expansion.
+         ***/
+        sdsl::int_vector<> suffixes_expansion_len(
+            m_gref.m_info.m_grammar_size, 0,
+            sdsl::bits::hi(m_gref.m_info.m_text_size[1]) + 1);
+
+        /**
+         * This will store the previous sibling of each suffix of a right-hand
+         */
+        sdsl::int_vector<> prev_rule(m_gref.m_info.m_grammar_size, 0,
+                                     sdsl::bits::hi(total_rules) + 1);
+
+        elias_fano_dfs_helper dfs_h(
+            rules_derivation, rules_pos, rules_expansion_pos,
+            suffixes_expansion_pos, focc, l, m_bv_dfuds, t, m_pi, inv_pi, wt,
+            m_str, rules_expansion_len, suffixes_expansion_len, prev_rule,
+            m_gref.m_xs, bv_idx);
+
+        cout << "Performing the DFS" << endl;
+        auto t1 = std::chrono::steady_clock::now();
+        dfs_h.dfs();
+        auto t2 = std::chrono::steady_clock::now();
+        cout
+            << "DFS done "
+            << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
+            << " seconds" << endl;
+        sdsl::construct_im(m_wt, wt);
+        m_l = l;
+        m_focc = focc;
+        m_t = t;
+        /***
+         * Construct rules info array
+         */
+        std::vector<rule_info> rules(m_pi.size() - 256);
+        rules[0].id = m_gref.m_xs;
+        rules[0].len = m_gref.m_info.m_text_size[1];
+        rules[0].pos = 0;
+        cout << '0' << " " << rules[0].id << " " << rules[0].len << " "
+             << rules[0].pos << endl;
+
+        for (uint_t i = 257; i < m_pi.size(); i++) {
+            rules[i - 256].id = m_pi[i];
+            rules[i - 256].len = rules_expansion_len[m_pi[i]];
+            rules[i - 256].pos = rules_expansion_pos[m_pi[i]];
+            //        cout << i - 256 << " " << rules[i - 256].id << " " <<
+            //        rules[i
+            //        - 256].len
+            //             << " " << rules[i - 256].pos << endl;
+        }
+
+        sorter<rule_info> s;
+        cout << "Sorting the rules " << endl;
+        t1 = std::chrono::steady_clock::now();
+        s.sort(rules, m_text);
+        t2 = std::chrono::steady_clock::now();
+        cout
+            << "Finished sorting the rules: "
+            << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
+            << " seconds " << endl;
+        // cout << endl;
+        // for (uint_t i = 0; i < rules.size(); i++) {
+        //     cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
+        //          << endl;
+        // }
+        // cout << endl;
+
+        //    cout << "Printing the suffixes " << endl;
+        std::vector<suffix_info> suffixes;
+        for (uint_t i = 0; i < suffixes_expansion_len.size(); i++) {
+            if (suffixes_expansion_len[i] != 0) {
+                suffixes.emplace_back(suffix_info(i, prev_rule[i],
+                                                  suffixes_expansion_pos[i],
+                                                  suffixes_expansion_len[i]));
+                // suffixes.back().print();
+            }
+        }
+        // cout << "Finished" << endl;
+        sorter<suffix_info> s2;
+
+        cout << "Sorting the Suffixes" << endl;
+        t1 = std::chrono::steady_clock::now();
+        s2.sort(suffixes, m_text);
+        t2 = std::chrono::steady_clock::now();
+        cout
+            << "Finished sorting the suffixes: "
+            << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
+            << " seconds" << endl;
+
+        // cout << " Printing the suffixes after sorting" << endl;
+
+        // for (uint_t i = 0; i < suffixes.size(); i++) {
+        //     suffixes[i].print();
+        // }
+
+        // cout << "Printing the rules before relabeling " << endl;
+        // for (uint_t i = 0; i < rules.size(); i++) {
+        //     cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
+        //          << endl;
+        // }
+        // cout << endl;
+
+        // cout << " Printing the suffixes before relabeling" << endl;
+
+        // for (uint_t i = 0; i < suffixes.size(); i++) {
+        //     suffixes[i].print();
+        // }
+
+        /***
+         * Relabel the permutation and the wavelet Tree
+         */
+
+        /** Compute the inverse permutation from the rules ordering **/
+        std::fill(inv_pi.begin(), inv_pi.end(), -1);
+        for (uint_t i = 0; i < 256; i++) {
+            inv_pi[i] = i;
+        }
+        for (uint_t i = 0; i < rules.size(); i++) {
+            inv_pi[rules[i].id] = i + 256;
+        }
+
+        // for (auto e : m_pi) {
+        //     cout << e << " ";
+        // }
+        // cout << endl;
+        /** Relabel the permutation **/
+        for (uint_t i = 0; i < m_pi.size(); i++) {
+            m_pi[i] = inv_pi[m_pi[i]];
+        }
+
+        // for (auto e : m_pi) {
+        //     cout << e << " ";
+        // }
+        // cout << endl;
+
+        /** Relabel the Wavelet Tree **/
+        for (uint_t i = 0; i < wt.size(); i++) {
+            wt[i] = inv_pi[wt[i]];
+        }
+        sdsl::construct_im(m_wt, wt);
+        /***
+         * Relabel the tree root
+         ***/
+        m_gref.m_xs = inv_pi[m_gref.m_xs];
+
+        /***
+         * Relabel the previous rules label from the suffixes ordering.
+         */
+
+        for (uint_t i = 0; i < suffixes.size(); i++) {
+            suffixes[i].prev_rule = inv_pi[suffixes[i].prev_rule];
+        }
+
+        // cout << "Printing the rules after relabeling " << endl;
+        for (uint_t i = 0; i < rules.size(); i++) {
+            rules[i].id = inv_pi[rules[i].id];
+            //     cout << rules[i].id << " " << rules[i].len << " " <<
+            //     rules[i].pos
+            //          << endl;
+        }
+        // cout << endl;
+
+        // cout << " Printing the suffixes after relabeling" << endl;
+
+        // for (uint_t i = 0; i < suffixes.size(); i++) {
+        //     suffixes[i].print();
+        // }
+        // for (auto e : m_bv_dfuds) {
+        //     cout << e;
+        // }
+        // cout << endl;
+        m_grid_points = std::move(suffixes);
+    }
 
     grammar_t &m_gref;
     sdsl::int_vector<> m_X;
     sdsl::int_vector<> m_pi;
-    sdsl::wt_gmr<> m_wt;
+    wt_t m_wt;
     sparse_bv_t m_focc;
     sparse_bv_t2 m_t;
     sparse_bv_t m_l;
@@ -375,308 +688,6 @@ class index_basics {
     sdsl::bit_vector m_bv_dfuds;
     char *m_text;
     std::vector<suffix_info> m_grid_points;
-};
-
-template <> void index_basics<elias_fano_grammar>::dfs() {
-    // Decompress all the rules
-    uint_t total_rules;
-    total_rules = std::accumulate(m_gref.m_info.m_number_of_rules.begin(),
-                                  m_gref.m_info.m_number_of_rules.end(), 0);
-    // fix for first level, if we have rules Xc->c this is not necessary
-    sdsl::int_vector<> rules_derivation(m_gref.m_info.m_grammar_size, 0,
-                                        sdsl::bits::hi(total_rules) + 1);
-    sdsl::int_vector<> rules_pos(
-        total_rules + 1, 0, sdsl::bits::hi(m_gref.m_info.m_grammar_size) + 1);
-    auto t =
-        sdsl::bit_vector(m_gref.m_info.m_grammar_size - total_rules + 1, 0);
-    // Decompress sequentially each rule
-
-    // Special case to avoid ifs
-    uint_t idx = 0;
-    rules_derivation[idx] = 0;
-    rules_pos[idx++] = 0;
-    uint_t rule_concat_idx = 1;
-
-    uint_t prev_lcp_pos = 0;
-    uint_t prev_rule_pos = 1;
-    uint_t prev_rule_len = 0;
-
-    /**
-     * Decompress the grammar and put everything into a single concatenated
-     * array. We use rules_pos to identify where the right-hand side of each
-     * rule begins.
-     */
-    for (uint_t i = 1; i < total_rules; i++) {
-        rules_pos[i] = idx;
-        auto cur_lcp_pos = m_gref.rules_lcp_select(i + 1);
-        uint_t lcp_len = cur_lcp_pos - prev_lcp_pos - 1;
-        prev_lcp_pos = cur_lcp_pos;
-
-        auto cur_rule_pos = m_gref.rules_delim_select(i + 1);
-        uint_t suffix_len = cur_rule_pos - prev_rule_pos - 1;
-        prev_rule_pos = cur_rule_pos;
-
-        auto cur_rule_len = lcp_len + suffix_len;
-        m_gref.copy_lcp(rules_derivation, lcp_len, prev_rule_len, idx);
-        m_gref.copy_suffix(rules_derivation, suffix_len, rule_concat_idx, idx);
-        prev_rule_len = cur_rule_len;
-    }
-    rules_pos[total_rules] = m_gref.m_info.m_grammar_size;
-
-    /**
-     * Computes the expansion for every rule in bfs order
-     */
-    std::vector<uint_t> rules_expansion_len(total_rules, 0);
-    // Special case: terminal rules have length 1
-    std::fill_n(rules_expansion_len.begin(), 256, 1);
-    for (uint_t i = 256; i < total_rules; i++) {
-        uint_t pos = rules_pos[i];
-        uint_t len = rules_pos[i + 1] - pos;
-        /***
-         * The expansion for a nonterminal is the sum of the expansions
-         * of its right-hand side
-         ***/
-        for (uint_t j = pos; j < pos + len; j++) {
-            rules_expansion_len[i] += rules_expansion_len[rules_derivation[j]];
-        }
-    }
-
-    auto l = sdsl::bit_vector(m_gref.m_info.m_text_size[1], 0);
-    idx = 0;
-    uint_t root_arity = rules_pos[m_gref.m_xs + 1] - rules_pos[m_gref.m_xs];
-    uint_t bv_idx = 512 + 3 + root_arity - 1 + 1;
-    int_t stack_idx = 0;
-    cout << "Number of levels = " << m_gref.m_info.m_level_n << endl;
-    // Important: We have to remove the rules which expands to 0
-    m_pi = sdsl::int_vector<>(
-        total_rules - m_gref.m_info.m_level_n + 1, 0,
-        sdsl::bits::hi(total_rules - m_gref.m_info.m_level_n + 1) + 1);
-    /***
-     * Inverse permutation: indicates whether the rules already appeared or
-     * not. In affirmative case, points to an index in the original
-     * permutation
-     */
-    std::vector<int_t> inv_pi(total_rules, -1);
-    auto focc = sdsl::bit_vector(m_gref.m_info.m_grammar_size + 1, 0);
-
-    /***
-     * Int vector which will store the wavelet tree before it is constructed
-     */
-    sdsl::int_vector<> wt(m_gref.m_info.m_grammar_size - total_rules + 1 -
-                          (m_gref.m_info.m_first_level_expansion_len));
-
-    // Account for the root and the terminal leaves
-    // Accout for the rightmost path which expands to 0.
-    m_bv_dfuds =
-        sdsl::bit_vector(3 + 2 * (m_gref.m_info.m_grammar_size + 1) - 1 -
-                             2 * (m_gref.m_info.m_level_n - 1) - 1 - 1,
-                         1);
-    m_bv_dfuds[2] = 0;
-    /**
-     * Initialize the dfuds tree with the information from the root and the
-     * terminal leaves.
-     */
-    for (uint_t i = 3 + root_arity - 1 + 256; i <= 512 + 3 + root_arity - 1;
-         i++) {
-        m_bv_dfuds[i] = 0;
-    }
-
-    /**
-     * Initializes the permutation and its inverse. The first occurrence
-     * bitvector is also initialized.
-     */
-    inv_pi[m_gref.m_xs] = 0;
-    m_pi[0] = m_gref.m_xs;
-    focc[0] = 1;
-    for (int i = 0; i < 256; i++) {
-        inv_pi[i] = i + 1;
-        m_pi[i + 1] = i;
-        focc[i + 1] = 1;
-        rules_expansion_len[i] = 1;
-    }
-
-    /***
-     * This will store the starting position in the texto of each
-     * rule expansion
-     */
-    sdsl::int_vector<> rules_expansion_pos(
-        total_rules, 0, sdsl::bits::hi(m_gref.m_info.m_text_size[1]) + 1);
-
-    /***
-     * This will store the starting position in the text of each rule suffix
-     * expansion
-     */
-    sdsl::int_vector<> suffixes_expansion_pos(
-        m_gref.m_info.m_grammar_size, 0,
-        sdsl::bits::hi(m_gref.m_info.m_text_size[1]) + 1);
-    /***
-     * This will store the len of each rule suffix expansion.
-     ***/
-    sdsl::int_vector<> suffixes_expansion_len(
-        m_gref.m_info.m_grammar_size, 0,
-        sdsl::bits::hi(m_gref.m_info.m_text_size[1]) + 1);
-
-    /**
-     * This will store the previous sibling of each suffix of a right-hand
-     */
-    sdsl::int_vector<> prev_rule(m_gref.m_info.m_grammar_size, 0,
-                                 sdsl::bits::hi(total_rules) + 1);
-
-    elias_fano_dfs_helper dfs_h(rules_derivation, rules_pos,
-                                rules_expansion_pos, suffixes_expansion_pos,
-                                focc, l, m_bv_dfuds, t, m_pi, inv_pi, wt, m_str,
-                                rules_expansion_len, suffixes_expansion_len,
-                                prev_rule, m_gref.m_xs, bv_idx);
-
-    cout << "Performing the DFS" << endl;
-    auto t1 = std::chrono::steady_clock::now();
-    dfs_h.dfs();
-    auto t2 = std::chrono::steady_clock::now();
-    cout << "DFS done "
-         << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
-         << " seconds" << endl;
-    sdsl::construct_im(m_wt, wt);
-    m_l = l;
-    m_focc = focc;
-    m_t = t;
-    /***
-     * Construct rules info array
-     */
-    std::vector<rule_info> rules(m_pi.size() - 256);
-    rules[0].id = m_gref.m_xs;
-    rules[0].len = m_gref.m_info.m_text_size[1];
-    rules[0].pos = 0;
-    cout << '0' << " " << rules[0].id << " " << rules[0].len << " "
-         << rules[0].pos << endl;
-
-    for (uint_t i = 257; i < m_pi.size(); i++) {
-        rules[i - 256].id = m_pi[i];
-        rules[i - 256].len = rules_expansion_len[m_pi[i]];
-        rules[i - 256].pos = rules_expansion_pos[m_pi[i]];
-        //        cout << i - 256 << " " << rules[i - 256].id << " " << rules[i
-        //        - 256].len
-        //             << " " << rules[i - 256].pos << endl;
-    }
-
-    sorter<rule_info> s;
-    cout << "Sorting the rules " << endl;
-    t1 = std::chrono::steady_clock::now();
-    s.sort(rules, m_text);
-    t2 = std::chrono::steady_clock::now();
-    cout << "Finished sorting the rules: "
-         << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
-         << " seconds " << endl;
-    // cout << endl;
-    // for (uint_t i = 0; i < rules.size(); i++) {
-    //     cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
-    //          << endl;
-    // }
-    // cout << endl;
-
-    //    cout << "Printing the suffixes " << endl;
-    std::vector<suffix_info> suffixes;
-    for (uint_t i = 0; i < suffixes_expansion_len.size(); i++) {
-        if (suffixes_expansion_len[i] != 0) {
-            suffixes.emplace_back(suffix_info(i, prev_rule[i],
-                                              suffixes_expansion_pos[i],
-                                              suffixes_expansion_len[i]));
-            // suffixes.back().print();
-        }
-    }
-    // cout << "Finished" << endl;
-    sorter<suffix_info> s2;
-
-    cout << "Sorting the Suffixes" << endl;
-    t1 = std::chrono::steady_clock::now();
-    s2.sort(suffixes, m_text);
-    t2 = std::chrono::steady_clock::now();
-    cout << "Finished sorting the suffixes: "
-         << std::chrono::duration_cast<std::chrono::seconds>(t2 - t1).count()
-         << " seconds" << endl;
-
-    // cout << " Printing the suffixes after sorting" << endl;
-
-    // for (uint_t i = 0; i < suffixes.size(); i++) {
-    //     suffixes[i].print();
-    // }
-
-    // cout << "Printing the rules before relabeling " << endl;
-    // for (uint_t i = 0; i < rules.size(); i++) {
-    //     cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
-    //          << endl;
-    // }
-    // cout << endl;
-
-    // cout << " Printing the suffixes before relabeling" << endl;
-
-    // for (uint_t i = 0; i < suffixes.size(); i++) {
-    //     suffixes[i].print();
-    // }
-
-    /***
-     * Relabel the permutation and the wavelet Tree
-     */
-
-    /** Compute the inverse permutation from the rules ordering **/
-    std::fill(inv_pi.begin(), inv_pi.end(), -1);
-    for (uint_t i = 0; i < 256; i++) {
-        inv_pi[i] = i;
-    }
-    for (uint_t i = 0; i < rules.size(); i++) {
-        inv_pi[rules[i].id] = i + 256;
-    }
-
-    // for (auto e : m_pi) {
-    //     cout << e << " ";
-    // }
-    // cout << endl;
-    /** Relabel the permutation **/
-    for (uint_t i = 0; i < m_pi.size(); i++) {
-        m_pi[i] = inv_pi[m_pi[i]];
-    }
-
-    // for (auto e : m_pi) {
-    //     cout << e << " ";
-    // }
-    // cout << endl;
-
-    /** Relabel the Wavelet Tree **/
-    for (uint_t i = 0; i < wt.size(); i++) {
-        wt[i] = inv_pi[wt[i]];
-    }
-    sdsl::construct_im(m_wt, wt);
-
-    /***
-     * Relabel the tree root
-     ***/
-    m_gref.m_xs = inv_pi[m_gref.m_xs];
-
-    /***
-     * Relabel the previous rules label from the suffixes ordering.
-     */
-
-    for (uint_t i = 0; i < suffixes.size(); i++) {
-        suffixes[i].prev_rule = inv_pi[suffixes[i].prev_rule];
-    }
-
-    // cout << "Printing the rules after relabeling " << endl;
-    for (uint_t i = 0; i < rules.size(); i++) {
-        rules[i].id = inv_pi[rules[i].id];
-        //     cout << rules[i].id << " " << rules[i].len << " " << rules[i].pos
-        //          << endl;
-    }
-    // cout << endl;
-
-    // cout << " Printing the suffixes after relabeling" << endl;
-
-    // for (uint_t i = 0; i < suffixes.size(); i++) {
-    //     suffixes[i].print();
-    // }
-    // for (auto e : m_bv_dfuds) {
-    //     cout << e;
-    // }
-    // cout << endl;
-    m_grid_points = std::move(suffixes);
-}
+}; // namespace gcis
 
 } // namespace gcis

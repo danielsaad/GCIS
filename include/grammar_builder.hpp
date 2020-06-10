@@ -22,8 +22,7 @@ template <class grammar_t> class grammar_builder {
   public:
     grammar_builder() = default;
 
-    grammar_t build(char *s) {
-        int n = strlen(s) + 1;
+    grammar_t build(char *s, uint_t n) {
         uint_t *SA = new uint_t[n];
         int K = 256;
         int cs = sizeof(char);
@@ -62,7 +61,7 @@ template <class grammar_t> class grammar_builder {
 
         // Classify the type of each character
         tset(m_t_ptr, m_text_size - 1,
-             1); // the sentinel must be in s1, important!!!
+             0); // the sentinel must be in s1, important!!!
         for (i = m_text_size - 2; i >= 0; i--)
             tset(m_t_ptr, i,
                  (chr(m_text, m_cs, i) < chr(m_text, m_cs, i + 1) ||
@@ -85,12 +84,14 @@ template <class grammar_t> class grammar_builder {
 
         for (i = m_text_size - 2; i >= 0; i--) {
             if (isLMS(m_t_ptr, i)) {
+                // cout << i << " "
+                //      << "is LMS" << endl;
                 m_SA[bkt[chr(m_text, m_cs, i)]--] = i;
                 first = i;
             }
         }
 
-        m_SA[0] = m_text_size - 1; // set the single sentinel LMS-substring
+        // m_SA[0] = m_text_size - 1; // set the single sentinel LMS-substring
 
         // Induce L-Type suffixes by using LMS-Type and L-Type suffixes
         induceSAl(m_t_ptr, m_SA, m_text, bkt, m_text_size, m_alphabet_size,
@@ -130,27 +131,17 @@ template <class grammar_t> class grammar_builder {
      * @return  a pair (b,l). b indicates wether the LMS substrings are
      * different and l indicates the LCP shared between the LMS substrings.
      */
-    std::pair<bool, int_t> compare_lms_substrings(uint_t i, uint_t j) {
+    std::pair<bool, int_t> compare_lms_substrings(uint_t i, uint_t j,
+                                                  int_t i_len, int_t j_len) {
         bool diff = false;
         int_t lcp = 0;
-        // d equals to the LCP between two consecutive LMS-substrings
-        for (lcp = 0; lcp < (int_t)m_text_size; lcp++) {
-            // If is first suffix in LMS order (sentinel), or one of the
-            // suffixes reached the last position of T, or the
-            // characters of T differs or the type os suffixes differ.
-            if (j == -1 ||
-                (chr(m_text, m_cs, i + lcp) != chr(m_text, m_cs, j + lcp) &&
-                 (lcp == 0 ||
-                  (!isLMS(m_t_ptr, i + lcp) && !isLMS(m_t_ptr, j + lcp)))) ||
-                (isLMS(m_t_ptr, i + lcp) ^ (isLMS(m_t_ptr, j + lcp)))) {
+
+        if (j == -1 || i_len != j_len) {
+            diff = true;
+        }
+        for (lcp = 0; lcp < min(i_len, j_len); lcp++) {
+            if (chr(m_text, m_cs, i + lcp) != chr(m_text, m_cs, j + lcp)) {
                 diff = true;
-                break;
-            }
-            // The comparison has reached the end of at least one
-            // LMS-substring
-            // TODO: is this really needed?
-            if (lcp > 0 &&
-                (isLMS(m_t_ptr, i + lcp) || isLMS(m_t_ptr, j + lcp))) {
                 break;
             }
         }
@@ -169,12 +160,18 @@ template <class grammar_t> class grammar_builder {
         // consecutive ones
         int_t name = -1;
         int_t prev = -1;
+        int_t prev_len = -1;
         std::vector<int_t> lms_substrings_lcp;
         uint_t rule_index = 0;
+        // cout << "LMS Substrings ";
         // Iterate over all suffixes in the LMS sorted array
         for (int_t i = 0; i < n1; i++) {
             int_t pos = m_SA[i];
-            auto diff = compare_lms_substrings(pos, prev);
+            int_t cur_len = 1;
+            while (pos + cur_len < m_text_size && !isLMS(m_t_ptr, pos + cur_len))
+                cur_len++;
+
+            auto diff = compare_lms_substrings(pos, prev, cur_len, prev_len);
 
             // The consecutive LMS-substrings differs
             if (diff.first) {
@@ -183,9 +180,12 @@ template <class grammar_t> class grammar_builder {
                 name++;
                 prev = pos;
             }
+            // cout << "[" << pos << "," << pos + cur_len  << "]";
             pos = (pos % 2 == 0) ? pos / 2 : (pos - 1) / 2;
             m_SA[n1 + pos] = name;
+            prev_len = cur_len;
         }
+        // cout << endl;
         // Compact every LMS substring name to the end of SA
         // After this SA[n-n1,n-1] will have the names of the LMS substrings
         // or in other words, the reduced text.
@@ -245,6 +245,12 @@ template <class grammar_t> class grammar_builder {
         // find heads of buckets
         get_buckets(s, bkt, n, K, cs, false);
         //  if(level==0) bkt[0]++;
+
+        // Put the last suffix in the beggining of its bucket, since it is
+        // L-type
+
+        SA[bkt[chr(s, cs, n - 1)]++] = n - 1;
+
         for (i = 0; i < n; i++) {
             if (SA[i] != EMPTY) {
                 j = SA[i] - 1;
@@ -253,6 +259,14 @@ template <class grammar_t> class grammar_builder {
                 }
             }
         }
+        // for (i = 0; i < n; i++) {
+        //     if (SA[i] != EMPTY) {
+        //         cout << SA[i] << " ";
+        //     } else {
+        //         cout << "-1 ";
+        //     }
+        // }
+        // cout << endl;
     }
     // compute SA for the S-Type suffixes by inducing the L-Type suffixes and
     // the S-Type suffixes
@@ -268,6 +282,14 @@ template <class grammar_t> class grammar_builder {
                 }
             }
         }
+        // for (i = 0; i < n; i++) {
+        //     if (SA[i] != EMPTY) {
+        //         cout << SA[i] << " ";
+        //     } else {
+        //         cout << "-1 ";
+        //     }
+        // }
+        // cout << endl;
     }
 
     // Compute the head or end of each bucket
@@ -326,6 +348,6 @@ template <class grammar_t> class grammar_builder {
             bkt[chr(s, cs, i)]++;
         }
     }
-};
+}; // namespace gcis
 
 } // namespace gcis

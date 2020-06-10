@@ -1,10 +1,9 @@
 #ifndef GCIS_GAP_HPP
 #define GCIS_GAP_HPP
 
-
-#include <chrono>
 #include "gcis.hpp"
 #include "gcis_gap_codec.hpp"
+#include <chrono>
 
 void print_text(sdsl::int_vector<> &v, size_t size) {
     for (size_t i = 0; i < size; i++) {
@@ -80,7 +79,7 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
             auto t0 = std::chrono::high_resolution_clock::now();
             extract(p.first, p.second, extracted_text, tmp_text);
             auto t1 = std::chrono::high_resolution_clock::now();
-            total_time += t1-t0;
+            total_time += t1 - t0;
             for (uint64_t i = p.first; i <= p.second; i++) {
                 cout << (char)extracted_text[i - p.first];
             }
@@ -90,7 +89,7 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
         cout << "Batch Extraction Total time(s): " << elapsed.count() << endl;
     }
 
-    char *decode() override {
+    pair<char *, int_t> decode() override {
         sdsl::int_vector<> r_string = reduced_string;
         char *str;
         if (g.size()) {
@@ -126,7 +125,7 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
                 str[i] = reduced_string[i];
             }
         }
-        return str;
+        return make_pair(str, g[0].string_size);
     }
 
     //     unsigned char *decode_saca(uint_t **sa) {
@@ -630,27 +629,33 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
         gcis::util::print_report("String Size = ", n, "\n");
         gcis::util::print_report("Number of Rules = ", name + 1, "\n");
         gcis::util::print_report("Average Rule Length = ",
-                     (double)total_rule_len / (name + 1), "\n");
-        gcis::util::print_report("Number of Discarded Rules = ", discarded_rules_n, "\n");
-        gcis::util::print_report("Average Discarded Rules Length = ",
-                     (double)discarded_rules_len / discarded_rules_n, "\n");
-        gcis::util::print_report("Average LCP = ", (double)total_lcp / (name + 1), "\n");
+                                 (double)total_rule_len / (name + 1), "\n");
+        gcis::util::print_report(
+            "Number of Discarded Rules = ", discarded_rules_n, "\n");
+        gcis::util::print_report(
+            "Average Discarded Rules Length = ",
+            (double)discarded_rules_len / discarded_rules_n, "\n");
+        gcis::util::print_report(
+            "Average LCP = ", (double)total_lcp / (name + 1), "\n");
         gcis::util::print_report("Average Rule Suffix Length = ",
-                     (double)total_rule_suffix_length / (name + 1), "\n");
+                                 (double)total_rule_suffix_length / (name + 1),
+                                 "\n");
         gcis::util::print_report(
             "Dictionary Level Size (bytes) =", g[level].size_in_bytes(), "\n");
-        gcis::util::print_report("LCP Size (bits) = ", g[level].lcp.size(), "\n");
-        gcis::util::print_report("Rule Suffix Length (total) = ", g[level].rule.size(),
-                     "\n");
+        gcis::util::print_report("LCP Size (bits) = ", g[level].lcp.size(),
+                                 "\n");
+        gcis::util::print_report(
+            "Rule Suffix Length (total) = ", g[level].rule.size(), "\n");
         gcis::util::print_report("Rule Suffix Width (bits per symbol) = ",
-                     (int_t)g[level].rule.width(), "\n");
+                                 (int_t)g[level].rule.width(), "\n");
         gcis::util::print_report("Tail Length = ", g[level].tail.size(), "\n");
         gcis::util::print_report("Tail Width (bits per symbol) = ",
-                     (int_t)g[level].tail.width(), "\n");
-        gcis::util::print_report("Run Length Potential (total) = ", run_length_potential,
-                     "\n");
+                                 (int_t)g[level].tail.width(), "\n");
+        gcis::util::print_report(
+            "Run Length Potential (total) = ", run_length_potential, "\n");
         gcis::util::print_report("Avg Run Length per Rule Suffix = ",
-                     (double)run_length_potential / (name + 1), "\n");
+                                 (double)run_length_potential / (name + 1),
+                                 "\n");
 #endif
 
         // TODO: reenable premature_stop comparison
@@ -671,7 +676,8 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
             if (premature_stop) {
                 // The encoding algorithm is stopped prematurely
 #ifdef REPORT
-                gcis::util::print_report("Premature Stop employed at level ", level, "\n");
+                gcis::util::print_report("Premature Stop employed at level ",
+                                         level, "\n");
 #endif
                 reduced_string.resize(n);
                 // cout << "Reduced string = ";
@@ -707,8 +713,9 @@ class gcis_dictionary<gcis_gap_codec> : public gcis_abstract<gcis_gap_codec> {
 #ifdef REPORT
             gcis::util::print_report(
                 "Reduced String Length = ", (int_t)reduced_string.size(), "\n");
-            gcis::util::print_report("Reduced String Width (bits per symbol) = ",
-                         (int_t)reduced_string.width(), "\n");
+            gcis::util::print_report(
+                "Reduced String Width (bits per symbol) = ",
+                (int_t)reduced_string.width(), "\n");
 #endif
         }
         delete[] t;

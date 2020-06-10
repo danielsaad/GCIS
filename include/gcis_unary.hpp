@@ -22,8 +22,7 @@ public:
         return total_bytes;
     }
 
-    void encode(char* s){
-        int_t n = strlen(s)+1;
+    void encode(char* s,int_t n){
         uint_t* SA = new uint_t[n];
         int_t K = 256;
         int cs = sizeof(char);
@@ -48,7 +47,7 @@ public:
                  sdsl::int_vector<>& extracted_text,
                  sdsl::int_vector<>& tmp_text){}
 
-    char* decode(){
+    pair<char*,int_t> decode(){
         sdsl::int_vector<> r_string = reduced_string;
         char* str;
         for(int64_t i=g.size()-1 ;i>=0 ; i--){
@@ -79,7 +78,7 @@ public:
                 r_string = std::move(next_r_string);
             }
         }
-        return str;
+        return make_pair(str,g[0].string_size);
     }
 
 

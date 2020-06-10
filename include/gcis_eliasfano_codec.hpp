@@ -3,42 +3,65 @@
 #ifndef GC_IS_GCIS_ELIASFANO_CODEC_HPP
 #define GC_IS_GCIS_ELIASFANO_CODEC_HPP
 
-
-#include <cstdint>
 #include "eliasfano.hpp"
-#include "sdsl/int_vector.hpp"
 #include "sdsl/bit_vectors.hpp"
 #include "sdsl/dac_vector.hpp"
+#include "sdsl/int_vector.hpp"
 #include "util.hpp"
+#include <cstdint>
 
-class gcis_eliasfano_codec_level{
-public:
+class gcis_eliasfano_codec_level {
+  public:
     gcis_eliasfano_codec_level() = default;
-    gcis_eliasfano_codec_level(gcis_eliasfano_codec_level& ) = default;
-    gcis_eliasfano_codec_level(gcis_eliasfano_codec_level&&) = default;
+    gcis_eliasfano_codec_level(gcis_eliasfano_codec_level &) = default;
+    gcis_eliasfano_codec_level(gcis_eliasfano_codec_level &&) = default;
 
     sdsl::int_vector<> rule;
     eliasfano_codec rule_delim;
 
-public:
-    void expand_rule(uint64_t rule_num, sdsl::int_vector<> &r_string, uint64_t &l);
-    void expand_rule(uint64_t rule_num, char* s, uint64_t &l);
+  public:
+    void expand_rule(uint64_t rule_num, sdsl::int_vector<> &r_string,
+                     uint64_t &l);
+    void expand_rule(uint64_t rule_num, char *s, uint64_t &l);
 
-    //expand rules while counting symbol's frequency
-    void expand_rule_bkt(uint64_t rule_num, sdsl::int_vector<> &r_string, uint64_t &l, int_t *bkt);
-    void expand_rule_bkt(uint64_t rule_num, unsigned char* s, uint64_t &l, int_t *bkt);
+    // expand rules while counting symbol's frequency
+    void expand_rule_bkt(int_t rule_num, vector<int_t> &r_string, uint_t &l,
+                         int_t *bkt);
+    void expand_rule_bkt(int_t rule_num, unsigned char *s, uint_t &l,
+                         int_t *bkt);
 };
 
+class gcis_eliasfano_pointers_codec_level {
+  public:
+    gcis_eliasfano_pointers_codec_level() = default;
+    gcis_eliasfano_pointers_codec_level(gcis_eliasfano_pointers_codec_level &) =
+        default;
+    gcis_eliasfano_pointers_codec_level(
+        gcis_eliasfano_pointers_codec_level &&) = default;
 
-class gcis_eliasfano_codec{
-public:
+    vector<uint_t> rule;
+    vector<uint_t> rule_pos;
+
+  public:
+    void expand_rule(uint_t rule_num, vector<uint_t> &r_string, uint_t &l);
+    void expand_rule(uint_t rule_num, char *s, uint_t &l);
+
+    // expand rules while counting symbol's frequency
+    void expand_rule_bkt(uint_t rule_num, vector<uint_t> &r_string, uint_t &l,
+                         int_t *bkt);
+    void expand_rule_bkt(uint_t rule_num, unsigned char *s, uint_t &l,
+                         int_t *bkt);
+};
+
+class gcis_eliasfano_codec {
+  public:
     gcis_eliasfano_codec() = default;
-    gcis_eliasfano_codec(gcis_eliasfano_codec& rhs) = default;
-    gcis_eliasfano_codec(gcis_eliasfano_codec&& rhs) = default;
+    gcis_eliasfano_codec(gcis_eliasfano_codec &rhs) = default;
+    gcis_eliasfano_codec(gcis_eliasfano_codec &&rhs) = default;
 
     // string size
     uint_t string_size;
-     // alphabet size
+    // alphabet size
     uint_t alphabet_size;
     // elias-fano coded lcp information
     eliasfano_codec lcp;
@@ -55,7 +78,7 @@ public:
     // A integer storing the fully decoded tail length
     uint64_t fully_decoded_tail_len;
 
-public:
+  public:
     uint64_t get_lcp(uint64_t i);
 
     uint64_t get_rule_pos(uint64_t i);
@@ -69,19 +92,24 @@ public:
     //                    sdsl::int_vector<>& extracted_text,
     //                    sdsl::int_vector<>& tmp_text);
     //
-    void extract_lcp(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
-    void extract_rule_suffix(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
-    void extract_rule(uint64_t rule_num,int64_t l,int64_t r,sdsl::int_vector<>& extracted_text,uint64_t& k);
+    void extract_lcp(uint64_t rule_num, int64_t l, int64_t r,
+                     sdsl::int_vector<> &extracted_text, uint64_t &k);
+    void extract_rule_suffix(uint64_t rule_num, int64_t l, int64_t r,
+                             sdsl::int_vector<> &extracted_text, uint64_t &k);
+    void extract_rule(uint64_t rule_num, int64_t l, int64_t r,
+                      sdsl::int_vector<> &extracted_text, uint64_t &k);
 
-    void extract_lcp(uint64_t rule_num,sdsl::int_vector<>& extracted_text,uint64_t& k);
-    void extract_rule_suffix(uint64_t rule_num,sdsl::int_vector<>& extracted_text,uint64_t& k);
-    void extract_rule(uint64_t rule_num,sdsl::int_vector<>& extracted_text,uint64_t& k);
+    void extract_lcp(uint64_t rule_num, sdsl::int_vector<> &extracted_text,
+                     uint64_t &k);
+    void extract_rule_suffix(uint64_t rule_num,
+                             sdsl::int_vector<> &extracted_text, uint64_t &k);
+    void extract_rule(uint64_t rule_num, sdsl::int_vector<> &extracted_text,
+                      uint64_t &k);
 
-
-
-    void serialize(std::ostream& o);
-    void load(std::istream& i);
-    gcis_eliasfano_codec_level decompress();
+    void serialize(std::ostream &o);
+    void load(std::istream &i);
+    // gcis_eliasfano_codec_level decompress();
+    gcis_eliasfano_pointers_codec_level decompress();
 };
 
-#endif //GC_IS_GCIS_ELIASFANO_CODEC_HPP
+#endif // GC_IS_GCIS_ELIASFANO_CODEC_HPP
