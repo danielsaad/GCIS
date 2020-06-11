@@ -162,6 +162,9 @@ int main(int argc, char *argv[]) {
         output1.write((const char *)str, (n) * sizeof(char));
         output2.write((const char *)&n, sizeof(n));
         output2.write((const char *)SA, sizeof(uint_t) * n);
+        for (int i = 0; i < n; i++) {
+            cout << "SA[" << i << "] = " << SA[i] << endl;
+        }
         output1.close();
         output2.close();
         // input.close();
@@ -223,6 +226,12 @@ int main(int argc, char *argv[]) {
         output2.write((const char *)SA, sizeof(n) * n);
         output3.write((const char *)&n, sizeof(n));
         output3.write((const char *)LCP, sizeof(n) * n);
+        for (int i = 0; i < n; i++) {
+            cout << "SA[" << i << "] = " << SA[i] << endl;
+        }
+        for (int i = 0; i < n; i++) {
+            cout << "LCP[" << i << "] = " << LCP[i] << endl;
+        }
 
         output1.close();
         output2.close();

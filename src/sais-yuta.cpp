@@ -46,6 +46,9 @@ int main(int argc, char *argv[]) {
 
     string ouf = argv[2];
     std::ofstream output(ouf + ".sa", std::ios::binary);
+    for (int i = 0; i < n; i++) {
+        cout << "SA[" << i << "] = " << SA[i] << endl;
+    }
 
     output.write((const char *)&n, sizeof(n));
     output.write((const char *)SA, sizeof(sa_int32_t) * n);

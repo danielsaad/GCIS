@@ -808,15 +808,23 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
 #endif
 
         //  bkt[0]++;
+        SA[bkt[chr(n - 1)]++] = n - 1;
         for (i = 0; i < n; i++) {
             if (SA[i] != U_MAX) {
 
                 if (LCP[i] == I_MIN) { // is a L/S-seam position
                     int_t l = 0;
+                    // cout << "i = " << i << endl;
+                    // cout << "SA[i] = " << SA[i] << endl;
+                    // cout << "bkt[chr(SA[i])] - 1 " << bkt[chr(SA[i])] - 1
+                    //      << endl;
+                    // cout << "chr(SA[i])" << (int)chr(SA[i]) << endl;
                     if (SA[bkt[chr(SA[i])] - 1] < n - 1)
-                        while (
-                            SA[i] + l < n && SA[bkt[char(SA[i])] - 1] + l < n &&
-                            chr(SA[i] + l) == chr(SA[bkt[chr(SA[i])] - 1] + l))
+                        // cout << "SA[i] == " << SA[i] << endl;
+                        while (SA[i] + l < n &&
+                               SA[bkt[char(SA[i])] - 1] + l < n - 1 &&
+                               chr(SA[i] + l) ==
+                                   chr(SA[bkt[chr(SA[i])] - 1] + l))
                             ++l;
                     LCP[i] = l;
                 }

@@ -53,6 +53,12 @@ int main(int argc, char *argv[]) {
     std::ofstream output_lcp(ouf_basename + ".lcp", std::ios::binary);
     output_lcp.write((const char *)&n, sizeof(n));
     output_lcp.write((const char *)LCP, sizeof(int) * n);
+    for(int i=0;i<n;i++){
+        cout << "SA[" << i << "] = " << SA[i] << endl;
+    }
+    for(int i=0;i<n;i++){
+        cout << "LCP[" << i << "] = " << LCP[i] << endl;
+    }
 
     output.close();
     output_lcp.close();

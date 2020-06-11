@@ -502,7 +502,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     uint_t cur_t, succ_t;
                     uint_t j = n1 - 1;
                     // s1[j--] = n - 1;
-                    succ_t = 0; // s[n-2] must be L-type
+                    succ_t = 0; // s[n-1] must be L-type
                     for (uint_t i = n - 1; i > 0; i--) {
                         cur_t =
                             (r_string[i - 1] < r_string[i] ||
@@ -637,7 +637,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     //          sizeof(char), level);
                     induceSAs_LCP(SA, LCP, (int_t *)str, cnt, bkt, n, K,
                                   sizeof(unsigned char), level);
-                    SA[0] = n - 1;
+                    // SA[0] = n - 1;
                 }
 
 #if DEGUB
