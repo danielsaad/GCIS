@@ -68,7 +68,7 @@ class gcis_interface {
     virtual pair<char *, int_t> decode() = 0;
     virtual void extract_batch(vector<pair<int, int>> &v_query) = 0;
     virtual pair<char *, int_t> decode_saca(uint_t **SA) = 0;
-    virtual pair<char*,int_t> decode_saca_lcp(uint_t **SA, int_t **LCP) = 0;
+    virtual pair<char *, int_t> decode_saca_lcp(uint_t **SA, int_t **LCP) = 0;
     virtual uint64_t size_in_bytes() = 0;
     virtual void serialize(std::ostream &o) = 0;
     virtual void load(std::istream &i) = 0;
@@ -83,7 +83,7 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
     void extract_batch(vector<pair<int, int>> &v_query) {
         throw(gcis::util::NotImplementedException("extract_batch"));
     }
-    pair<char *, int_t>  decode_saca(uint_t **SA) {
+    pair<char *, int_t> decode_saca(uint_t **SA) {
         throw(gcis::util::NotImplementedException("decode_saca"));
     }
     pair<char *, int_t> decode_saca_lcp(uint_t **SA, int_t **LCP) {
@@ -559,8 +559,8 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
     }
 
     void compute_lcp_phi_sparse_sais(int_t *s, uint_t *SA1, uint_t *RA,
-                                     int_t *LCP, int_t *PLCP, uint_t n1,
-                                     int cs) {
+                                     int_t *LCP, int_t *PLCP, uint_t n1, int cs,
+                                     int_t n) {
 
         uint_t i;
 
@@ -581,7 +581,8 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
                 l = 0;
             // l=max(0,l);
 
-            while (chr(RA[i] + l) == chr(RA[LCP[i]] + l))
+            while (RA[i] + l < n && RA[LCP[i]] + l < n &&
+                   chr(RA[i] + l) == chr(RA[LCP[i]] + l))
                 l++;
             PLCP[i] = l;
 
@@ -689,8 +690,10 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
 
                     if (SA[bkt[chr(j)]] != U_MAX) { // L/S-seam
                         int_t l = 0;
-                        while (chr(SA[bkt[chr(j)] + 1] + l) ==
-                               chr(SA[bkt[chr(j)]] + l))
+                        while (SA[bkt[chr(j)] + 1] + l < n &&
+                               SA[bkt[chr(j)]] + l < n &&
+                               chr(SA[bkt[chr(j)] + 1] + l) ==
+                                   chr(SA[bkt[chr(j)]] + l))
                             l++;
                         LCP[bkt[chr(j)] + 1] = l;
                     }
@@ -811,8 +814,9 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
                 if (LCP[i] == I_MIN) { // is a L/S-seam position
                     int_t l = 0;
                     if (SA[bkt[chr(SA[i])] - 1] < n - 1)
-                        while (chr(SA[i] + l) ==
-                               chr(SA[bkt[chr(SA[i])] - 1] + l))
+                        while (
+                            SA[i] + l < n && SA[bkt[char(SA[i])] - 1] + l < n &&
+                            chr(SA[i] + l) == chr(SA[bkt[chr(SA[i])] - 1] + l))
                             ++l;
                     LCP[i] = l;
                 }

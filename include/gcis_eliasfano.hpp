@@ -560,7 +560,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
                     int_t *PLCP = LCP + n - n1; // PHI is stored in PLCP array
                     // compute the LCP of consecutive LMS-suffixes
                     compute_lcp_phi_sparse_sais((int_t *)str, SA1, RA, LCP,
-                                                PLCP, n1, sizeof(char));
+                                                PLCP, n1, sizeof(char),n);
                 }
 
                 int_t j = 0;
