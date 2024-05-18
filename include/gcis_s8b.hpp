@@ -718,7 +718,7 @@ class gcis_lyndon : public gcis_s8b_pointers {
                     uint_t cur_t, succ_t;
                     uint_t j = n1 - 1;
                     // s1[j--] = n - 1;
-                    succ_t = 0; // s[n-2] must be L-type
+                    succ_t = 0; // s[n-1] must be L-type
                     for (uint_t i = n - 1; i > 0; i--) {
                         cur_t = (str[i - 1] < str[i] ||
                                  (str[i - 1] == str[i] && succ_t == 1))
@@ -894,7 +894,7 @@ class gcis_lyndon : public gcis_s8b_pointers {
     void induceSAs_lyndon(uint_t *SA, uint_t *LA, int_t *s, int_t *cnt,
                           int_t *bkt, uint_t n, int_t K, int_t cs, int level) {
         get_buckets(cnt, bkt, K, true);
-        int i, j;
+        int_t i, j;
         for (i = n - 1; i > 0; i--) {
             int_t next, prev;
             j = SA[i];
