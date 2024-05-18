@@ -24,9 +24,9 @@ def barplot(title,y_title,file_suffix,level,y,output_folder_path):
     plt.xticks([x for x in locs], x_labels,rotation='vertical')
     #ax.legend(loc='best')
 
-    output_path = os.path.join(output_folder_path,title+'-'+file_suffix+'.png')
+    output_path = os.path.join(output_folder_path,title+'-'+file_suffix+'.pdf')
     print('Generating',output_path+'\n')
-    plt.savefig(output_path,format='png',bbox_inches='tight',dpi=300)
+    plt.savefig(output_path,format='pdf',bbox_inches='tight')
     plt.close('all')
 
 def statistics2plot_helper(statistics_file_path,output_folder_path):
@@ -84,4 +84,4 @@ def statistics2plot(statistics_folder_path,output_folder_path):
 ''' argv[1] folder path to the csv files containing the GC-IS compression statistics
     argv[2] folder path to the csv files containing the GC-IS compression statistics graphs '''
 if __name__ == '__main__':
-    scan(sys.argv[1],sys.argv[2])
+    statistics2plot(sys.argv[1],sys.argv[2])

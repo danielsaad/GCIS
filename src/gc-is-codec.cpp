@@ -4,6 +4,7 @@
 #include "gcis_eliasfano_no_lcp.hpp"
 #include "gcis_gap.hpp"
 #include "gcis_s8b.hpp"
+#include "gcis_s8b_no_lcp.hpp"
 #include "gcis_unary.hpp"
 #include "sais.h"
 #include <cassert>
@@ -50,6 +51,7 @@ int main(int argc, char *argv[]) {
     string codec_flag(argv[4]);
     gcis_interface *d;
     if (codec_flag == "-s8b") {
+        // d = new gcis_s8b_no_lcp_pointers();
         d = new gcis_s8b_pointers();
     } else if (codec_flag == "-ef") {
         d = new gcis_dictionary<gcis_eliasfano_codec>();
@@ -79,7 +81,7 @@ int main(int argc, char *argv[]) {
         mm.event("GC-IS Save");
 #endif
 
-        cout << "input:\t" << strlen(str) << " bytes" << endl;
+        cout << "input:\t" << n << " bytes" << endl;
         cout << "output:\t" << d->size_in_bytes() << " bytes" << endl;
         cout << "time: " << (double)duration_cast<seconds>(stop - start).count()
              << " seconds" << endl;
@@ -108,7 +110,7 @@ int main(int argc, char *argv[]) {
         auto stop = timer::now();
 
         cout << "input:\t" << d->size_in_bytes() << " bytes" << endl;
-        cout << "output:\t" << strlen(str) << " bytes" << endl;
+        cout << "output:\t" << n << " bytes" << endl;
         cout << "time: "
              << (double)duration_cast<milliseconds>(stop - start).count() /
                     1000.0
@@ -252,8 +254,9 @@ int main(int argc, char *argv[]) {
 #ifdef MEM_MONITOR
         mm.event("GC-IS Extract");
 #endif
-        vector<pair<int, int>> v_query;
-        uint64_t l, r;
+        vector<pair<uint_t, uint_t>> v_query;
+        uint_t l, r;
+        query >> l >> r; // ignore first two
         while (query >> l >> r) {
             v_query.push_back(make_pair(l, r));
         }

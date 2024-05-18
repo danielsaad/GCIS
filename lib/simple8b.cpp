@@ -59,7 +59,7 @@ uint64_t simple8b_codec::get_next(){
 
 uint64_t simple8b_codec::size_in_bytes() {
     uint64_t total_bytes = m_v.size() * sizeof(uint64_t);
-    total_bytes += (5+BUF_SIZE) * sizeof(uint64_t);
+    // total_bytes += (5+BUF_SIZE) * sizeof(uint64_t);
     return total_bytes;
 }
 
@@ -107,7 +107,7 @@ uint64_t simple8b_codec::flush(uint64_t buf_size){
 
 uint64_t simple8b_codec::decode_to_buffer(){
     uint64_t index = 0;
-    while(true){
+    while(true && m_cur_word<m_v.size()){
         uint64_t word = m_v[m_cur_word];
         uint64_t n_items = s8b_selector[word & 0xf].n_items;
         uint64_t n_bits =  s8b_selector[word & 0xf].n_bits;

@@ -66,7 +66,7 @@ class gcis_interface {
   public:
     virtual void encode(char *s, int_t n) = 0;
     virtual pair<char *, int_t> decode() = 0;
-    virtual void extract_batch(vector<pair<int, int>> &v_query) = 0;
+    virtual void extract_batch(vector<pair<uint_t,uint_t>> &v_query) = 0;
     virtual pair<char *, int_t> decode_saca(uint_t **SA) = 0;
     virtual pair<char *, int_t> decode_saca_lcp(uint_t **SA, int_t **LCP) = 0;
     virtual uint64_t size_in_bytes() = 0;
@@ -80,7 +80,7 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
     sdsl::int_vector<> reduced_string;
 
   public:
-    void extract_batch(vector<pair<int, int>> &v_query) {
+    void extract_batch(vector<pair<uint_t,uint_t>> &v_query) {
         throw(gcis::util::NotImplementedException("extract_batch"));
     }
     pair<char *, int_t> decode_saca(uint_t **SA) {

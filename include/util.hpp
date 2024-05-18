@@ -51,7 +51,10 @@ namespace util {
 
 #ifdef REPORT
 
-template <typename T> void print_report(T value) { report_file << value; }
+template <typename T>
+void print_report(T value) {
+    report_file << value;
+}
 
 template <typename T, typename... TArgs>
 void print_report(T value, TArgs... args) {
@@ -63,16 +66,24 @@ void print_report(T value, TArgs... args) {
 
 #ifdef MYDEBUG
 
-template <typename T, typename... TArgs> void pdbg2(T value, TArgs... args) {
+template <typename T, typename... TArgs>
+void pdbg2(T value, TArgs... args) {
     dbg_file << value << " ";
     pdbg2(args...);
 }
 
-template <typename T> void pdbg2(T value) { dbg_file << value << endl; }
+template <typename T>
+void pdbg2(T value) {
+    dbg_file << value << endl;
+}
 
-template <typename T> void pdbg(T value) { dbg_file << value << endl; }
+template <typename T>
+void pdbg(T value) {
+    dbg_file << value << endl;
+}
 
-template <typename T, typename... TArgs> void pdbg(T value, TArgs... args) {
+template <typename T, typename... TArgs>
+void pdbg(T value, TArgs... args) {
     dbg_file << value << " ";
     pdbg(args...);
 }
@@ -96,7 +107,8 @@ ostream &operator<<(ostream &os, const std::vector<T> &v) {
 #endif // MY_DEBUGs
 
 // For static asserts
-template <class T> struct false_predicate : std::false_type {};
+template <class T>
+struct false_predicate : std::false_type {};
 
 // When calling not implemented functions this exception is generatd
 class NotImplementedException : public std::logic_error {
@@ -108,15 +120,16 @@ class NotImplementedException : public std::logic_error {
         : std::logic_error{custom_string + ": function not yet implemented."} {}
 };
 
-template <class T> void serialize(T &x, std::ofstream &o) {
-    o.write((const char *)&x, sizeof(x));
+template <typename T>
+void serialize(const T &x, std::ofstream &o) {
+    o.write((const char *)&x, sizeof(T));
 }
 
-template <class T> void serialize(std::vector<T> &v, std::ofstream &o) {
-    size_t sz = v.size();
-    serialize(sz, o);
-    o.write((const char *)v.data(), sizeof(T) * sz);
-}
+// template <typename T> void serialize(std::vector<T> &v, std::ofstream &o) {
+//     size_t sz = v.size();
+//     serialize(sz, o);
+//     o.write((const char *)v.data(), sizeof(T) * sz);
+// }
 
 // template <> void serialize<std::string>(std::string &s, std::ofstream &o) {
 //     size_t sz = s.size();
@@ -124,16 +137,18 @@ template <class T> void serialize(std::vector<T> &v, std::ofstream &o) {
 //     o.write((const char *)s.data(), sizeof(char) * sz);
 // }
 
-template <class T> void load(T &x, std::ifstream &in) {
-    in.read((char *)&x, sizeof(x));
+template <typename T>
+void load(T &x, std::ifstream &in) {
+    in.read((char *)&x, sizeof(T));
 }
 
-template <class T> void load(std::vector<T> &v, std::ifstream &in) {
-    size_t sz;
-    load(sz, in);
-    v.resize(sz);
-    in.read((char *)v.data(), sz * sizeof(T));
-}
+// template <typename T>
+// void load(std::vector<T> &v, std::ifstream &in) {
+//     size_t sz;
+//     load(sz, in);
+//     v.resize(sz);
+//     in.read((char *)v.data(), sz * sizeof(T));
+// }
 
 // template <> void load<std::string>(std::string &s, std::ifstream &in) {
 //     size_t sz;
@@ -142,7 +157,10 @@ template <class T> void load(std::vector<T> &v, std::ifstream &in) {
 //     in.read((char *)s.data(), sizeof(char) * sz);
 // }
 
-template <class T> class identity { typedef T type; };
+template <class T>
+class identity {
+    typedef T type;
+};
 
 } // namespace util
 

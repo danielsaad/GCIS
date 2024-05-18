@@ -4,7 +4,7 @@ import sys
 
 
 number_of_substrings = 10000
-substring_size = [1, 5, 10, 25, 50, 100]
+substring_size = [1,10, 100, 1000]
 
 
 '''
@@ -23,8 +23,8 @@ def generate_extract_input(input_file_path, output_file_path):
         for ss in substring_size:
             with open(output_file_path + '.' + str(ss)+'_extract', 'w') as extract_file:
                 print(number_of_substrings,ss, file=extract_file)
-                intervals = [(x, x+ss-1)
-                             for x in [random.randint(0, input_size-ss-1) for k in range(number_of_substrings)]]
+                intervals = [(x, min(x+ss-1,input_size -1))
+                             for x in [random.randint(0, max(0,input_size-ss-1)) for k in range(number_of_substrings)]]
                 for i in intervals:
                     print(i[0], i[1], file=extract_file)
 

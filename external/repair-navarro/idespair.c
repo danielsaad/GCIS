@@ -136,8 +136,8 @@ void main (int argc, char **argv)
      fprintf (stderr,"   Number of rules: %i\n",n-alph);
      fprintf (stderr,"   Compressed sequence length: %i\n",c);
      fprintf (stderr,"   Maximum rule depth: %i\n",maxdepth);
-     fprintf (stderr,"   Compression ratio: %0.2f%%\n",
-                        (2.0*(n-alph)+c)*(float)blog(n-1)/(u*blog(alph-1))*100.0);
+    //  fprintf (stderr,"   Compression ratio: %0.2f%%\n",
+    //                     (2.0*(n-alph)+c)*(float)blog(n-1)/(u*blog(alph-1))*100.0);
      exit(0);
    }
 

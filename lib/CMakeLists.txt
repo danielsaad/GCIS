@@ -2,6 +2,7 @@ ADD_LIBRARY(gc-is STATIC
         util.cpp
         simple8b.cpp
         gcis_s8b_codec.cpp
+        gcis_s8b_no_lcp_codec.cpp
         gcis_unary_codec.cpp
         gcis_eliasfano_codec.cpp
         gcis_eliasfano_codec_no_lcp.cpp
@@ -14,6 +15,10 @@ ADD_LIBRARY(gc-is STATIC
         ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
+        ../include/gcis_s8b_alphabet_reordering.hpp
+        ../include/gcis_repair_hybrid.hpp
+        ../include/gcis_repair_hybrid_2.hpp
+        ../include/gcis_statistics.hpp
         ../include/gcis_eliasfano.hpp
         ../include/gcis_eliasfano_no_lcp.hpp
         ../include/gcis_gap_codec.hpp
@@ -30,6 +35,7 @@ ADD_LIBRARY(gc-is-64 STATIC
         util.cpp
         simple8b.cpp
         gcis_s8b_codec.cpp
+        gcis_s8b_no_lcp_codec.cpp
         gcis_unary_codec.cpp
         gcis_eliasfano_codec.cpp
         gcis_eliasfano_codec_no_lcp.cpp
@@ -42,6 +48,10 @@ ADD_LIBRARY(gc-is-64 STATIC
         ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
+        ../include/gcis_s8b_alphabet_reordering.hpp
+        ../include/gcis_repair_hybrid.hpp
+        ../include/gcis_repair_hybrid_2.hpp
+        ../include/gcis_statistics.hpp
         ../include/gcis_eliasfano.hpp
         ../include/gcis_eliasfano_no_lcp.hpp
         ../include/gcis_gap_codec.hpp
@@ -57,6 +67,7 @@ ADD_LIBRARY(gc-is-statistics STATIC
         util.cpp
         simple8b.cpp
         gcis_s8b_codec.cpp
+        gcis_s8b_no_lcp_codec.cpp
         gcis_unary_codec.cpp
         gcis_eliasfano_codec.cpp
         gcis_eliasfano_codec_no_lcp.cpp
@@ -69,6 +80,8 @@ ADD_LIBRARY(gc-is-statistics STATIC
         ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
+        ../include/gcis_s8b_alphabet_reordering.hpp
+        ../include/gcis_statistics.hpp
         ../include/gcis_eliasfano.hpp
         ../include/gcis_eliasfano_no_lcp.hpp
         ../include/gcis_gap_codec.hpp
@@ -84,6 +97,7 @@ ADD_LIBRARY(gc-is-statistics-64 STATIC
         util.cpp
         simple8b.cpp
         gcis_s8b_codec.cpp
+        gcis_s8b_no_lcp_codec.cpp
         gcis_unary_codec.cpp
         gcis_eliasfano_codec.cpp
         gcis_eliasfano_codec_no_lcp.cpp
@@ -96,6 +110,8 @@ ADD_LIBRARY(gc-is-statistics-64 STATIC
         ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
+        ../include/gcis_s8b_alphabet_reordering.hpp
+        ../include/gcis_statistics.hpp
         ../include/gcis_eliasfano.hpp
         ../include/gcis_eliasfano_no_lcp.hpp
         ../include/gcis_gap_codec.hpp

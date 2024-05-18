@@ -23,7 +23,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
         gcis_abstract::serialize(o);
         uint64_t n = partial_sum.size();
         o.write((char *)&n, sizeof(n));
-        o.write((char *)partial_sum.data(), sizeof(uint32_t) * n);
+        o.write((char *)partial_sum.data(), sizeof(uint_t) * n);
     }
 
     void load(std::istream &i) override {
@@ -31,7 +31,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
         uint64_t n;
         i.read((char *)&n, sizeof(n));
         partial_sum.resize(n);
-        i.read((char *)partial_sum.data(), sizeof(uint32_t) * n);
+        i.read((char *)partial_sum.data(), sizeof(uint_t) * n);
     }
 
     /**
@@ -40,8 +40,8 @@ class gcis_dictionary<gcis_eliasfano_codec>
      *
      * @param query A vector containing [l,r] pairs.
      */
-    void extract_batch(vector<pair<int, int>> &query) {
-        int l, r;
+    void extract_batch(vector<pair<uint_t, uint_t>> &query) {
+        uint_t l, r;
         std::tie(l, r) = query[0];
         uint64_t query_length = 50000;
         uint64_t size = query_length;
@@ -59,13 +59,16 @@ class gcis_dictionary<gcis_eliasfano_codec>
             extract(p.first, p.second, extracted_text, tmp_text);
             auto t1 = std::chrono::high_resolution_clock::now();
             total_time += t1 - t0;
+            #ifdef EXTRACT_TEST
             for (uint64_t i = p.first; i <= p.second; i++) {
                 cout << (unsigned char)extracted_text[i - p.first];
             }
             cout << endl;
+            #endif
         }
         std::chrono::duration<double> elapsed = total_time - first;
         cout << "Batch Extraction Total time(s): " << elapsed.count() << endl;
+        cout << "Mean time (microseconds): " << elapsed.count() / query.size() * 1e6 << endl;
     }
 
     /**
@@ -686,7 +689,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
     } // end decode_saca
 
   private:
-    std::vector<uint32_t> partial_sum;
+    std::vector<uint_t> partial_sum;
 
   private:
     void gc_is(int_t *s, uint_t *SA, int_t n, int_t K, int cs,
@@ -1017,7 +1020,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
      * @param sz the position we want to find
      * @return the leftmost index rk such that partial_sum[rk]>=sz
      */
-    uint64_t bsearch_upperbound(vector<uint32_t> &partial_sum, uint64_t sz) {
+    uint64_t bsearch_upperbound(vector<uint_t> &partial_sum, uint64_t sz) {
         if (partial_sum.back() <= sz) {
             return partial_sum.size() - 1;
         }
@@ -1041,7 +1044,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
      * @param sz the position we want to find
      * @return the rightmost index lk such that partial_sum[lk]<=sz
      */
-    uint64_t bsearch_lowerbound(vector<uint32_t> &partial_sum, uint64_t sz) {
+    uint64_t bsearch_lowerbound(vector<uint_t> &partial_sum, uint64_t sz) {
         if (partial_sum[0] >= sz) {
             return 0;
         }
