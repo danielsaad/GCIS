@@ -110,7 +110,7 @@ class gcis_dictionary<gcis_s8b_codec> : public gcis_abstract<gcis_s8b_codec> {
         }
         int_t *bkt = new int_t[K]; // bucket counters
 
-        int_t first = n - 1;
+        int_t first = n;
 
         // sort all the S-substrings
         get_buckets(s, bkt, n, K, cs, true); // find ends of buckets
@@ -173,27 +173,8 @@ class gcis_dictionary<gcis_s8b_codec> : public gcis_abstract<gcis_s8b_codec> {
             cur_len = 1;
             while (pos + cur_len < n && !isLMS(pos + cur_len))
                 cur_len++;
-            bool diff = false;
+            bool diff = prev == -1 || prev_len != cur_len;
             int_t d;
-            // d equals to the LCP between two consecutive LMS-substrings
-            // for (d = 0; d < n; d++) {
-            //     // If is first suffix in LMS order (sentinel), or one of the
-            //     // suffixes reached the last position of T, or the
-            //     // characters of T differs or the type os suffixes differ.
-            //     if (prev == -1 || pos + d == n - 1 || prev + d == n - 1 ||
-            //         chr(pos + d) != chr(prev + d) ||
-            //         (isLMS(pos + d) ^ (isLMS(prev + d)))) {
-            //         diff = true;
-            //         break;
-            //     }
-            //     // The comparison has reached the end of at least one
-            //     // LMS-substring
-            //     if (d > 0 && (isLMS(pos + d) || isLMS(prev + d))) {
-            //         break;
-            //     }
-            // }
-            if (prev == -1 || prev_len != cur_len)
-                diff = true;
 
             for (d = 0; d < min(cur_len, prev_len); d++) {
                 if (chr(pos + d) != chr(prev + d)) {
@@ -206,8 +187,8 @@ class gcis_dictionary<gcis_s8b_codec> : public gcis_abstract<gcis_s8b_codec> {
             if (diff) {
 
                 g[level].lcp.encode(d);
-                g[level].rule_suffix_length.encode(cur_len - d);
-                g[level].rule.resize(g[level].rule.size() + cur_len - d);
+                g[level].rule_suffix_length.encode(cur_len - d - 1);
+                g[level].rule.resize(g[level].rule.size() + cur_len - d - 1);
 
 #ifdef REPORT
                 total_rule_len += cur_len;
@@ -215,7 +196,7 @@ class gcis_dictionary<gcis_s8b_codec> : public gcis_abstract<gcis_s8b_codec> {
                 total_rule_suffix_length += cur_len - d;
 #endif
 
-                for (j = 0; j < cur_len - d && j + pos + d < n; j++) {
+                for (j = 0; j < cur_len - d - 1 && j + pos + d < n; j++) {
 #ifdef REPORT
                     if (j + pos + d + 1 < n &&
                         chr(j + pos + d) == chr(j + pos + d + 1)) {
@@ -373,6 +354,10 @@ class gcis_s8b_pointers : public gcis_dictionary<gcis_s8b_codec> {
                     next_r_string[l++] = g[i].tail[j];
                 }
                 for (uint_t j = 0; j < r_string.size(); j++) {
+                    // std::println("Number of rules = {}, Rule = {}, Level = {} "
+                                //  "l = {}, next_r_string.size() = {}",
+                                //  r_string.size(), j, i, l,
+                                //  next_r_string.size());
                     gd.expand_rule(r_string[j], next_r_string, l);
                 }
                 r_string = std::move(next_r_string);
@@ -635,13 +620,13 @@ class gcis_s8b_pointers : public gcis_dictionary<gcis_s8b_codec> {
 
 class gcis_lyndon : public gcis_s8b_pointers {
   public:
-    pair<char *, int_t> decode_lyndon(uint_t **lyn) {
+    pair<char *, int_t> decode_lyndon(int_t **lyn) {
         sdsl::int_vector<> r_string = reduced_string;
         unsigned char *str;
         uint_t n = g[0].string_size;
         uint_t *SA = new uint_t[n];
         // allocate space for LA
-        uint_t *LA = new uint_t[n];
+        int_t *LA = new int_t[n];
         // Initialize LA
         for (int i = 0; i < n; i++)
             LA[i] = i + 1;
@@ -737,6 +722,8 @@ class gcis_lyndon : public gcis_s8b_pointers {
                         next_r_string[l++] = g[level].tail[j];
                         cnt[g[level].tail[j]]++; // count frequencies
                     }
+                    // std::println("Level = {}", level);
+                    // std::println("r_string_size() = {}", r_string.size());
                     for (uint_t j = 0; j < r_string.size(); j++) {
                         gd.expand_rule_bkt(r_string[j], next_r_string, l, cnt);
                     }
@@ -879,41 +866,52 @@ class gcis_lyndon : public gcis_s8b_pointers {
                      << (double)duration_cast<seconds>(stop - start).count()
                      << " seconds" << endl;
 #endif
+                // std::println("Final suffix array\n");
+                // if (level == 0) {
+                //     for (int i = 0; i < n; i++) {
+                //         std::println("SA[{}] = {}", i, SA[i]);
+                //     }
+                // }
             }
         } else {
             str = new unsigned char[reduced_string.size()];
             for (uint64_t i = 0; i < reduced_string.size(); i++)
                 str[i] = reduced_string[i];
         }
-
         *lyn = LA;
         return make_pair((char *)str, g[0].string_size);
     } // end decode_lyndon
 
   private:
-    void induceSAs_lyndon(uint_t *SA, uint_t *LA, int_t *s, int_t *cnt,
+    void induceSAs_lyndon(uint_t *SA, int_t *LA, int_t *s, int_t *cnt,
                           int_t *bkt, uint_t n, int_t K, int_t cs, int level) {
         get_buckets(cnt, bkt, K, true);
         int_t i, j;
         for (i = n - 1; i > 0; i--) {
             int_t next, prev;
             j = SA[i];
-
+            // std::println("SA[{}] = {}", i, SA[i]);
             if (SA[i] > 0) {
-                std::println("SA[{}] = {}", i, SA[i]);
                 if (LA[j - 1] < j)
                     prev = LA[j - 1];
                 else
                     prev = j - 1;
                 next = LA[j];
-
                 LA[next - 1] = prev;
-                if (prev >= 0)
+                // std::println("(SA[i] > 0) Computed LA[{}] = {}", next - 1,
+                //              prev);
+                if (prev >= 0) {
                     LA[prev] = next;
+                    // std::println("(SA[i] > 0) Computed LA[{}] = {}", prev,
+                    //              next);
+                }
 
                 j = SA[i] - 1;
                 if (chr(j) <= chr(j + 1) && bkt[chr(j)] < i) { // Inducing
                                                                // S-type
+                    // std::println("Inducing S-suffix {} at pos {}", j,
+                                //  bkt[chr(j)]);
+
                     SA[bkt[chr(j)]] = j;
                     bkt[chr(j)]--;
                 }
@@ -921,14 +919,21 @@ class gcis_lyndon : public gcis_s8b_pointers {
                 prev = j - 1;
                 next = LA[j];
                 LA[next - 1] = prev;
+                // std::println("Computed LA[{}] = {}", next - 1, prev);
             }
         }
         LA[n - 1] = n;
+        // for (int j = 0; j < n; j++) {
+        //     std::println("Intermediary LA[{}] = {}", j, LA[j]);
+        // }
         for (j = 0; j < n; j++) {
-            if (LA[j] < j)
+            if (LA[j] < j || LA[j] >= n) {
                 LA[j] = 1;
-            else
+                // std::println("Final computing LA[{}] = 1", j);
+            } else {
                 LA[j] = LA[j] - j;
+                // std::println("Final computing LA[{}] = {}", j, LA[j]);
+            }
         }
     }
 
@@ -948,8 +953,6 @@ class gcis_lyndon : public gcis_s8b_pointers {
         uint_t discarded_rules_len = 0;
 #endif
 
-        cout << "LINDAO ARRAY\n";
-
         unsigned char *t =
             new unsigned char[n / 8 + 1]; // LS-type array in bits
         // stage 1: reduce the problem by at least 1/2
@@ -966,8 +969,9 @@ class gcis_lyndon : public gcis_s8b_pointers {
         }
         int_t *bkt = new int_t[K]; // bucket counters
 
-        int_t first = n - 1;
+        int_t first = n;
 
+        std::println("Inducing GCIS Lyndon");
         // sort all the S-substrings
         get_buckets(s, bkt, n, K, cs, true); // find ends of buckets
 
@@ -1030,10 +1034,10 @@ class gcis_lyndon : public gcis_s8b_pointers {
             while (pos + cur_len < n && !isLMS(pos + cur_len))
                 cur_len++;
             cur_len++;
-            bool diff = prev == -1;
+            bool diff = prev == -1 || cur_len != prev_len;
             int_t d;
             //  d equals to the LCP between two consecutive LMS-substrings
-            for (d = 0; d < min(prev_len, cur_len); d++) {
+            for (d = 0; d < min(prev_len, cur_len)-1; d++) {
                 // If is first suffix in LMS order (sentinel), or one of the
                 // suffixes reached the last position of T, or the
                 // characters of T differs or the type os suffixes differ.
@@ -1045,27 +1049,34 @@ class gcis_lyndon : public gcis_s8b_pointers {
             }
 
             if (diff) {
-
+                std::println("d = {} cur_len = {}", d, cur_len);
+                if (cur_len - d - 1 <= 0)
+                    std::println("{} - 1 - {} = {}", cur_len, d,
+                                 cur_len - d - 1);
                 g[level].lcp.encode(d);
-                g[level].rule_suffix_length.encode(cur_len - 1 - d);
-                g[level].rule.resize(g[level].rule.size() + cur_len - 1 - d);
+                g[level].rule_suffix_length.encode(cur_len - d - 1);
+                g[level].rule.resize(g[level].rule.size() + cur_len - d - 1);
 
 #ifdef REPORT
                 total_rule_len += cur_len - 1;
                 total_lcp += d;
                 total_rule_suffix_length += cur_len - d - 1;
 #endif
-
-                for (j = 0; j < cur_len - 1 - d && j + pos + d < n; j++) {
+                // std::print("Rule {}: ", name + 1);
+                // std::print("LCP = {}, ", d);
+                for (j = 0; j < cur_len -d - 1 && j + pos + d < n; j++) {
 #ifdef REPORT
                     if (j + pos + d + 1 < n &&
                         chr(j + pos + d) == chr(j + pos + d + 1)) {
                         run_length_potential++;
                     }
 #endif
+
+                    // std::print("{} ", (uint_t)chr(j + pos + d));
                     g[level].rule[rule_index] = (uint_t)chr(j + pos + d);
                     rule_index++;
                 }
+                // std::println("");
                 name++;
                 prev = pos;
                 prev_len = cur_len;
@@ -1080,14 +1091,14 @@ class gcis_lyndon : public gcis_s8b_pointers {
                 discarded_rules_n++;
             }
 #endif
-            std::println("LMS string with name {} at pos {}", name, pos);
-            for (int k = 0; k < cur_len - 1; k++) {
-                if (K == 256)
-                    std::print("{} ", (char)chr(pos + k));
-                else
-                    std::print("{} ", (int)chr(pos + k));
-            }
-            std::print("\n");
+            // std::println("LMS string with name {} at pos {}", name, pos);
+            // for (int k = 0; k < cur_len - 1; k++) {
+            //     if (K == 256)
+            //         std::print("{} ", (char)chr(pos + k));
+            //     else
+            //         std::print("{} ", (int)chr(pos + k));
+            // }
+            // std::print("\n");
 
             pos = (pos % 2 == 0) ? pos / 2 : (pos - 1) / 2;
             SA[n1 + pos] = name;

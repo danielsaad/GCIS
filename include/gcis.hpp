@@ -9,6 +9,7 @@
 #include "util.hpp"
 #include <cstdint>
 #include <cstring>
+#include <print>
 
 #define chr(i) (cs == sizeof(int_t) ? ((int_t *)s)[i] : ((unsigned char *)s)[i])
 
@@ -28,10 +29,10 @@ const int EMPTY = 0xffffffff;
 
 unsigned char mask[] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 
-#define tget(i) ((t[(i) >> 3] & mask[(i)&0x7]) ? 1 : 0)
+#define tget(i) ((t[(i) >> 3] & mask[(i) & 0x7]) ? 1 : 0)
 #define tset(i, b)                                                             \
-    t[(i) >> 3] =                                                              \
-        (b) ? (mask[(i)&0x7] | t[(i) >> 3]) : ((~mask[(i)&0x7]) & t[(i) >> 3])
+    t[(i) >> 3] = (b) ? (mask[(i) & 0x7] | t[(i) >> 3])                        \
+                      : ((~mask[(i) & 0x7]) & t[(i) >> 3])
 
 #define isLMS(i) (i > 0 && tget(i) && !tget(i - 1))
 
@@ -66,7 +67,7 @@ class gcis_interface {
   public:
     virtual void encode(char *s, int_t n) = 0;
     virtual pair<char *, int_t> decode() = 0;
-    virtual void extract_batch(vector<pair<uint_t,uint_t>> &v_query) = 0;
+    virtual void extract_batch(vector<pair<uint_t, uint_t>> &v_query) = 0;
     virtual pair<char *, int_t> decode_saca(uint_t **SA) = 0;
     virtual pair<char *, int_t> decode_saca_lcp(uint_t **SA, int_t **LCP) = 0;
     virtual uint64_t size_in_bytes() = 0;
@@ -74,13 +75,14 @@ class gcis_interface {
     virtual void load(std::istream &i) = 0;
 };
 
-template <class codec_t> class gcis_abstract : public gcis_interface {
+template <class codec_t>
+class gcis_abstract : public gcis_interface {
   public:
     std::vector<codec_t> g;
     sdsl::int_vector<> reduced_string;
 
   public:
-    void extract_batch(vector<pair<uint_t,uint_t>> &v_query) {
+    void extract_batch(vector<pair<uint_t, uint_t>> &v_query) {
         throw(gcis::util::NotImplementedException("extract_batch"));
     }
     pair<char *, int_t> decode_saca(uint_t **SA) {
@@ -547,11 +549,16 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
         get_buckets(s, bkt, n, K, cs, false);
 
         SA[bkt[chr(n - 1)]++] = n - 1;
+        // std::println("Special Inducing L-suffix {} at pos {}", n - 1,
+        //  bkt[chr(n - 1)] - 1);
         //  if(level==0) bkt[0]++;
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < n ; i++) {
             if (SA[i] != EMPTY) {
                 j = SA[i] - 1;
                 if (j >= 0 && !tget(j)) {
+                    // std::println("Inducing L-suffix {} at pos {}", j,
+                    //  bkt[chr(j)]);
+
                     SA[bkt[chr(j)]++] = j;
                 }
             }
@@ -611,6 +618,8 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
                 j = SA[i] - 1;
                 if (j >= 0)
                     if (chr(j) <= chr(j + 1) && bkt[chr(j)] < i) {
+                        // std::println("Inducing S-suffix {} at pos {}", j,
+                        //  bkt[chr(j)]);
                         SA[bkt[chr(j)]--] = j;
                     }
             }
@@ -761,6 +770,8 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
         int_t i, j;
         // find heads of buckets
         get_buckets(cnt, bkt, K, false);
+        // std::println("Special Inducing L-suffix {} at pos {}", n - 1,
+        // bkt[chr(n - 1)]);
         SA[bkt[chr(n - 1)]++] = n - 1;
         //  if(level==0) bkt[0]++;
         for (i = 0; i < n; i++) {
@@ -768,6 +779,9 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
                 j = SA[i] - 1;
                 if (j >= 0)
                     if (chr(j) >= chr(SA[i])) {
+                        // std::println("Inducing L-suffix {} at pos {}", j,
+                        //              bkt[chr(j)]);
+
                         SA[bkt[chr(j)]++] = j;
                     }
             }
@@ -1214,6 +1228,7 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
 //     return extracted_text;
 // }
 
-template <typename T> class gcis_dictionary : public gcis_abstract<T> {};
+template <typename T>
+class gcis_dictionary : public gcis_abstract<T> {};
 
 #endif

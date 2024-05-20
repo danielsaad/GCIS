@@ -1,5 +1,6 @@
 #include "gcis_s8b_codec.hpp"
-
+#include <iostream>
+#include <print>
 uint64_t gcis_s8b_codec::size_in_bytes() {
     uint64_t total_bytes = 0;
     total_bytes += 2 * sizeof(uint_t);
@@ -99,11 +100,15 @@ gcis_s8b_pointers_codec_level gcis_s8b_codec::decompress() {
     lcp.reset();
     rule_suffix_length.reset();
     for (uint64_t i = 0; i < lcp.size(); i++) {
-        total_lcp_length += lcp.get_next();
+        auto lcp_len = lcp.get_next();
+        // std::println("lcp_len = {}", lcp_len);
+        total_lcp_length += lcp_len;
     }
     // Compute the total rule suffix length and the number of rules
     for (uint64_t i = 0; i < rule_suffix_length.size(); i++) {
-        total_rule_suffix_length += rule_suffix_length.get_next();
+        auto rule_suffix_len = rule_suffix_length.get_next();
+        // std::println("rule suffix len = {}", rule_suffix_len);
+        total_rule_suffix_length += rule_suffix_len;
     }
 
     // Resize data structures
@@ -111,7 +116,7 @@ gcis_s8b_pointers_codec_level gcis_s8b_codec::decompress() {
     gd.rule.width(sdsl::bits::hi(alphabet_size - 1) + 1);
     gd.rule.resize(total_length);
     uint64_t rule_start = 0;
-    uint64_t prev_rule_start=0;
+    uint64_t prev_rule_start = 0;
     uint64_t start = 0;
     lcp.reset();
     rule_suffix_length.reset();
@@ -126,16 +131,20 @@ gcis_s8b_pointers_codec_level gcis_s8b_codec::decompress() {
 
         // Copy the contents of the previous rule by LCP length chars
         uint64_t j = 0;
+        // std::println("Rule {}", i);
         while (j < lcp_length) {
             gd.rule[rule_start + j] = gd.rule[prev_rule_start + j];
+            // std::print("{} ", (int)gd.rule[rule_start + j]);
             j++;
         }
 
         // Copy the remaining suffix rule
         while (j < total_length) {
             gd.rule[rule_start + j] = rule[start++];
+            // std::print("{} ", (int)gd.rule[rule_start + j]);
             j++;
         }
+        // std::println("");
 
         gd.rule_pos.push_back(rule_start);
         prev_rule_start = rule_start;
@@ -144,7 +153,6 @@ gcis_s8b_pointers_codec_level gcis_s8b_codec::decompress() {
     gd.rule_pos.push_back(rule_start);
     return gd;
 }
-
 
 void gcis_s8b_codec_level::expand_rule(uint_t rule_num,
                                        sdsl::int_vector<> &r_string,
@@ -157,8 +165,7 @@ void gcis_s8b_codec_level::expand_rule(uint_t rule_num,
     }
 }
 
-void gcis_s8b_codec_level::expand_rule(uint_t rule_num, char *s,
-                                       uint_t &l) {
+void gcis_s8b_codec_level::expand_rule(uint_t rule_num, char *s, uint_t &l) {
     uint_t rule_start = rule_delim_sel(rule_num + 1);
     uint_t rule_length = rule_delim_sel(rule_num + 2) - rule_start;
     for (uint64_t i = 0; i < rule_length; i++) {
@@ -182,6 +189,7 @@ void gcis_s8b_pointers_codec_level::expand_rule(uint_t rule_num, char *s,
                                                 uint_t &l) {
     uint_t rule_start = rule_pos[rule_num];
     uint_t rule_length = rule_pos[rule_num + 1] - rule_pos[rule_num];
+    // std::print("Rule len = {}", rule_length);
     for (uint_t i = 0; i < rule_length; i++) {
         s[l] = rule[rule_start + i];
         l++;
@@ -190,20 +198,28 @@ void gcis_s8b_pointers_codec_level::expand_rule(uint_t rule_num, char *s,
 
 void gcis_s8b_pointers_codec_level::expand_rule_bkt(
     uint_t rule_num, sdsl::int_vector<> &r_string, uint_t &l, int_t *bkt) {
+    // std::println("\nrule num = {}", rule_num);
     uint_t rule_start = rule_pos[rule_num];
     uint_t rule_length = rule_pos[rule_num + 1] - rule_pos[rule_num];
+    // std::println("Rule start = {}\n rule_lenght = {}", rule_start,
+    // rule_length); std::println("r_string_size() = {} l = {}",
+    // r_string.size(), l);
     for (uint_t i = 0; i < rule_length; i++) {
+        // assert(l < r_string.size());
         r_string[l++] = rule[rule_start + i];
         bkt[rule[rule_start + i]]++;
     }
 }
 
 void gcis_s8b_pointers_codec_level::expand_rule_bkt(uint_t rule_num,
-                                                          unsigned char *s,
-                                                          uint_t &l,
-                                                          int_t *bkt) {
+                                                    unsigned char *s, uint_t &l,
+                                                    int_t *bkt) {
+    // std::println("rule num = {}", rule_num);
     uint_t rule_start = rule_pos[rule_num];
     uint_t rule_length = rule_pos[rule_num + 1] - rule_pos[rule_num];
+    // std::println("Rule start = {}\n rule_lenght = {}\n", rule_start,
+    //  rule_length);
+
     for (uint_t i = 0; i < rule_length; i++) {
         s[l++] = rule[rule_start + i];
         bkt[rule[rule_start + i]]++;

@@ -21,6 +21,7 @@ void load_string_from_file(char *&str, char *filename, int_t &n) {
 };
 
 int main(int argc, char *argv[]) {
+    std::cout.setf(std::ios_base::unitbuf);
 
 #ifdef MEM_MONITOR
     mm.event("GC-IS Init");
@@ -96,12 +97,11 @@ int main(int argc, char *argv[]) {
         output.close();
     } else if (strcmp(mode, "-l") == 0) {
         std::ifstream input(argv[2]);
+        std::ofstream output(argv[3]);
         g.load(input);
-        uint_t *LA = nullptr;
+        int_t *LA = nullptr;
         auto [str, n] = g.decode_lyndon(&LA);
-        for (int i = 0; i < n; i++) {
-            std::println("LA[{}] = {}", i, LA[i]);
-        }
+        output.write((const char *)LA, sizeof(int_t) * n);
     } else if (strcmp(mode, "-sa") == 0) {
         std::ifstream input(argv[2]);
         g.load(input);
