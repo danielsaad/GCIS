@@ -5,7 +5,6 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <print>
 
 using namespace std::chrono;
 using timer = std::chrono::high_resolution_clock;
@@ -31,6 +30,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "Usage: \n"
                   << argv[0] << " -c <file_to_be_encoded> <output>\n"
                   << argv[0] << " -d <file_to_be_decoded> <output>\n"
+                  << argv[0] << "-dd <file_to_be_decode>\n"
                   << argv[0] << " -l <file_to_be_decoded> \n"
                   << argv[0] << " -sa <file_to_be_decoded>\n";
         exit(EXIT_FAILURE);
@@ -95,6 +95,33 @@ int main(int argc, char *argv[]) {
         output.write(str, n);
         input.close();
         output.close();
+    } else if (strcmp(mode, "-dd") == 0) {
+        std::ifstream input(argv[2]);
+
+#ifdef MEM_MONITOR
+        mm.event("GC-IS Load");
+#endif
+
+        g.load(input);
+
+#ifdef MEM_MONITOR
+        mm.event("GC-IS Decompress");
+#endif
+
+        auto start = timer::now();
+        char *str;
+        int_t n;
+        tie(str, n) = g.decode();
+        auto stop = timer::now();
+
+        cout << "input:\t" << g.size_in_bytes() << " bytes" << endl;
+        cout << "output:\t" << n << " bytes" << endl;
+        cout << "time: "
+             << (double)duration_cast<milliseconds>(stop - start).count() /
+                    1000.0
+             << setprecision(2) << fixed << " seconds" << endl;
+        input.close();
+        delete[] str;
     } else if (strcmp(mode, "-l") == 0) {
         std::ifstream input(argv[2]);
         std::ofstream output(argv[3]);
@@ -102,14 +129,26 @@ int main(int argc, char *argv[]) {
         int_t *LA = nullptr;
         auto [str, n] = g.decode_lyndon(&LA);
         output.write((const char *)LA, sizeof(int_t) * n);
+        delete[] LA;
+        delete[] str;
+    } else if (strcmp(mode, "-lite") == 0) {
+        std::ifstream input(argv[2]);
+        std::ofstream output(argv[3]);
+        gcis_lyndon_lite glite;
+        glite.load(input);
+        int_t *LA = nullptr;
+        uint_t n = glite.decode_lyndon(&LA);
+        output.write((const char *)LA, sizeof(int_t) * n);
+        delete[] LA;
     } else if (strcmp(mode, "-sa") == 0) {
         std::ifstream input(argv[2]);
+        std::ofstream output(argv[3]);
         g.load(input);
         uint_t *SA = nullptr;
         auto [t, n] = g.decode_saca(&SA);
-        for (int i = 0; i < n; i++) {
-            std::println("SA[{}] = {}", i, SA[i]);
-        }
+        output.write((const char *)SA, sizeof(uint_t) * n);
+        delete[] SA;
+        delete[] t;
     }
 
 #ifdef MEM_MONITOR

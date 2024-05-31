@@ -1,6 +1,6 @@
 #include "gcis_s8b_codec.hpp"
 #include <iostream>
-#include <print>
+
 uint64_t gcis_s8b_codec::size_in_bytes() {
     uint64_t total_bytes = 0;
     total_bytes += 2 * sizeof(uint_t);

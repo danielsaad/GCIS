@@ -4,11 +4,10 @@
 
 #ifndef GC_IS_GCIS_S8B_HPP
 #define GC_IS_GCIS_S8B_HPP
-
 #include "gcis.hpp"
 #include "gcis_s8b_codec.hpp"
 #include "util.hpp"
-#include <print>
+// #include <print>
 template <>
 class gcis_dictionary<gcis_s8b_codec> : public gcis_abstract<gcis_s8b_codec> {
   public:
@@ -354,10 +353,11 @@ class gcis_s8b_pointers : public gcis_dictionary<gcis_s8b_codec> {
                     next_r_string[l++] = g[i].tail[j];
                 }
                 for (uint_t j = 0; j < r_string.size(); j++) {
-                    // std::println("Number of rules = {}, Rule = {}, Level = {} "
-                                //  "l = {}, next_r_string.size() = {}",
-                                //  r_string.size(), j, i, l,
-                                //  next_r_string.size());
+                    // std::println("Number of rules = {}, Rule = {}, Level = {}
+                    // "
+                    //  "l = {}, next_r_string.size() = {}",
+                    //  r_string.size(), j, i, l,
+                    //  next_r_string.size());
                     gd.expand_rule(r_string[j], next_r_string, l);
                 }
                 r_string = std::move(next_r_string);
@@ -879,6 +879,7 @@ class gcis_lyndon : public gcis_s8b_pointers {
                 str[i] = reduced_string[i];
         }
         *lyn = LA;
+        delete[] SA;
         return make_pair((char *)str, g[0].string_size);
     } // end decode_lyndon
 
@@ -910,7 +911,7 @@ class gcis_lyndon : public gcis_s8b_pointers {
                 if (chr(j) <= chr(j + 1) && bkt[chr(j)] < i) { // Inducing
                                                                // S-type
                     // std::println("Inducing S-suffix {} at pos {}", j,
-                                //  bkt[chr(j)]);
+                    //  bkt[chr(j)]);
 
                     SA[bkt[chr(j)]] = j;
                     bkt[chr(j)]--;
@@ -927,7 +928,7 @@ class gcis_lyndon : public gcis_s8b_pointers {
         //     std::println("Intermediary LA[{}] = {}", j, LA[j]);
         // }
         for (j = 0; j < n; j++) {
-            if (LA[j] < j || LA[j] >= n) {
+            if (LA[j] < j) {
                 LA[j] = 1;
                 // std::println("Final computing LA[{}] = 1", j);
             } else {
@@ -971,7 +972,7 @@ class gcis_lyndon : public gcis_s8b_pointers {
 
         int_t first = n;
 
-        std::println("Inducing GCIS Lyndon");
+        // std::println("Inducing GCIS Lyndon");
         // sort all the S-substrings
         get_buckets(s, bkt, n, K, cs, true); // find ends of buckets
 
@@ -1037,7 +1038,7 @@ class gcis_lyndon : public gcis_s8b_pointers {
             bool diff = prev == -1 || cur_len != prev_len;
             int_t d;
             //  d equals to the LCP between two consecutive LMS-substrings
-            for (d = 0; d < min(prev_len, cur_len)-1; d++) {
+            for (d = 0; d < min(prev_len, cur_len); d++) {
                 // If is first suffix in LMS order (sentinel), or one of the
                 // suffixes reached the last position of T, or the
                 // characters of T differs or the type os suffixes differ.
@@ -1049,13 +1050,20 @@ class gcis_lyndon : public gcis_s8b_pointers {
             }
 
             if (diff) {
-                std::println("d = {} cur_len = {}", d, cur_len);
-                if (cur_len - d - 1 <= 0)
-                    std::println("{} - 1 - {} = {}", cur_len, d,
-                                 cur_len - d - 1);
-                g[level].lcp.encode(d);
-                g[level].rule_suffix_length.encode(cur_len - d - 1);
-                g[level].rule.resize(g[level].rule.size() + cur_len - d - 1);
+                // std::println("d = {} cur_len = {}", d, cur_len);
+                // if (cur_len - d - 1 <= 0){
+                // std::println("{} - 1 - {} = {}", cur_len, d,
+                //  cur_len - d - 1);
+                // }
+                if (d == cur_len) {
+                    g[level].lcp.encode(d - 1);
+                    g[level].rule_suffix_length.encode(0);
+                } else {
+                    g[level].lcp.encode(d);
+                    g[level].rule_suffix_length.encode(cur_len - d - 1);
+                    g[level].rule.resize(g[level].rule.size() + cur_len - d -
+                                         1);
+                }
 
 #ifdef REPORT
                 total_rule_len += cur_len - 1;
@@ -1064,7 +1072,7 @@ class gcis_lyndon : public gcis_s8b_pointers {
 #endif
                 // std::print("Rule {}: ", name + 1);
                 // std::print("LCP = {}, ", d);
-                for (j = 0; j < cur_len -d - 1 && j + pos + d < n; j++) {
+                for (j = 0; j < cur_len - d - 1 && j + pos + d < n; j++) {
 #ifdef REPORT
                     if (j + pos + d + 1 < n &&
                         chr(j + pos + d) == chr(j + pos + d + 1)) {
@@ -1203,6 +1211,436 @@ class gcis_lyndon : public gcis_s8b_pointers {
 #endif
         }
         delete[] t;
+    }
+};
+
+class gcis_lyndon_lite : public gcis_lyndon {
+  public:
+    uint_t decode_lyndon(int_t **lyn) {
+        sdsl::bit_vector t_array;
+        sdsl::rank_support_v<01, 2> t_array_rank;
+        sdsl::select_support_mcl<01, 2> t_array_sel;
+        sdsl::int_vector<> r_string = reduced_string;
+        unsigned char *str;
+        uint_t n = g[0].string_size;
+        uint_t *SA = new uint_t[n];
+        // allocate space for LA
+        int_t *LA = new int_t[n];
+        // Initialize LA
+        for (int i = 0; i < n; i++)
+            LA[i] = i + 1;
+
+        int_t *s = (int_t *)SA + n / 2;
+
+        int sz = g.size();
+        int cs = sizeof(int_t);
+        if (g.size()) {
+
+            for (int64_t level = sz - 1; level >= 0; level--) {
+#if TIME
+                auto start = timer::now();
+#endif
+
+                n = g[level].string_size;
+
+                // cout << "R string level" << level << "\n";
+                // for (int i = 0; i < r_string.size(); i++) {
+                //     cout << r_string[i] << ' ';
+                // }
+                // cout << endl;
+                uint_t n1 = r_string.size();
+                uint_t *SA1 = SA, *s1 = SA + n - n1;
+
+                // copy to s1[1]
+                if (level == sz - 1)
+                    for (uint_t i = 0; i < n1; i++)
+                        SA1[r_string[i]] = i;
+                else
+                    for (uint_t i = 0; i < n1; i++)
+                        s1[i] = SA[i];
+
+#if DEBUG
+                cout << endl
+                     << "level = " << level
+                     << "\t string_size = " << g[level].string_size << "\n"
+                     << "alphabet_size = " << g[level].alphabet_size << endl;
+                cout << "n = " << n << "\nn1 = " << n1 << endl;
+                cout << "\n####" << endl;
+                cout << "s1 = ";
+                for (uint_t i = 0; i < n1; i++) {
+                    cout << s1[i] << " ";
+                    cout << endl;
+                }
+#endif
+
+#if TIME
+                auto expand = timer::now();
+#endif
+
+                gcis_s8b_pointers_codec_level gd =
+                    std::move(g[level].decompress());
+
+                int_t K = g[level].alphabet_size; // alphabet
+
+                int_t *bkt = new int_t[K]; // bucket
+                int_t *cnt = new int_t[K]; // counters
+                uint_t l = 0;
+
+                init_buckets(cnt, K);
+
+                if (level == 0) {
+                    n = g[level].string_size;
+                    t_array = sdsl::bit_vector(n, 0);
+                    // Classify the type of each character
+                    uint_t cur_t, succ_t;
+                    uint_t j = n1 - 1;
+                    succ_t = 1; // s[n] must be L-type
+                    int_t succ_v = -1;
+                    int_t idx = n - 1;
+                    for (int_t l = r_string.size() - 1; l >= 0; l--) {
+                        uint_t rule_num = r_string[l];
+                        uint_t pos = gd.rule_pos[rule_num + 1] - 1;
+                        uint_t len =
+                            gd.rule_pos[rule_num + 1] - gd.rule_pos[rule_num];
+                        for (uint_t k = 0; k < len; k++) {
+                            int_t cur_v = gd.rule[pos--];
+                            cnt[cur_v]++;
+                            cur_t = (cur_v < succ_v) ||
+                                            (cur_v == succ_v && succ_t == 1)
+                                        ? 1
+                                        : 0;
+                            if (l < r_string.size() - 1 && cur_t == 0 &&
+                                succ_t == 1) {
+                                s1[j--] = idx + 1;
+                            }
+                            t_array[idx--] = cur_t;
+                            succ_v = cur_v;
+                            succ_t = cur_t;
+                        }
+                    }
+                    if (g[level].tail.size() > 0) {
+                        s1[j--] = idx + 1;
+                    }
+                    // str = new unsigned char[g[level].string_size];
+                    for (int_t l = g[level].tail.size() - 1; l >= 0; l--) {
+                        uint_t cur_v = g[level].tail[l];
+                        cnt[cur_v]++;
+                        cur_t =
+                            (cur_v < succ_v) || (cur_v == succ_v && succ_t == 1)
+                                ? 1
+                                : 0;
+                        t_array[idx--] = cur_t;
+                        succ_v = cur_v;
+                        succ_t = cur_t;
+                    }
+                } else {
+                    sdsl::int_vector<> next_r_string(
+                        g[level].string_size, 0,
+                        sdsl::bits::hi(g[level].alphabet_size - 1) + 1);
+
+                    init_buckets(bkt, K);
+
+                    // Convert the reduced string in the previous reduced string
+                    for (uint_t j = 0; j < g[level].tail.size(); j++) {
+                        next_r_string[l++] = g[level].tail[j];
+                        cnt[g[level].tail[j]]++; // count frequencies
+                    }
+                    // std::println("Level = {}", level);
+                    // std::println("r_string_size() = {}", r_string.size());
+                    for (uint_t j = 0; j < r_string.size(); j++) {
+                        gd.expand_rule_bkt(r_string[j], next_r_string, l, cnt);
+                    }
+                    r_string = std::move(next_r_string);
+
+                    // n=r_string.size();
+                    n = g[level].string_size;
+                    // copy to s[1]
+                    for (uint_t i = 0; i < n; i++)
+                        s[i] = r_string[i];
+
+                    // Classify the type of each character
+                    uint_t cur_t, succ_t;
+                    uint_t j = n1 - 1;
+                    // s1[j--] = n - 1;
+                    succ_t = 0; // s[n-1] must be L-type
+                    for (uint_t i = n - 1; i > 0; i--) {
+                        cur_t =
+                            (r_string[i - 1] < r_string[i] ||
+                             (r_string[i - 1] == r_string[i] && succ_t == 1))
+                                ? 1
+                                : 0;
+                        if (cur_t == 0 && succ_t == 1)
+                            s1[j--] = i;
+                        succ_t = cur_t;
+                    }
+                }
+
+#if TIME
+                auto end = timer::now();
+                cout << "expand: "
+                     << (double)duration_cast<seconds>(end - expand).count()
+                     << " seconds" << endl;
+#endif
+
+#if DEGUB
+                cout << "n = " << n << "\nn1 = " << n1 << endl;
+                cout << "level = " << level
+                     << "\t string_size = " << g[level].string_size << "\n"
+                     << "alphabet_size = " << g[level].alphabet_size << endl;
+                cout << "SA1: ";
+                for (uint_t i = 0; i < n1; i++)
+                    cout << SA[i] << ", ";
+                cout << endl;
+#endif
+
+                // stage 3: induce the result for the original problem
+                get_buckets(cnt, bkt, K, true);
+
+#if TIME
+                auto begin = timer::now();
+#endif
+
+#if TIME
+                end = timer::now();
+                cout << "classify: "
+                     << (double)duration_cast<seconds>(end - begin).count()
+                     << " seconds" << endl;
+                begin = timer::now();
+#endif
+
+#if DEGUB
+                for (int_t i = 0; i < n; i++) {
+                    cout << tget(i) << " ";
+                }
+                cout << endl;
+#endif
+
+                int_t j = 0;
+                for (int_t i = 0; i < n1; i++) {
+                    SA1[i] = s1[SA1[i]]; // get index in s1
+                }
+                for (int_t i = n1; i < n; i++) {
+                    SA[i] = EMPTY; // init SA[n1..n-1]
+                }
+
+                if (level) {
+                    for (int_t i = n1 - 1; i >= 0; i--) {
+                        j = SA[i];
+                        SA[i] = EMPTY;
+                        SA[bkt[chr(j)]--] = j;
+                    }
+                } else {
+                    // for (int i = 0; i < n; i++) {
+                    //     cout << "t[" << i << "] = " << t_array[i] << '\n';
+                    // }
+                    // for (int i = 0; i < n; i++) {
+                    //     cout << "SA[" << i << "] = " << SA[i] << '\n';
+                    // }
+                    // for (int i = 0; i < r_string.size(); i++) {
+                    //     cout << "R[" << i << "] = " << r_string[i] << '\n';
+                    // }
+                    sdsl::util::init_support(t_array_rank, &t_array);
+                    sdsl::util::init_support(t_array_sel, &t_array);
+                    for (int_t i = n1 - 1; i >= 0; i--) {
+                        uint_t j = SA[i];
+                        SA[i] = EMPTY;
+                        uint_t strj = get_str_i(t_array_rank, t_array_sel,
+                                                r_string, gd, j);
+                        SA[bkt[strj]--] = j;
+                        // std::print("j {} str[j] {}\n", j, strj);
+                    }
+                    // SA[0] = n - 1;
+                }
+
+#if TIME
+                end = timer::now();
+                cout << "position: "
+                     << (double)duration_cast<seconds>(end - begin).count()
+                     << " seconds" << endl;
+                begin = timer::now();
+#endif
+
+                if (level)
+                    induceSAl(SA, s, cnt, bkt, n, K, cs, level);
+                else
+                    induceSAl_lite(t_array, t_array_rank, t_array_sel, r_string,
+                                   gd, SA, cnt, bkt, n, K,
+                                   sizeof(unsigned char));
+
+#if TIME
+                end = timer::now();
+                cout << "induce L: "
+                     << (double)duration_cast<seconds>(end - begin).count()
+                     << " seconds" << endl;
+                begin = timer::now();
+#endif
+
+                if (level)
+                    induceSAs(SA, s, cnt, bkt, n, K, cs, level);
+                else
+                    induceSAs_lyndon(SA, LA, (int_t *)str, cnt, bkt, n, K,
+                                     sizeof(unsigned char), level, gd, t_array,
+                                     t_array_rank, t_array_sel, r_string);
+
+#if TIME
+                end = timer::now();
+                cout << "induce S: "
+                     << (double)duration_cast<seconds>(end - begin).count()
+                     << " seconds" << endl;
+#endif
+
+#if DEGUB
+                cout << "SA: ";
+                for (uint_t i = 0; i < n; i++) {
+                    cout << SA[i] << ", ";
+                }
+                cout << endl;
+#endif
+                delete[] bkt;
+                delete[] cnt;
+                g.pop_back();
+#if TIME
+                auto stop = timer::now();
+                cout << "time: "
+                     << (double)duration_cast<seconds>(stop - start).count()
+                     << " seconds" << endl;
+#endif
+                // std::println("Final suffix array\n");
+                // if (level == 0) {
+                //     for (int i = 0; i < n; i++) {
+                //         std::println("SA[{}] = {}", i, SA[i]);
+                //     }
+                // }
+            }
+        }
+        // } else {
+        //     str = new unsigned char[reduced_string.size()];
+        //     for (uint64_t i = 0; i < reduced_string.size(); i++)
+        //         str[i] = reduced_string[i];
+        // }
+        *lyn = LA;
+        delete[] SA;
+        return n;
+    } // end decode_lyndon
+
+    void induceSAs_lyndon(uint_t *SA, int_t *LA, int_t *s, int_t *cnt,
+                          int_t *bkt, uint_t n, int_t K, int_t cs, int level,
+                          gcis_s8b_pointers_codec_level &gd,
+                          sdsl::bit_vector &t_array,
+                          sdsl::rank_support_v<01, 2> &t_array_rank,
+                          sdsl::select_support_mcl<01, 2> &t_array_sel,
+                          sdsl::int_vector<> &r_string) {
+        get_buckets(cnt, bkt, K, true);
+        int_t i, j;
+        for (i = n - 1; i > 0; i--) {
+            int_t next, prev;
+            j = SA[i];
+            // std::println("SA[{}] = {}", i, SA[i]);
+            if (SA[i] > 0) {
+                if (LA[j - 1] < j)
+                    prev = LA[j - 1];
+                else
+                    prev = j - 1;
+                next = LA[j];
+                LA[next - 1] = prev;
+                // std::println("(SA[i] > 0) Computed LA[{}] = {}", next - 1,
+                //              prev);
+                if (prev >= 0) {
+                    LA[prev] = next;
+                    // std::println("(SA[i] > 0) Computed LA[{}] = {}", prev,
+                    //              next);
+                }
+
+                j = SA[i] - 1;
+                if (t_array[j] == 1) {
+                    // uint_t strj1 =
+                    //     get_str_i(t_array_rank, t_array_sel, r_string, gd, j
+                    //     + 1);
+                    // if (strj <= strj1 && bkt[strj] < i) { // Inducing
+                    // S-type
+                    // std::println("Inducing S-suffix {} at pos {}", j,
+                    //  bkt[chr(j)]);
+                    uint_t strj =
+                        get_str_i(t_array_rank, t_array_sel, r_string, gd, j);
+
+                    SA[bkt[strj]] = j;
+                    bkt[strj]--;
+                }
+            } else {
+                prev = j - 1;
+                next = LA[j];
+                LA[next - 1] = prev;
+                // std::println("Computed LA[{}] = {}", next - 1, prev);
+            }
+        }
+        LA[n - 1] = n;
+        // for (int j = 0; j < n; j++) {
+        //     std::println("Intermediary LA[{}] = {}", j, LA[j]);
+        // }
+        for (j = 0; j < n; j++) {
+            if (LA[j] < j) {
+                LA[j] = 1;
+                // std::println("Final computing LA[{}] = 1", j);
+            } else {
+                LA[j] = LA[j] - j;
+                // std::println("Final computing LA[{}] = {}", j, LA[j]);
+            }
+        }
+    }
+
+  private:
+    uint_t get_str_i(sdsl::rank_support_v<01, 2> &t_array_rnk,
+                     sdsl::select_support_mcl<01, 2> &t_array_sel,
+                     sdsl::int_vector<> &r_string,
+                     gcis_s8b_pointers_codec_level &gd, uint_t i) {
+        uint_t rnk = t_array_rnk(i + 1);
+        if (rnk == 0) {
+            return g[0].tail[i];
+        }
+        rnk--;
+        uint_t rule_num = r_string[rnk];
+        uint_t pos = gd.rule_pos[rule_num] + (i - t_array_sel(rnk + 1));
+        // std::print("rule num {} pos {} gd.rule.size() {} i {}\n", rule_num,
+        // pos,
+        //            gd.rule.size(), i);
+        uint_t c = gd.rule[pos];
+        return c;
+    }
+
+    void induceSAl_lite(sdsl::bit_vector &t_array,
+                        sdsl::rank_support_v<01, 2> &t_array_rnk,
+                        sdsl::select_support_mcl<01, 2> &t_array_sel,
+                        sdsl::int_vector<> &r_string,
+                        gcis_s8b_pointers_codec_level &gd, uint_t *SA,
+                        int_t *cnt, int_t *bkt, int_t n, int_t K, int cs) {
+        int_t i, j;
+        // find heads of buckets
+        get_buckets(cnt, bkt, K, false);
+        // for (int i = 0; i < K; i++) {
+        //     std::println("bkt[{}] = {}", i, bkt[i]);
+        // }
+
+        uint_t c = get_str_i(t_array_rnk, t_array_sel, r_string, gd, n - 1);
+        // std::println("Special Inducing L-suffix {} at pos {}", n - 1,
+        // bkt[c]);
+        SA[bkt[c]++] = n - 1;
+        //  if(level==0) bkt[0]++;
+        for (i = 0; i < n; i++) {
+            if (SA[i] != EMPTY) {
+                j = SA[i] - 1;
+                // if (j >= 0)
+                //     c = get_str_i(t_array_rnk, t_array_sel, r_string, gd, j);
+                // uint_t c2 =
+                //     get_str_i(t_array_rnk, t_array_sel, r_string, gd, SA[i]);
+                // if (c >= c2) {
+                // std::println("Inducing L-suffix {} at pos {}", j,
+                // bkt[c]);
+                if (j >= 0 && t_array[j] == 0) {
+                    c = get_str_i(t_array_rnk, t_array_sel, r_string, gd, j);
+                    SA[bkt[c]++] = j;
+                }
+            }
+        }
     }
 };
 

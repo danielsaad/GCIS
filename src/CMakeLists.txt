@@ -17,7 +17,7 @@ target_compile_definitions(gcis-ef-memory PRIVATE MEM_MONITOR REPORT)
 target_compile_definitions(gcis_alpha PRIVATE MEM_MONITOR REPORT)
 target_compile_definitions(gcis_repair_hybrid PRIVATE MEM_MONITOR REPORT)
 target_compile_definitions(gcis_repair_hybrid_2 PRIVATE MEM_MONITOR REPORT)
-target_compile_definitions(gcis_lyndon PRIVATE MEM_MONITOR REPORT)
+# target_compile_definitions(gcis_lyndon PRIVATE MEM_MONITOR REPORT)
 
 
 

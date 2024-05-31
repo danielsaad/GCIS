@@ -9,7 +9,7 @@
 #include "util.hpp"
 #include <cstdint>
 #include <cstring>
-#include <print>
+// #include <print>
 
 #define chr(i) (cs == sizeof(int_t) ? ((int_t *)s)[i] : ((unsigned char *)s)[i])
 
@@ -552,7 +552,7 @@ class gcis_abstract : public gcis_interface {
         // std::println("Special Inducing L-suffix {} at pos {}", n - 1,
         //  bkt[chr(n - 1)] - 1);
         //  if(level==0) bkt[0]++;
-        for (i = 0; i < n ; i++) {
+        for (i = 0; i < n; i++) {
             if (SA[i] != EMPTY) {
                 j = SA[i] - 1;
                 if (j >= 0 && !tget(j)) {
@@ -770,8 +770,11 @@ class gcis_abstract : public gcis_interface {
         int_t i, j;
         // find heads of buckets
         get_buckets(cnt, bkt, K, false);
+        // for (int i = 0; i < K; i++) {
+        //     std::println("bkt[{}] = {}", i, bkt[i]);
+        // }
         // std::println("Special Inducing L-suffix {} at pos {}", n - 1,
-        // bkt[chr(n - 1)]);
+        //              bkt[chr(n - 1)]);
         SA[bkt[chr(n - 1)]++] = n - 1;
         //  if(level==0) bkt[0]++;
         for (i = 0; i < n; i++) {
