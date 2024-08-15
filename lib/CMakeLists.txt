@@ -8,9 +8,7 @@ ADD_LIBRARY(gc-is STATIC
         gcis_gap_codec.cpp
         eliasfano.cpp
         sais_nong.cpp
-        ../include/gcis_eliasfano_index.hpp
         ../include/grammar_builder.hpp
-        ../include/index_builder.hpp
         ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
@@ -19,10 +17,6 @@ ADD_LIBRARY(gc-is STATIC
         ../include/gcis_gap_codec.hpp
         ../include/gcis_gap.hpp
         ../include/sais_nong.hpp
-        ../include/gcis_index.hpp
-        ../include/gcis_index_bs.hpp
-        ../include/gcis_index_grid.hpp
-        ../include/gcis_index_dfuds.hpp
 )
 
 
@@ -36,9 +30,7 @@ ADD_LIBRARY(gc-is-64 STATIC
         gcis_gap_codec.cpp
         eliasfano.cpp
         sais_nong.cpp
-        ../include/gcis_eliasfano_index.hpp
         ../include/grammar_builder.hpp
-        ../include/index_builder.hpp
         ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
@@ -47,10 +39,6 @@ ADD_LIBRARY(gc-is-64 STATIC
         ../include/gcis_gap_codec.hpp
         ../include/gcis_gap.hpp
         ../include/sais_nong.hpp
-        ../include/gcis_index.hpp
-        ../include/gcis_index_bs.hpp
-        ../include/gcis_index_grid.hpp
-        ../include/gcis_index_dfuds.hpp
 )
 
 ADD_LIBRARY(gc-is-statistics STATIC
@@ -63,9 +51,7 @@ ADD_LIBRARY(gc-is-statistics STATIC
         gcis_gap_codec.cpp
         eliasfano.cpp
         sais_nong.cpp
-        ../include/gcis_eliasfano_index.hpp
         ../include/grammar_builder.hpp
-        ../include/index_builder.hpp
         ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
@@ -74,10 +60,6 @@ ADD_LIBRARY(gc-is-statistics STATIC
         ../include/gcis_gap_codec.hpp
         ../include/gcis_gap.hpp
         ../include/sais_nong.hpp
-        ../include/gcis_index.hpp
-        ../include/gcis_index_bs.hpp
-        ../include/gcis_index_grid.hpp
-        ../include/gcis_index_dfuds.hpp        
 )
 
 ADD_LIBRARY(gc-is-statistics-64 STATIC
@@ -90,9 +72,7 @@ ADD_LIBRARY(gc-is-statistics-64 STATIC
         gcis_gap_codec.cpp
         eliasfano.cpp
         sais_nong.cpp
-        ../include/gcis_eliasfano_index.hpp
         ../include/grammar_builder.hpp
-        ../include/index_builder.hpp
         ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
@@ -101,10 +81,6 @@ ADD_LIBRARY(gc-is-statistics-64 STATIC
         ../include/gcis_gap_codec.hpp
         ../include/gcis_gap.hpp
         ../include/sais_nong.hpp
-        ../include/gcis_index.hpp
-        ../include/gcis_index_bs.hpp
-        ../include/gcis_index_grid.hpp
-        ../include/gcis_index_dfuds.hpp
 )
 
 target_compile_definitions(gc-is-64 PRIVATE m64)

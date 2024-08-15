@@ -297,8 +297,9 @@ class gcis_dictionary<gcis_s8b_codec> : public gcis_abstract<gcis_s8b_codec> {
                                  "\n");
 #endif
 
-        bool premature_stop =
-            evaluate_premature_stop(n, K, n1, name + 1, level);
+        // bool premature_stop =
+        //     evaluate_premature_stop(n, K, n1, name + 1, level);
+        bool premature_stop = false;
         if (name + 1 < n1 && !premature_stop) {
             g[level].string_size = n;
             g[level].alphabet_size = K;
