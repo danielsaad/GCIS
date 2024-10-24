@@ -22,9 +22,9 @@ class gcis_s8b_codec_level {
     sdsl::bit_vector::select_1_type rule_delim_sel;
 
   public:
-    void expand_rule(uint64_t rule_num, sdsl::int_vector<> &r_string,
-                     uint64_t &l);
-    void expand_rule(uint64_t rule_num, char *s, uint64_t &l);
+    void expand_rule(uint_t rule_num, sdsl::int_vector<> &r_string,
+                     uint_t &l);
+    void expand_rule(uint_t rule_num, char *s, uint_t &l);
 };
 
 /**
@@ -39,8 +39,13 @@ class gcis_s8b_pointers_codec_level {
     vector<uint_t> rule_pos;
 
   public:
-  void expand_rule(uint64_t rule_num, sdsl::int_vector<>& r_string, uint64_t& l);
-  void expand_rule(uint64_t rule_num,char* s, uint64_t& l);
+    void expand_rule(uint_t rule_num, sdsl::int_vector<> &r_string, uint_t &l);
+    void expand_rule(uint_t rule_num, char *s, uint_t &l);
+
+    void expand_rule_bkt(uint_t rule_num, sdsl::int_vector<> &r_string, uint_t &l,
+                         int_t *bkt);
+    void expand_rule_bkt(uint_t rule_num, unsigned char *s, uint_t &l,
+                         int_t *bkt);
 };
 
 class gcis_s8b_codec {

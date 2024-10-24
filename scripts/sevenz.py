@@ -1,15 +1,16 @@
 import os
-
+import util
 from subprocess import Popen, PIPE
 
-
-def compress_7z(input,output):
+@util.timing
+def compress(input,output):
     process = Popen(['7za', 'a', output, input, "-mmt=1"],stdout=PIPE,stderr=PIPE)
     process.communicate()
 
-def decompress_7z(input,output):
-    outputdir = os.path.split(input)[0]
-    process = Popen(['7za', 'e', input, "-o" + outputdir,"-mmt=1"],stdout=PIPE,stderr=PIPE)
+@util.timing
+def decompress(input,output):
+    outputdir = os.path.dirname(output)
+    process = Popen(['7za', 'e', input, "-y -o" + outputdir,"-mmt=1"],stdout=PIPE,stderr=PIPE)
     process.communicate()
 
 

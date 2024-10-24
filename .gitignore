@@ -1,0 +1,13 @@
+**/bin/*
+**/build/*
+/external/sdsl-lite/*
+.idea/*
+.vscode/*
+include/gtest/*
+include/sdsl/*
+lib/*.a
+*.a
+lib/pkgconfig*
+*.o
+scripts/__pycache__
+/.vscode

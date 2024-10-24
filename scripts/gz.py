@@ -3,17 +3,18 @@ import sys
 import os
 import glob
 import shutil
-import time
+import util
 
 from subprocess import Popen, PIPE
 
-
-def compress_gz(input,output):
+@util.timing
+def compress(input,output):
     with open(output, "w") as f:
         process = Popen(['gzip', '-c', input], stdout=f,stderr=PIPE)
         process.communicate()
-
-def decompress_gz(input,output):
+        
+@util.timing
+def decompress(input,output):
     with open(output, "w") as f:
         process = Popen(['gzip', '-dck', input], stdout=f,stderr=PIPE)
         process.communicate()

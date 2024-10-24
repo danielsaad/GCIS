@@ -25,7 +25,9 @@ int main(int argc, char *argv[]) {
     cout << "Loading " << argv[1] << endl;
     d.load(compressed_file);
     cout << "Decompressing " << argv[1] << endl;
-    char *str = d.decode();
+    int_t n;
+    char *str;
+    tie(str,n) = d.decode();
     auto stop = timer::now();
 
     cout << "Decompression Time: "
@@ -34,7 +36,6 @@ int main(int argc, char *argv[]) {
 
     // Compute the Suffix Array
     start = timer::now();
-    size_t n = strlen(str) + 1;
     cout << "Computing the Suffix Array with SAIS-NONG" << endl;
     int32_t *SA = new int32_t[n];
     SA_IS((unsigned char *)str, SA, n, 255, sizeof(char), 0);

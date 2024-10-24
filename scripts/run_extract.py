@@ -10,6 +10,7 @@ def run_extract(input_folder_path,output_folder_path):
         process = Popen(['../bin/gc-is-codec', '-e', f,output_file])
         process.communicate()
 
+
 #argv[1] contains the path to the experiments folder
 #argv[2] contains the path to the output folder
 

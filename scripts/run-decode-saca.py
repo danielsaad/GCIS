@@ -30,7 +30,7 @@ def run_decode_nong(input_folder_path, output_folder_path):
         if(os.path.isfile(compressed_file)):
             print(compressed_file, 'already exists, skipping')
         else:
-            gcis.compress_gc_is(input_file, compressed_file)
+            gcis.compress(input_file, compressed_file,'-ef')
 
         print("GCIS Decoding and SAIS Nong")
         dt = []
@@ -65,7 +65,7 @@ def run_decode_yuta(input_folder_path, output_folder_path):
         if(os.path.isfile(compressed_file)):
             print(compressed_file, 'already exists, skipping')
         else:
-            gcis.compress_gc_is(input_file, compressed_file)
+            gcis.compress(input_file, compressed_file,'-ef')
 
         print("GCIS Decoding and SAIS Yuta")
         dt = []
@@ -100,7 +100,7 @@ def run_decode_lcp_yuta(input_folder_path, output_folder_path):
         if(os.path.isfile(compressed_file)):
             print(compressed_file, 'already exists, skipping')
         else:
-            gcis.compress_gc_is(input_file, compressed_file)
+            gcis.compress(input_file, compressed_file,'-ef')
 
         print("GCIS Decoding and SAIS Yuta + LCP")
         dt = []
@@ -136,7 +136,7 @@ def run_decode_divsufsort(input_folder_path, output_folder_path):
         if(os.path.isfile(compressed_file)):
             print(compressed_file, 'already exists, skipping')
         else:
-            gcis.compress_gc_is(input_file, compressed_file)
+            gcis.compress(input_file, compressed_file,'-ef')
 
         print("GCIS Decoding and Divsufsort")
         dt = []
@@ -185,7 +185,7 @@ def run_decode_divsufsort_lcp(input_folder_path, output_folder_path):
         if(os.path.isfile(compressed_file)):
             print(compressed_file, 'already exists, skipping')
         else:
-            gcis.compress_gc_is(input_file, compressed_file)
+            gcis.compress(input_file, compressed_file,'-ef')
 
         print("GCIS Decoding and Divsufsort + LCP")
         dt = []
@@ -345,13 +345,13 @@ def run_decode(input_folder_path, output_folder_path):
         if(os.path.isfile(compressed_file)):
             print(compressed_file, 'already exists, skipping')
         else:
-            gcis.compress_gc_is(input_file, compressed_file)
+            gcis.compress(input_file, compressed_file,'-ef')
 
         print("GCIS Decoding")
         tt = []
         for i in range(number_of_samples):
             total_time = gcis.decompress_gc_is(
-                compressed_file, decompressed_file)
+                compressed_file, decompressed_file,'-ef')
             tt.append(total_time)
             print("Time Decode =", "{:.2f}".format(total_time))
             print('Removing tmp file', decompressed_file)
@@ -376,13 +376,13 @@ def run_decode_saca(input_folder_path, output_folder_path):
         if(os.path.isfile(compressed_file)):
             print(compressed_file, 'already exists, skipping')
         else:
-            gcis.compress_gc_is(input_file, compressed_file)
+            gcis.compress(input_file, compressed_file,'-ef')
 
         print("GCIS Decoding + SAIS: ", f)
         tt = []
         for i in range(number_of_samples):
             start_time = time.perf_counter()  # Start time
-            gcis.decompress_saca(compressed_file, output_file)
+            gcis.decompress_saca(compressed_file, output_file,'-ef')
             end_time = time.perf_counter()  # End time
             total_time = end_time - start_time
             print("Time GCIS =", "{:.2f}".format(total_time))
@@ -408,13 +408,13 @@ def run_decode_saca_lcp(input_folder_path, output_folder_path):
         if(os.path.isfile(compressed_file)):
             print(compressed_file, 'already exists, skipping')
         else:
-            gcis.compress_gc_is(input_file, compressed_file)
+            gcis.compress(input_file, compressed_file,'-ef')
 
         print("GCIS Decoding + SAIS + LCP: ", f)
         tt = []
         for i in range(number_of_samples):
             start_time = time.perf_counter()  # Start time
-            gcis.decompress_saca_lcp(compressed_file, output_file)
+            gcis.decompress_saca_lcp(compressed_file, output_file,'-ef')
             end_time = time.perf_counter()  # End time
             total_time = end_time - start_time
             print("Time GCIS + LCP =", "{:.2f}".format(total_time))

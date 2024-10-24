@@ -22,7 +22,9 @@ int main(int argc, char *argv[]) {
     cout << "Loading " << argv[2] << endl;
     d.load(compressed_file);
     cout << "Decompressing " << argv[2] << endl;
-    char *str = d.decode();
+    int_t n;
+    char *str;
+    tie(str,n) = d.decode();
     auto stop = timer::now();
     cout << "Decompression Time: "
          << (double)duration_cast<milliseconds>(stop - start).count() / 1000.0
@@ -30,7 +32,6 @@ int main(int argc, char *argv[]) {
 
     start = timer::now();
     cout << "Computing the Suffix Array with SAIS-YUTA" << endl;
-    size_t n = strlen(str) + 1;
     sa_int32_t *SA = new sa_int32_t[n];
     sa_int32_t k = 256;
     sais_u8((sa_uint8_t *)str, SA, n, k);

@@ -22,8 +22,7 @@ public:
         return total_bytes;
     }
 
-    void encode(char* s){
-        int_t n = strlen(s)+1;
+    void encode(char* s,int_t n){
         uint_t* SA = new uint_t[n];
         int_t K = 256;
         int cs = sizeof(char);
@@ -48,7 +47,7 @@ public:
                  sdsl::int_vector<>& extracted_text,
                  sdsl::int_vector<>& tmp_text){}
 
-    char* decode(){
+    pair<char*,int_t> decode(){
         sdsl::int_vector<> r_string = reduced_string;
         char* str;
         for(int64_t i=g.size()-1 ;i>=0 ; i--){
@@ -79,7 +78,7 @@ public:
                 r_string = std::move(next_r_string);
             }
         }
-        return str;
+        return make_pair(str,g[0].string_size);
     }
 
 
@@ -327,23 +326,23 @@ private:
         // recurse if names are not yet unique
 
 #ifdef REPORT
-        print_report("Level ",level,"\n");
-        print_report("Alphabet Size = ",K, "\n");
-        print_report("String Size = ",n,"\n");
-        print_report("Number of Rules = ", name+1, "\n");
-        print_report("Average Rule Length = ",(double) total_rule_len/(name+1),"\n");
-        print_report("Number of Discarded Rules = ",discarded_rules_n,"\n");
-        print_report("Average Discarded Rules Length = ",(double) discarded_rules_len/discarded_rules_n,"\n");
-        print_report("Average LCP = ",(double) total_lcp/(name+1),"\n");
-        print_report("Average Rule Suffix Length = ",(double) total_rule_suffix_length/(name+1),"\n");
-        print_report("Dictionary Level Size (bytes) =",g[level].size_in_bytes(),"\n");
-        print_report("LCP Size (bits) = ",g[level].lcp.size(),"\n");
-        print_report("Rule Suffix Length (total) = ",g[level].rule.size(),"\n");
-        print_report("Rule Suffix Width (bits per symbol) = ",(int_t) g[level].rule.width(),"\n");
-        print_report("Tail Length = ",g[level].tail.size(),"\n");
-        print_report("Tail Width (bits per symbol) = ",(int_t) g[level].tail.width(),"\n");
-        print_report("Run Length Potential (total) = ",run_length_potential,"\n");
-        print_report("Avg Run Length per Rule Suffix = ",(double) run_length_potential/(name+1),"\n");
+        gcis::util::print_report("Level ",level,"\n");
+        gcis::util::print_report("Alphabet Size = ",K, "\n");
+        gcis::util::print_report("String Size = ",n,"\n");
+        gcis::util::print_report("Number of Rules = ", name+1, "\n");
+        gcis::util::print_report("Average Rule Length = ",(double) total_rule_len/(name+1),"\n");
+        gcis::util::print_report("Number of Discarded Rules = ",discarded_rules_n,"\n");
+        gcis::util::print_report("Average Discarded Rules Length = ",(double) discarded_rules_len/discarded_rules_n,"\n");
+        gcis::util::print_report("Average LCP = ",(double) total_lcp/(name+1),"\n");
+        gcis::util::print_report("Average Rule Suffix Length = ",(double) total_rule_suffix_length/(name+1),"\n");
+        gcis::util::print_report("Dictionary Level Size (bytes) =",g[level].size_in_bytes(),"\n");
+        gcis::util::print_report("LCP Size (bits) = ",g[level].lcp.size(),"\n");
+        gcis::util::print_report("Rule Suffix Length (total) = ",g[level].rule.size(),"\n");
+        gcis::util::print_report("Rule Suffix Width (bits per symbol) = ",(int_t) g[level].rule.width(),"\n");
+        gcis::util::print_report("Tail Length = ",g[level].tail.size(),"\n");
+        gcis::util::print_report("Tail Width (bits per symbol) = ",(int_t) g[level].tail.width(),"\n");
+        gcis::util::print_report("Run Length Potential (total) = ",run_length_potential,"\n");
+        gcis::util::print_report("Avg Run Length per Rule Suffix = ",(double) run_length_potential/(name+1),"\n");
 #endif
 
         bool premature_stop = evaluate_premature_stop(n,K,n1,name+1,level);
@@ -354,7 +353,7 @@ private:
         } else { // generate the suffix array of s1 directly
             if(premature_stop){
 #ifdef REPORT
-                print_report("Premature Stop employed at level ",level, "\n");
+                gcis::util::print_report("Premature Stop employed at level ",level, "\n");
 #endif
                 reduced_string.resize(n);
                 for (j = 0; j < n; j++) {
@@ -374,8 +373,8 @@ private:
             sdsl::util::bit_compress(reduced_string);
 
 #ifdef REPORT
-            print_report("Reduced String Length = ",(int_t) reduced_string.size(),"\n");
-            print_report("Reduced String Width (bits per symbol) = ",(int_t) reduced_string.width(),"\n");
+            gcis::util::print_report("Reduced String Length = ",(int_t) reduced_string.size(),"\n");
+            gcis::util::print_report("Reduced String Width (bits per symbol) = ",(int_t) reduced_string.width(),"\n");
 #endif
         }
         // Initialize support data structures for LCP

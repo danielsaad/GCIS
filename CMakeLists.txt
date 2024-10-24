@@ -14,14 +14,20 @@ else ()
     set (CMAKE_CXX_STANDARD 11)
 endif ()
 
+# Check if Profile mode is enabled
 
 SET(CMAKE_VERBOSE_MAKEFILE on)
 if(CMAKE_BUILD_TYPE MATCHES DEBUG)
 	MESSAGE(STATUS "Debug mode")
     SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
-else()
-	MESSAGE(STATUS "Release mode")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
+elseif(CMAKE_BUILD_TYPE MATCHES RELEASE)
+    MESSAGE(STATUS "Release mode")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native -Wall")
+elseif(${PROFILE})
+    MESSAGE(STATUS "Gprof Profile  mode")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg -no-pie")
+else()  
+    MESSAGE(STATUS "Default mode")
 endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
@@ -30,7 +36,7 @@ include_directories(${CMAKE_SOURCE_DIR}/external/malloc_count)
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/src)
-add_subdirectory(${CMAKE_SOURCE_DIR}/test)
+# add_subdirectory(${CMAKE_SOURCE_DIR}/test)
 add_subdirectory(${CMAKE_SOURCE_DIR}/lib)
 
 #add_subdirectory(${CMAKE_SOURCE_DIR}/benchmark)
