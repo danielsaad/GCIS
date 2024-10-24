@@ -66,7 +66,7 @@ int expand (int i, int d)
      return ret; 
    }
 
-void main (int argc, char **argv)
+int main (int argc, char **argv)
 
    { char fname[1024];
      char *text;

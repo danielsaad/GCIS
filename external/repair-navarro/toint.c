@@ -26,7 +26,7 @@ Chile. Blanco Encalada 2120, Santiago, Chile. gnavarro@dcc.uchile.cl
 
 #include <stdio.h>
 
-main (int c, char **argv)
+int main (int c, char **argv)
 
  { FILE *f = fopen (argv[1],"w");
    int i;

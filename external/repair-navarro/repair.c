@@ -285,7 +285,7 @@ if (PRNC) prnC();
      return 0;
    }
 
-void main (int argc, char **argv)
+int main (int argc, char **argv)
 
    { char fname[1024];
      char *text;
