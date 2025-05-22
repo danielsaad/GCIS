@@ -28,10 +28,10 @@ const int EMPTY = 0xffffffff;
 
 unsigned char mask[] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 
-#define tget(i) ((t[(i) >> 3] & mask[(i)&0x7]) ? 1 : 0)
+#define tget(i) ((t[(i) >> 3] & mask[(i) & 0x7]) ? 1 : 0)
 #define tset(i, b)                                                             \
-    t[(i) >> 3] =                                                              \
-        (b) ? (mask[(i)&0x7] | t[(i) >> 3]) : ((~mask[(i)&0x7]) & t[(i) >> 3])
+    t[(i) >> 3] = (b) ? (mask[(i) & 0x7] | t[(i) >> 3])                        \
+                      : ((~mask[(i) & 0x7]) & t[(i) >> 3])
 
 #define isLMS(i) (i > 0 && tget(i) && !tget(i - 1))
 
@@ -80,6 +80,10 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
     sdsl::int_vector<> reduced_string;
 
   public:
+    virtual ~gcis_abstract() {
+        g.clear();
+        sdsl::util::clear(reduced_string);
+    }
     void extract_batch(vector<pair<int, int>> &v_query) {
         throw(gcis::util::NotImplementedException("extract_batch"));
     }

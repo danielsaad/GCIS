@@ -8,6 +8,7 @@
 #include "gcis.hpp"
 #include "gcis_s8b_codec.hpp"
 #include "util.hpp"
+
 template <>
 class gcis_dictionary<gcis_s8b_codec> : public gcis_abstract<gcis_s8b_codec> {
   public:
@@ -199,7 +200,6 @@ class gcis_dictionary<gcis_s8b_codec> : public gcis_abstract<gcis_s8b_codec> {
 
             // The consecutive LMS-substrings differs
             if (diff) {
-
                 g[level].lcp.encode(d);
                 g[level].rule_suffix_length.encode(cur_len - d);
                 g[level].rule.resize(g[level].rule.size() + cur_len - d);
@@ -297,42 +297,25 @@ class gcis_dictionary<gcis_s8b_codec> : public gcis_abstract<gcis_s8b_codec> {
                                  "\n");
 #endif
 
-        // bool premature_stop =
-        //     evaluate_premature_stop(n, K, n1, name + 1, level);
-        bool premature_stop = false;
-        if (name + 1 < n1 && !premature_stop) {
-            g[level].string_size = n;
-            g[level].alphabet_size = K;
+        g[level].string_size = n;
+        g[level].alphabet_size = K;
+        if (name + 1 < n1) {
             gc_is((int_t *)s1, SA1, n1, name + 1, sizeof(int_t), level + 1);
         } else { // generate the suffix array of s1 directly
-            if (premature_stop) {
-#ifdef REPORT
-                gcis::util::print_report("Premature Stop employed at level ",
-                                         level, "\n");
-#endif
-                reduced_string.resize(n);
-                for (j = 0; j < n; j++) {
-                    // Copy the reduced substring
-                    reduced_string[j] = s[j];
-                }
-                g.pop_back();
-            } else {
-                reduced_string.resize(n1);
-                for (j = 0; j < n1; j++) {
-                    // Copy the reduced substring
-                    reduced_string[j] = s1[j];
-                }
+            reduced_string.resize(n1);
+            for (j = 0; j < n1; j++) {
+                // Copy the reduced substring
+                reduced_string[j] = s1[j];
             }
             sdsl::util::bit_compress(reduced_string);
+        }
 
 #ifdef REPORT
-            gcis::util::print_report(
-                "Reduced String Length = ", (int_t)reduced_string.size(), "\n");
-            gcis::util::print_report(
-                "Reduced String Width (bits per symbol) = ",
-                (int_t)reduced_string.width(), "\n");
+        gcis::util::print_report(
+            "Reduced String Length = ", (int_t)reduced_string.size(), "\n");
+        gcis::util::print_report("Reduced String Width (bits per symbol) = ",
+                                 (int_t)reduced_string.width(), "\n");
 #endif
-        }
         delete[] t;
     }
 };
@@ -371,7 +354,7 @@ class gcis_s8b_pointers : public gcis_dictionary<gcis_s8b_codec> {
         return make_pair(str, g[0].string_size);
     }
 
-    pair<char *,int_t> decode_saca(uint_t **sa) override {
+    pair<char *, int_t> decode_saca(uint_t **sa) override {
 
         sdsl::int_vector<> r_string = reduced_string;
         unsigned char *str;
@@ -619,7 +602,7 @@ class gcis_s8b_pointers : public gcis_dictionary<gcis_s8b_codec> {
         }
 
         *sa = SA;
-        return make_pair((char*) str,g[0].string_size);
+        return make_pair((char *)str, g[0].string_size);
     } // end decode_sac
 };
 

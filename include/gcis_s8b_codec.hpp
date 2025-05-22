@@ -63,6 +63,7 @@ class gcis_s8b_codec {
     void load(std::istream &i);
     // gcis_s8b_codec_level decompress();
     gcis_s8b_pointers_codec_level decompress();
+    ~gcis_s8b_codec() = default;
 };
 
 #endif // GC_IS_GCIS_S8_CODEC_CPP_H

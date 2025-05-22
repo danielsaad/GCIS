@@ -1,5 +1,6 @@
 #include "gcis_s8b_codec.hpp"
 
+
 uint64_t gcis_s8b_codec::size_in_bytes() {
     uint64_t total_bytes = 0;
     total_bytes += 2 * sizeof(uint_t);
@@ -99,7 +100,8 @@ gcis_s8b_pointers_codec_level gcis_s8b_codec::decompress() {
     lcp.reset();
     rule_suffix_length.reset();
     for (uint64_t i = 0; i < lcp.size(); i++) {
-        total_lcp_length += lcp.get_next();
+        uint_t x = lcp.get_next();
+        total_lcp_length += x;
     }
     // Compute the total rule suffix length and the number of rules
     for (uint64_t i = 0; i < rule_suffix_length.size(); i++) {

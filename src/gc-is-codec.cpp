@@ -50,9 +50,9 @@ int main(int argc, char *argv[]) {
     string codec_flag(argv[4]);
     gcis_interface *d;
     if (codec_flag == "-s8b") {
-        d = new gcis_s8b_pointers();
+        d = new gcis_s8b_pointers;
     } else if (codec_flag == "-ef") {
-        d = new gcis_dictionary<gcis_eliasfano_codec>();
+        d = new gcis_dictionary<gcis_eliasfano_codec>;
     } else {
         cerr << "Invalid CODEC." << endl;
         cerr << "Use -s8b for Simple8b or -ef for Elias-Fano" << endl;
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
         mm.event("GC-IS Save");
 #endif
 
-        cout << "input:\t" << strlen(str) << " bytes" << endl;
+        cout << "input:\t" << n << " bytes" << endl;
         cout << "output:\t" << d->size_in_bytes() << " bytes" << endl;
         cout << "time: " << (double)duration_cast<seconds>(stop - start).count()
              << " seconds" << endl;

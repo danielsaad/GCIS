@@ -107,7 +107,7 @@ uint64_t simple8b_codec::flush(uint64_t buf_size){
 
 uint64_t simple8b_codec::decode_to_buffer(){
     uint64_t index = 0;
-    while(true){
+    while(m_cur_word < m_v.size()){
         uint64_t word = m_v[m_cur_word];
         uint64_t n_items = s8b_selector[word & 0xf].n_items;
         uint64_t n_bits =  s8b_selector[word & 0xf].n_bits;
