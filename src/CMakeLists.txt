@@ -2,12 +2,13 @@ add_executable(gcis gc-is-codec.cpp)
 add_executable(gcis-memory gc-is-codec.cpp ${CMAKE_SOURCE_DIR}/external/malloc_count/malloc_count.c)
 add_executable(gcis-64 gc-is-codec.cpp)
 add_executable(gcis-64-memory gc-is-codec.cpp ${CMAKE_SOURCE_DIR}/external/malloc_count/malloc_count.c)
-
+add_executable(gcis_lyndon gcis_lyndon.cpp)
 target_compile_definitions(gcis-64 PRIVATE m64 )
 target_compile_definitions(gcis-memory PRIVATE MEM_MONITOR REPORT )
 target_compile_definitions(gcis-64-memory PRIVATE MEM_MONITOR REPORT m64 )
 
 target_link_libraries(gcis gc-is sdsl pthread sais )
+target_link_libraries(gcis_lyndon gc-is sdsl pthread sais )
 target_link_libraries(gcis-memory gc-is-statistics sdsl pthread dl sais)
 target_link_libraries(gcis-64 gc-is-64 sdsl pthread sais )
 target_link_libraries(gcis-64-memory  gc-is-statistics-64 sdsl pthread dl sais)
@@ -38,4 +39,4 @@ target_link_libraries(decode-sais-divsufsort gc-is sdsl divsufsort)
 target_link_libraries(decode-sais-divsufsort-lcp gc-is sdsl divsufsort-lcp)
 
 
-install(TARGETS sais-nong sais-yuta sais-lcp-yuta decode-sais-nong decode-sais-yuta decode-sais-lcp-yuta gcis gcis-memory gcis-64 gcis-64-memory sais-divsufsort sais-divsufsort-lcp decode-sais-divsufsort decode-sais-divsufsort-lcp  RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+install(TARGETS sais-nong sais-yuta sais-lcp-yuta decode-sais-nong decode-sais-yuta decode-sais-lcp-yuta gcis gcis_lyndon gcis-memory gcis-64 gcis-64-memory sais-divsufsort sais-divsufsort-lcp decode-sais-divsufsort decode-sais-divsufsort-lcp  RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/bin)

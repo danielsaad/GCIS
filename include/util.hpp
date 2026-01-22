@@ -142,6 +142,8 @@ template <class T> void load(std::vector<T> &v, std::ifstream &in) {
 //     in.read((char *)s.data(), sizeof(char) * sz);
 // }
 
+std::string make_temp_filename();
+
 template <class T> class identity { typedef T type; };
 
 } // namespace util

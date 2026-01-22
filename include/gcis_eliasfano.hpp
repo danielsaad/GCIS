@@ -992,7 +992,8 @@ class gcis_dictionary<gcis_eliasfano_codec>
             }
             sdsl::util::bit_compress(reduced_string);
             partial_sum.resize(reduced_string.size());
-            partial_sum[0] = 0;
+            if(reduced_string.size() > 0 )
+                partial_sum[0] = 0;
             for (uint64_t i = 1; i < reduced_string.size(); i++) {
                 partial_sum[i] =
                     partial_sum[i - 1] +

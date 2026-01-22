@@ -461,8 +461,7 @@ template <class codec_t> class gcis_abstract : public gcis_interface {
                                  "\n");
 #endif
 
-        bool premature_stop =
-            evaluate_premature_stop(n, K, n1, name + 1, level);
+        bool premature_stop = false;
         if (name + 1 < n1 && !premature_stop) {
             gc_is((int_t *)s1, SA1, n1, name + 1, sizeof(int_t), level + 1);
         } else { // generate the suffix array of s1 directly
