@@ -1111,7 +1111,6 @@ class gcis_dictionary<gcis_eliasfano_codec>
     void extract(int64_t l, int64_t r, sdsl::int_vector<> &extracted_text,
                  sdsl::int_vector<> &tmp_text) {
         //	  // Stores the interval being tracked in the text
-        std::cout << "Extracting " << l << " " << r << std::endl;
         int64_t text_l;
         int64_t text_r;
         // Stores the interval being tracked in the level
