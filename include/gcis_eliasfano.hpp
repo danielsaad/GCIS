@@ -53,8 +53,6 @@ class gcis_dictionary<gcis_eliasfano_codec>
         auto first = std::chrono::high_resolution_clock::now();
         auto total_time = std::chrono::high_resolution_clock::now();
         for (auto p : query) {
-            // cout << "Extracting"
-            //      << "[" << p.first << "," << p.second << "]" << endl;
             auto t0 = std::chrono::high_resolution_clock::now();
             extract(p.first, p.second, extracted_text, tmp_text);
             auto t1 = std::chrono::high_resolution_clock::now();
@@ -1113,6 +1111,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
     void extract(int64_t l, int64_t r, sdsl::int_vector<> &extracted_text,
                  sdsl::int_vector<> &tmp_text) {
         //	  // Stores the interval being tracked in the text
+        std::cout << "Extracting " << l << " " << r << std::endl;
         int64_t text_l;
         int64_t text_r;
         // Stores the interval being tracked in the level
