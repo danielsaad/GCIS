@@ -43,7 +43,7 @@ class gcis_dictionary<gcis_eliasfano_codec>
     void extract_batch(vector<pair<int, int>> &query) {
         int l, r;
         std::tie(l, r) = query[0];
-        uint64_t query_length = 50000;
+        uint64_t query_length = 100000;
         uint64_t size = query_length;
         //            g.size() ?  (g.back().fully_decoded_tail_len +
         //            (query_length))
