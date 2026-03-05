@@ -41,4 +41,4 @@ target_link_libraries(decode-sais-divsufsort gc-is sdsl divsufsort)
 target_link_libraries(decode-sais-divsufsort-lcp gc-is sdsl divsufsort-lcp)
 
 
-install(TARGETS sais-nong sais-yuta sais-lcp-yuta decode-sais-nong decode-sais-yuta decode-sais-lcp-yuta gcis gcis_lyndon gcis-memory gcis-64 gcis-64-memory sais-divsufsort sais-divsufsort-lcp decode-sais-divsufsort decode-sais-divsufsort-lcp  RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+install(TARGETS sais-nong sais-yuta sais-lcp-yuta decode-sais-nong decode-sais-yuta decode-sais-lcp-yuta gcis gcis_lyndon gcis-memory gcis-64 gcis-64-memory sais-divsufsort sais-divsufsort-lcp decode-sais-divsufsort decode-sais-divsufsort-lcp  gcis_int RUNTIME DESTINATION ${CMAKE_SOURCE_DIR}/bin)

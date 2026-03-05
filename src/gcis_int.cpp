@@ -10,7 +10,7 @@ using timer = std::chrono::high_resolution_clock;
 void load_int_string_from_file(uint_t *&str, char *filename, int_t &n) {
     std::ifstream f(filename, std::ios::binary);
     f.seekg(0, std::ios::end);
-    n = f.tellg();
+    n = f.tellg()/sizeof(uint_t);
     f.seekg(0, std::ios::beg);
     str = new uint_t[n];
     f.read((char *)str, n * sizeof(uint_t));
@@ -18,7 +18,7 @@ void load_int_string_from_file(uint_t *&str, char *filename, int_t &n) {
 };
 
 int main(int argc, char *argv[]) {
-    if (argc != 5) {
+    if (argc != 4) {
         std::cerr << "Usage: \n"
                   << argv[0] << " -c <file_to_be_encoded> <output>\n"
                   << argv[0] << " -d <file_to_be_decoded> <output>\n";
