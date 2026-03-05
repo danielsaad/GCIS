@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
         auto stop = timer::now();
 
         cout << "input:\t" << d.size_in_bytes() << " bytes" << endl;
-        cout << "output:\t" << strlen(str) << " bytes" << endl;
+        cout << "output:\t" << n * sizeof(uint_t) << " bytes" << endl;
         cout << "time: "
              << (double)duration_cast<milliseconds>(stop - start).count() /
                     1000.0
@@ -67,12 +67,10 @@ int main(int argc, char *argv[]) {
         output.write((char *)str, n * sizeof(uint_t));
         input.close();
         output.close();
-    }
-    else{
+    } else {
         std::cerr << "Invalid mode. Use -c for encoding and -d for decoding.\n";
         exit(EXIT_FAILURE);
     }
-
 
     return 0;
 }
