@@ -12,6 +12,7 @@ ADD_LIBRARY(gc-is STATIC
         ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
+        ../include/gcis_s8b_int.hpp
         ../include/gcis_eliasfano.hpp
         ../include/gcis_eliasfano_no_lcp.hpp
         ../include/gcis_gap_codec.hpp
@@ -34,6 +35,7 @@ ADD_LIBRARY(gc-is-64 STATIC
         ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
+        ../include/gcis_s8b_int.hpp
         ../include/gcis_s8b_lyndon.hpp
         ../include/gcis_eliasfano.hpp
         ../include/gcis_eliasfano_no_lcp.hpp
@@ -56,6 +58,7 @@ ADD_LIBRARY(gc-is-statistics STATIC
         ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
+        ../include/gcis_s8b_int.hpp
         ../include/gcis_s8b_lyndon.hpp
         ../include/gcis_eliasfano.hpp
         ../include/gcis_eliasfano_no_lcp.hpp
@@ -78,6 +81,7 @@ ADD_LIBRARY(gc-is-statistics-64 STATIC
         ../include/eliasfano.hpp
         ../include/gcis_unary.hpp
         ../include/gcis_s8b.hpp
+        ../include/gcis_s8b_int.hpp
         ../include/gcis_s8b_lyndon.hpp
         ../include/gcis_eliasfano.hpp
         ../include/gcis_eliasfano_no_lcp.hpp

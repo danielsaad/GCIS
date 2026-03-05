@@ -26,7 +26,7 @@ const int_t EMPTY = 0xffffffffffffffff;
 const int EMPTY = 0xffffffff;
 #endif
 
-unsigned char mask[] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
+static unsigned char mask[] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 
 #define tget(i) ((t[(i) >> 3] & mask[(i) & 0x7]) ? 1 : 0)
 #define tset(i, b)                                                             \
@@ -47,7 +47,7 @@ typedef struct _pair {
     int_t lcp;
 } t_pair;
 
-int compare(const void *a, const void *b) {
+static int compare(const void *a, const void *b) {
     if (*(const uint_t *)a < *(const uint_t *)b)
         return -1;
     if (*(const uint_t *)a > *(const uint_t *)b)
@@ -55,7 +55,7 @@ int compare(const void *a, const void *b) {
     return 0;
 }
 
-void stack_push(t_pair *STACK, int_t *top, uint_t idx, int_t lcp) {
+static void stack_push(t_pair *STACK, int_t *top, uint_t idx, int_t lcp) {
     STACK[*top].idx = idx;
     STACK[*top].lcp = lcp;
     (*top)++;
