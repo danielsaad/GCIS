@@ -37,8 +37,13 @@ int main(int argc, char *argv[]) {
         d.encode(str, n);
         auto stop = timer::now();
 
-        cout << "input:\t" << n << " bytes" << endl;
-        cout << "output:\t" << d.size_in_bytes() << " bytes" << endl;
+
+        size_t input_bytes = n * sizeof(uint_t);
+        size_t output_bytes = d.size_in_bytes();
+
+        cout << "input:\t" << input_bytes << " bytes" << endl;
+        cout << "output:\t" << output_bytes << " bytes" << endl;
+        cout << "ratio:\t" << fixed << setprecision(3) << (double)output_bytes/input_bytes << " bytes" << endl;
         cout << "time: " << (double)duration_cast<seconds>(stop - start).count()
              << " seconds" << endl;
 
