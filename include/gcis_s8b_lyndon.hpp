@@ -3,8 +3,8 @@
 
 #include "gcis_s8b.hpp"
 #include "util.hpp"
-#include <filesystem>
-#include <print>
+//#include <filesystem>
+//#include <print>
 class gcis_lyndon : public gcis_s8b_pointers {
   public:
     pair<char *, int_t> decode_lyndon(int_t **lyn) {
@@ -279,7 +279,7 @@ class gcis_lyndon : public gcis_s8b_pointers {
             int_t next, prev;
             j = SA[i];
             // std::println("SA[{}] = {}", i, SA[i]);
-            std::println("SA[{}] = {}", i+1, SA[i]+1);
+//            std::println("SA[{}] = {}", i+1, SA[i]+1);
             if (SA[i] > 0) {
                 if (LA[j - 1] < j)
                     prev = LA[j - 1];
@@ -287,13 +287,13 @@ class gcis_lyndon : public gcis_s8b_pointers {
                     prev = j - 1;
                 next = LA[j];
                 // std::println("LA[{}] = {}", next-1,prev);
-                std::println("LA[{}] = {}", next-1+1,prev+1);
+//                std::println("LA[{}] = {}", next-1+1,prev+1);
                 LA[next - 1] = prev;
                 // std::println("(SA[i] > 0) Computed LA[{}] = {}", next - 1,
                 //              prev);
                 if (prev >= 0) {
                     // std::println("LA[{}] = {}", prev, next);
-                    std::println("LA[{}] = {}", prev+1, next+1);
+//                    std::println("LA[{}] = {}", prev+1, next+1);
                     LA[prev] = next;
                     // std::println("(SA[i] > 0) Computed LA[{}] = {}", prev,
                     //              next);
@@ -312,12 +312,12 @@ class gcis_lyndon : public gcis_s8b_pointers {
                 prev = j - 1;
                 next = LA[j];
                 LA[next - 1] = prev;
-                std::println("Computed LA[{}] = {}", next - 1+1, prev+1);
+//                std::println("Computed LA[{}] = {}", next - 1+1, prev+1);
             }
         }
         LA[n - 1] = n;
         for (int j = 0; j < n; j++) {
-            std::println("Intermediary LA[{}] = {}", j+1, LA[j]+1);
+//            std::println("Intermediary LA[{}] = {}", j+1, LA[j]+1);
         }
         for (j = 0; j < n; j++) {
             if (LA[j] < j) {
@@ -529,36 +529,36 @@ class gcis_lyndon : public gcis_s8b_pointers {
         // recurse if names are not yet unique
 
 #ifdef REPORT
-        gcis::util::print_report("Level ", level, "\n");
-        gcis::util::print_report("Alphabet Size = ", K, "\n");
-        gcis::util::print_report("String Size = ", n, "\n");
-        gcis::util::print_report("Number of Rules = ", name + 1, "\n");
-        gcis::util::print_report("Average Rule Length = ",
-                                 (double)total_rule_len / (name + 1), "\n");
-        gcis::util::print_report(
-            "Number of Discarded Rules = ", discarded_rules_n, "\n");
-        gcis::util::print_report(
-            "Average Discarded Rules Length = ",
-            (double)discarded_rules_len / discarded_rules_n, "\n");
-        gcis::util::print_report(
-            "Average LCP = ", (double)total_lcp / (name + 1), "\n");
-        gcis::util::print_report("Average Rule Suffix Length = ",
-                                 (double)total_rule_suffix_length / (name + 1),
-                                 "\n");
-        gcis::util::print_report(
-            "Dictionary Level Size (bytes) =", g[level].size_in_bytes(), "\n");
-        gcis::util::print_report("LCP Size (bits) = ", g[level].lcp.size(),
-                                 "\n");
-        gcis::util::print_report(
-            "Rule Suffix Length (total) = ", g[level].rule.size(), "\n");
-        gcis::util::print_report("Rule Suffix Width (bits per symbol) = ",
-                                 (int_t)g[level].rule.width(), "\n");
-        gcis::util::print_report("Tail Length = ", g[level].tail.size(), "\n");
-        gcis::util::print_report("Tail Width (bits per symbol) = ",
-                                 (int_t)g[level].tail.width(), "\n");
-        gcis::util::print_report(
-            "Run Length Potential (total) = ", run_length_potential, "\n");
-        gcis::util::print_report("Avg Run Length per Rule Suffix = ",
+//        gcis::util::print_report("Level ", level, "\n");
+//        gcis::util::print_report("Alphabet Size = ", K, "\n");
+//        gcis::util::print_report("String Size = ", n, "\n");
+//        gcis::util::print_report("Number of Rules = ", name + 1, "\n");
+//        gcis::util::print_report("Average Rule Length = ",
+//                                 (double)total_rule_len / (name + 1), "\n");
+//        gcis::util::print_report(
+//            "Number of Discarded Rules = ", discarded_rules_n, "\n");
+//        gcis::util::print_report(
+//            "Average Discarded Rules Length = ",
+//            (double)discarded_rules_len / discarded_rules_n, "\n");
+//        gcis::util::print_report(
+//            "Average LCP = ", (double)total_lcp / (name + 1), "\n");
+//        gcis::util::print_report("Average Rule Suffix Length = ",
+//                                 (double)total_rule_suffix_length / (name + 1),
+//                                 "\n");
+//        gcis::util::print_report(
+//            "Dictionary Level Size (bytes) =", g[level].size_in_bytes(), "\n");
+//        gcis::util::print_report("LCP Size (bits) = ", g[level].lcp.size(),
+//                                 "\n");
+//        gcis::util::print_report(
+//            "Rule Suffix Length (total) = ", g[level].rule.size(), "\n");
+//        gcis::util::print_report("Rule Suffix Width (bits per symbol) = ",
+//                                 (int_t)g[level].rule.width(), "\n");
+//        gcis::util::print_report("Tail Length = ", g[level].tail.size(), "\n");
+//        gcis::util::print_report("Tail Width (bits per symbol) = ",
+//                                 (int_t)g[level].tail.width(), "\n");
+//        gcis::util::print_report(
+//            "Run Length Potential (total) = ", run_length_potential, "\n");
+//        gcis::util::print_report("Avg Run Length per Rule Suffix = ",
                                  (double)run_length_potential / (name + 1),
                                  "\n");
 #endif
@@ -576,7 +576,7 @@ class gcis_lyndon : public gcis_s8b_pointers {
         } else { // generate the suffix array of s1 directly
             if (premature_stop) {
 #ifdef REPORT
-                gcis::util::print_report("Premature Stop employed at level ",
+//                gcis::util::print_report("Premature Stop employed at level ",
                                          level, "\n");
 #endif
                 reduced_string.resize(n);
@@ -595,11 +595,11 @@ class gcis_lyndon : public gcis_s8b_pointers {
             sdsl::util::bit_compress(reduced_string);
 
 #ifdef REPORT
-            gcis::util::print_report(
-                "Reduced String Length = ", (int_t)reduced_string.size(), "\n");
-            gcis::util::print_report(
-                "Reduced String Width (bits per symbol) = ",
-                (int_t)reduced_string.width(), "\n");
+//            gcis::util::print_report(
+//                "Reduced String Length = ", (int_t)reduced_string.size(), "\n");
+////            gcis::util::print_report(
+//                "Reduced String Width (bits per symbol) = ",
+//                (int_t)reduced_string.width(), "\n");
 #endif
         }
         delete[] t;
@@ -1347,7 +1347,7 @@ class gcis_lyndon_semi_external : public gcis_s8b_pointers {
         // close stream
         ifs.close();
         // remove file
-        std::filesystem::remove(filename);
+//        std::filesystem::remove(filename);
     }
 
     void gc_is(int_t *s, uint_t *SA, int_t n, int_t K, int cs, int level) {
@@ -1549,38 +1549,38 @@ class gcis_lyndon_semi_external : public gcis_s8b_pointers {
         // recurse if names are not yet unique
 
 #ifdef REPORT
-        gcis::util::print_report("Level ", level, "\n");
-        gcis::util::print_report("Alphabet Size = ", K, "\n");
-        gcis::util::print_report("String Size = ", n, "\n");
-        gcis::util::print_report("Number of Rules = ", name + 1, "\n");
-        gcis::util::print_report("Average Rule Length = ",
-                                 (double)total_rule_len / (name + 1), "\n");
-        gcis::util::print_report(
-            "Number of Discarded Rules = ", discarded_rules_n, "\n");
-        gcis::util::print_report(
-            "Average Discarded Rules Length = ",
-            (double)discarded_rules_len / discarded_rules_n, "\n");
-        gcis::util::print_report(
-            "Average LCP = ", (double)total_lcp / (name + 1), "\n");
-        gcis::util::print_report("Average Rule Suffix Length = ",
-                                 (double)total_rule_suffix_length / (name + 1),
-                                 "\n");
-        gcis::util::print_report(
-            "Dictionary Level Size (bytes) =", g[level].size_in_bytes(), "\n");
-        gcis::util::print_report("LCP Size (bits) = ", g[level].lcp.size(),
-                                 "\n");
-        gcis::util::print_report(
-            "Rule Suffix Length (total) = ", g[level].rule.size(), "\n");
-        gcis::util::print_report("Rule Suffix Width (bits per symbol) = ",
-                                 (int_t)g[level].rule.width(), "\n");
-        gcis::util::print_report("Tail Length = ", g[level].tail.size(), "\n");
-        gcis::util::print_report("Tail Width (bits per symbol) = ",
-                                 (int_t)g[level].tail.width(), "\n");
-        gcis::util::print_report(
-            "Run Length Potential (total) = ", run_length_potential, "\n");
-        gcis::util::print_report("Avg Run Length per Rule Suffix = ",
-                                 (double)run_length_potential / (name + 1),
-                                 "\n");
+//        gcis::util::print_report("Level ", level, "\n");
+//        gcis::util::print_report("Alphabet Size = ", K, "\n");
+//        gcis::util::print_report("String Size = ", n, "\n");
+//        gcis::util::print_report("Number of Rules = ", name + 1, "\n");
+//        gcis::util::print_report("Average Rule Length = ",
+//                                 (double)total_rule_len / (name + 1), "\n");
+//        gcis::util::print_report(
+//            "Number of Discarded Rules = ", discarded_rules_n, "\n");
+//        gcis::util::print_report(
+//            "Average Discarded Rules Length = ",
+//            (double)discarded_rules_len / discarded_rules_n, "\n");
+//        gcis::util::print_report(
+//            "Average LCP = ", (double)total_lcp / (name + 1), "\n");
+//        gcis::util::print_report("Average Rule Suffix Length = ",
+//                                 (double)total_rule_suffix_length / (name + 1),
+//                                 "\n");
+//        gcis::util::print_report(
+//            "Dictionary Level Size (bytes) =", g[level].size_in_bytes(), "\n");
+//        gcis::util::print_report("LCP Size (bits) = ", g[level].lcp.size(),
+//                                 "\n");
+//        gcis::util::print_report(
+//            "Rule Suffix Length (total) = ", g[level].rule.size(), "\n");
+//        gcis::util::print_report("Rule Suffix Width (bits per symbol) = ",
+//                                 (int_t)g[level].rule.width(), "\n");
+//        gcis::util::print_report("Tail Length = ", g[level].tail.size(), "\n");
+//        gcis::util::print_report("Tail Width (bits per symbol) = ",
+//                                 (int_t)g[level].tail.width(), "\n");
+//        gcis::util::print_report(
+//            "Run Length Potential (total) = ", run_length_potential, "\n");
+//        gcis::util::print_report("Avg Run Length per Rule Suffix = ",
+//                                 (double)run_length_potential / (name + 1),
+//                                 "\n");
 #endif
 
         // bool premature_stop =
@@ -1596,7 +1596,7 @@ class gcis_lyndon_semi_external : public gcis_s8b_pointers {
         } else { // generate the suffix array of s1 directly
             if (premature_stop) {
 #ifdef REPORT
-                gcis::util::print_report("Premature Stop employed at level ",
+//                gcis::util::print_report("Premature Stop employed at level ",
                                          level, "\n");
 #endif
                 reduced_string.resize(n);
@@ -1615,11 +1615,11 @@ class gcis_lyndon_semi_external : public gcis_s8b_pointers {
             sdsl::util::bit_compress(reduced_string);
 
 #ifdef REPORT
-            gcis::util::print_report(
-                "Reduced String Length = ", (int_t)reduced_string.size(), "\n");
-            gcis::util::print_report(
-                "Reduced String Width (bits per symbol) = ",
-                (int_t)reduced_string.width(), "\n");
+//            gcis::util::print_report(
+//                "Reduced String Length = ", (int_t)reduced_string.size(), "\n");
+//            gcis::util::print_report(
+//                "Reduced String Width (bits per symbol) = ",
+//                (int_t)reduced_string.width(), "\n");
 #endif
         }
         delete[] t;
@@ -1999,7 +1999,7 @@ class gcis_lyndon_lite_semi_external : public gcis_lyndon_lite {
         // close stream
         ifs.close();
         // remove file
-        std::filesystem::remove(filename);
+//        std::filesystem::remove(filename);
     }
 
   private:
