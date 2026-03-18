@@ -33,6 +33,30 @@ int main(int argc, char *argv[]) {
         uint_t *str;
         load_int_string_from_file(str, argv[2], n);
         std::ofstream output(argv[3], std::ios::binary);
+
+        /**
+        std::cout << "Computing alphabet size..." << std::endl;
+        // set<int> alphabet(s, s + n);
+        int_t K = *std::max_element(str, str + n) + (uint_t) 1;
+        std::cout << "Alphabet size = " << K << std::endl;
+
+        //ALPHABET MAPPING
+        set<uint_t> SIGMA;
+        for(int_t i=0; i<n; i++){
+          SIGMA.insert(str[i]);
+        }
+        std::cout << "(real) Alphabet size = " << SIGMA.size() << std::endl;
+ 
+        map<uint_t, uint_t> rank;
+        int r=0;
+        //compress
+        for(auto &c:SIGMA){
+          rank[c]=r++;
+        }
+        for (int i = 0; i < n; i++) str[i] = rank[str[i]];
+        /**/
+
+
         auto start = timer::now();
         d.encode(str, n);
         auto stop = timer::now();

@@ -14,29 +14,10 @@ class gcis_s8b_int : public gcis_abstract<gcis_s8b_codec> {
   public:
     void encode(uint_t *s, int_t n) {
         uint_t *SA = new uint_t[n];
-        std::cout << "Computing alphabet size..." << std::endl;
-        // set<int> alphabet(s, s + n);
+
+        /**/
+
         int_t K = *std::max_element(s, s + n) + (uint_t) 1;
-        std::cout << "Alphabet size = " << K << std::endl;
-
-        /**/
-        //ALPHABET MAPPING
-        set<uint_t> SIGMA;
-        for(int_t i=0; i<n; i++){
-          SIGMA.insert(s[i]);
-        }
-        std::cout << "(real) Alphabet size = " << SIGMA.size() << std::endl;
- 
-        map<uint_t, uint_t> rank;
-        int r=0;
-        //compress
-        for(auto &c:SIGMA){
-          rank[c]=r++;
-        }
-        for (int i = 0; i < n; i++) s[i] = rank[s[i]];
-        /**/
-
-        K = *std::max_element(s, s + n) + (uint_t) 1;
         std::cout << "Alphabet size = " << K << std::endl;
 
         int cs = sizeof(int);
